@@ -271,6 +271,42 @@ function BeverageQuickSheet({onClose, onPhoto, onWater}){
   );
 }
 
+function DietQuickSheet({onClose, onPhoto, onManual}){
+  const I = window.Icon;
+  return (
+    <div className="dock-sheet dock-beverage-sheet dock-diet-sheet">
+      <div className="dock-sheet-hd">
+        <h3 className="dock-sheet-title">记录饮食</h3>
+        <button type="button" className="dock-sheet-close" onClick={onClose} aria-label="关闭">
+          <I name="close" size={20} stroke={1.8}/>
+        </button>
+      </div>
+      <div className="dock-beverage-actions">
+        <button type="button" className="dock-beverage-action" onClick={(event)=>onPhoto?.(event.currentTarget)}>
+          <span className="dock-beverage-action-icon is-photo" aria-hidden="true">
+            <I name="camera" size={25} stroke={1.8}/>
+          </span>
+          <span>
+            <strong>拍照记录</strong>
+            <small>拍下整份餐食，识别食物、热量和营养信息</small>
+          </span>
+          <I name="chevron-right" size={18} stroke={1.8}/>
+        </button>
+        <button type="button" className="dock-beverage-action" onClick={onManual}>
+          <span className="dock-beverage-action-icon is-manual" aria-hidden="true">
+            <I name="pen" size={24} stroke={1.8}/>
+          </span>
+          <span>
+            <strong>手动输入</strong>
+            <small>手动填写食物与份量</small>
+          </span>
+          <I name="chevron-right" size={18} stroke={1.8}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function WaterQuickSheet({onClose, onSave}){
   const categories = ['水', '奶茶', '咖啡', '果茶', '纯茶', '果汁', '果蔬汁', '纯奶饮品', '饮料', '其他'];
   const nutritionPer500 = {
@@ -569,7 +605,9 @@ function DockPublisher({
   };
 
   const handleDietFanTap = (buttonEl)=>{
-    openRecognitionCamera(buttonEl);
+    setQuickOpen(false);
+    setQuickSelected(null);
+    setDockSheet('diet');
   };
 
   const handleCameraCaptureSuccess = (payload)=>{
@@ -637,7 +675,8 @@ function DockPublisher({
     }
     if(item?.action === 'diet'){
       setQuickOpen(false);
-      setQuickSelected('diet');
+      setQuickSelected(null);
+      setDockSheet('diet');
       return;
     }
     if(item?.action === 'beverage'){
@@ -729,6 +768,12 @@ function DockPublisher({
             <DockSymptomPicker
               onConfirm={handleSymptomConfirm}
               onCancel={closeDockSheet}
+            />
+          ) : dockSheet === 'diet' ? (
+            <DietQuickSheet
+              onClose={closeDockSheet}
+              onPhoto={(buttonEl)=>openRecognitionCamera(buttonEl, 'diet')}
+              onManual={()=>{}}
             />
           ) : dockSheet === 'beverage' ? (
             <BeverageQuickSheet

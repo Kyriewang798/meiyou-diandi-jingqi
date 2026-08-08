@@ -1094,6 +1094,7 @@ function CameraView({
 
   const showAnalyze = !!analyzePhase;
   const showPreview = !!capturedPhotoUrl;
+  const showPlainPhotoPreview = showAnalyze && analyzeMode === 'photo';
   
   return (
     <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
@@ -1102,7 +1103,7 @@ function CameraView({
       </button>
       {!showGallery && !permDenied ? (
         <div className="camera-mode-title" aria-live="polite">
-          {showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze ? 'AI 识别中' : '智能拍照'}
+          {showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
         </div>
       ) : null}
       
@@ -1123,7 +1124,7 @@ function CameraView({
                   <i key={index} style={{ left:`${x}%`, top:`${18 + ((index * 23) % 64)}%`, animationDelay:`${index * 120}ms` }}/>
                 ))}
               </div>
-            ) : analyzePhase === 'loading' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
+            ) : analyzePhase === 'loading' && analyzeMode !== 'photo' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
           </div>
         ) : (
           <>
@@ -1170,7 +1171,7 @@ function CameraView({
 
       <div className="camera-bottom-bar">
         {showAnalyze ? (
-          recognitionResult ? (
+          showPlainPhotoPreview ? null : recognitionResult ? (
             <CameraRecognitionResult
               result={recognitionResult}
               onChange={onRecognitionChange}
