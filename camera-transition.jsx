@@ -1096,6 +1096,7 @@ function CameraView({
 
   const showAnalyze = !!analyzePhase;
   const showPreview = !!capturedPhotoUrl;
+  const showPlainPhotoPreview = showAnalyze && analyzeMode === 'photo';
   const activeMode = CAMERA_PRIMARY_MODES.find((mode) => mode.id === selectedMode) || CAMERA_PRIMARY_MODES[0];
   
   return (
@@ -1126,7 +1127,7 @@ function CameraView({
                   <i key={index} style={{ left:`${x}%`, top:`${18 + ((index * 23) % 64)}%`, animationDelay:`${index * 120}ms` }}/>
                 ))}
               </div>
-            ) : analyzePhase === 'loading' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
+            ) : analyzePhase === 'loading' && analyzeMode !== 'photo' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
           </div>
         ) : (
           <>
@@ -1167,7 +1168,7 @@ function CameraView({
 
       <div className="camera-bottom-bar">
         {showAnalyze ? (
-          recognitionResult ? (
+          showPlainPhotoPreview ? null : recognitionResult ? (
             <CameraRecognitionResult
               result={recognitionResult}
               onChange={onRecognitionChange}
