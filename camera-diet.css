@@ -166,14 +166,12 @@
   text-wrap:balance;
 }
 .camera-hint-track{
-  animation:cameraHintRoll 12s cubic-bezier(.45,0,.2,1) infinite;
+  animation:cameraHintRoll 8s cubic-bezier(.45,0,.2,1) infinite;
 }
 @keyframes cameraHintRoll{
-  0%,15%{transform:translateY(0)}
-  21%,36%{transform:translateY(-44px)}
-  42%,57%{transform:translateY(-88px)}
-  63%,78%{transform:translateY(-132px)}
-  84%,100%{transform:translateY(-176px)}
+  0%,32%{transform:translateY(0)}
+  42%,74%{transform:translateY(-44px)}
+  84%,100%{transform:translateY(-88px)}
 }
 
 .camera-frame-corner{
