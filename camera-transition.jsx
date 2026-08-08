@@ -3,6 +3,7 @@
 const TRANSITION_DURATION = 520;
 const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
+const CAMERA_DIET_ANALYZE_MS = 6000;
 
 const CAMERA_PRIMARY_MODES = [
   { id: 'diet', label: '饮食识别', hint: '对准整份餐食，识别会更准确' },
@@ -909,11 +910,9 @@ function CameraCaptureAnalyzePanel({
 }
 
 function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
-  const loadingMs = window.PHOTO_ANALYZE_LOADING_MS || 5000;
   const mockRecognize = window.mockRecognizeDietPhoto || (() => ({ ok: true }));
   const readScenario = window.readDietRecognitionScenario || (() => 'success');
   const getMaxFailures = window.getDietRecognitionMaxFailures || (() => 5);
-  const resolveAnalyzeMs = window.getDietRecognitionAnalyzeMs || ((scenario, ms) => ms);
 
   const [phase, setPhase] = React.useState(null);
   const [photoUrl, setPhotoUrl] = React.useState(null);
@@ -959,16 +958,16 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
     clearTimers();
     setPhotoUrl(url);
     setPhase('loading');
-    setProgress(6);
     setErrorKind(null);
     if (!isRetry) setFailureCount(0);
     onAnalyzeStart?.();
 
     const recognitionMode = meta?.mode || 'diet';
     setAnalyzeMode(recognitionMode);
+    setProgress(recognitionMode === 'diet' ? 0 : 6);
     const activeScenario = recognitionMode === 'diet' ? readScenario() : 'success';
     const analyzeMs = recognitionMode === 'diet'
-      ? resolveAnalyzeMs(activeScenario, loadingMs)
+      ? CAMERA_DIET_ANALYZE_MS
       : recognitionMode === 'beverage'
         ? 6000
         : 2600;
@@ -978,7 +977,9 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
     const startedAt = Date.now();
     progressTimerRef.current = window.setInterval(() => {
       const elapsed = Date.now() - startedAt;
-      const pct = Math.min(isEarlySuccess ? 86 : 92, 6 + (elapsed / analyzeMs) * 86);
+      const pct = recognitionMode === 'diet'
+        ? Math.min(99, (elapsed / analyzeMs) * 100)
+        : Math.min(isEarlySuccess ? 86 : 92, 6 + (elapsed / analyzeMs) * 86);
       setProgress(pct);
     }, 100);
 
@@ -1010,7 +1011,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
         setFailureCount((count) => count + 1);
       }
     }, analyzeMs);
-  }, [clearTimers, loadingMs, mockRecognize, onAnalyzeStart, onSuccess, readScenario, reset, resolveAnalyzeMs]);
+  }, [clearTimers, mockRecognize, onAnalyzeStart, onSuccess, readScenario, reset]);
 
   const handleRetry = React.useCallback((event) => {
     if (phase !== 'error' || errorKind !== 'timeout' || failureCount >= maxFailures || !photoUrl) return;
