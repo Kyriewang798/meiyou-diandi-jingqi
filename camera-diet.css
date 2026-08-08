@@ -168,23 +168,6 @@
 .camera-hint-track{
   animation:cameraHintRoll 12s cubic-bezier(.45,0,.2,1) infinite;
 }
-.camera-main .camera-mode-hint{
-  top:calc(50% + 132px);
-  min-height:44px;
-}
-.camera-mode-hint > span{
-  display:block;
-  padding:7px 14px;
-  border-radius:18px;
-  background:rgba(0,0,0,.28);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  animation:cameraModeCopyIn .24s ease-out;
-}
-@keyframes cameraModeCopyIn{
-  from{opacity:0;transform:translateY(3px)}
-  to{opacity:1;transform:translateY(0)}
-}
 @keyframes cameraHintRoll{
   0%,15%{transform:translateY(0)}
   21%,36%{transform:translateY(-44px)}
@@ -241,40 +224,6 @@
   padding:0 24px 36px;
   z-index:20;
 }
-.camera-mode-switch{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-  margin:0 auto 18px;
-  padding:4px;
-  width:max-content;
-  max-width:100%;
-  border-radius:22px;
-  background:rgba(24,24,24,.54);
-  backdrop-filter:blur(18px) saturate(130%);
-  -webkit-backdrop-filter:blur(18px) saturate(130%);
-  box-shadow:0 4px 18px rgba(0,0,0,.16);
-}
-.camera-mode-switch button{
-  height:34px;
-  padding:0 13px;
-  border:0;
-  border-radius:17px;
-  background:transparent;
-  color:rgba(255,255,255,.66);
-  font-family:inherit;
-  font-size:13px;
-  font-weight:500;
-  white-space:nowrap;
-  transition:background .2s ease,color .2s ease,transform .14s ease;
-}
-.camera-mode-switch button.is-active{
-  color:#fff;
-  background:linear-gradient(135deg,#ff76a5,#ff4d88);
-  box-shadow:0 3px 10px rgba(255,77,136,.28);
-}
-.camera-mode-switch button:active{transform:scale(.96)}
 .camera-controls{
   display:flex;
   align-items:center;

@@ -4,12 +4,6 @@ const TRANSITION_DURATION = 520;
 const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
 
-const CAMERA_PRIMARY_MODES = [
-  { id: 'diet', label: '饮食识别', hint: '对准整份餐食，识别会更准确' },
-  { id: 'beverage', label: '饮品识别', hint: '对准饮品与包装标签，信息更清晰' },
-  { id: 'photo', label: '拍照记录', hint: '记录此刻，稍后可以补充文字' },
-];
-
 const CAMERA_RECOGNITION_MODES = [
   {
     id: 'photo',
@@ -157,10 +151,16 @@ const AUTO_DETECT_DEMO_PHOTOS = CAMERA_RECOGNITION_MODES.flatMap((mode, index) =
   return photos;
 });
 
+const AUTO_DETECT_CAPTURE_SEQUENCE = [
+  AUTO_DETECT_DEMO_PHOTOS.find((photo) => photo.id === 'auto-detect-diet'),
+  AUTO_DETECT_DEMO_PHOTOS.find((photo) => photo.id === 'auto-detect-beverage-starbucks'),
+  AUTO_DETECT_DEMO_PHOTOS.find((photo) => photo.id === 'auto-detect-photo'),
+].filter(Boolean);
+
 let autoDetectCaptureIndex = 0;
 
 function getNextAutoDetectDemoPhoto() {
-  const photo = AUTO_DETECT_DEMO_PHOTOS[autoDetectCaptureIndex % AUTO_DETECT_DEMO_PHOTOS.length];
+  const photo = AUTO_DETECT_CAPTURE_SEQUENCE[autoDetectCaptureIndex % AUTO_DETECT_CAPTURE_SEQUENCE.length];
   autoDetectCaptureIndex += 1;
   return photo;
 }
@@ -1072,8 +1072,6 @@ function CameraView({
   analyzeExhausted = false,
   analyzeErrorKind = null,
   analyzeMode = null,
-  selectedMode = 'diet',
-  onModeChange,
   onAnalyzeRetry,
   onAnalyzeRetake,
   recognitionResult,
@@ -1094,7 +1092,6 @@ function CameraView({
 
   const showAnalyze = !!analyzePhase;
   const showPreview = !!capturedPhotoUrl;
-  const activeMode = CAMERA_PRIMARY_MODES.find((mode) => mode.id === selectedMode) || CAMERA_PRIMARY_MODES[0];
   
   return (
     <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
@@ -1103,7 +1100,7 @@ function CameraView({
       </button>
       {!showGallery && !permDenied ? (
         <div className="camera-mode-title" aria-live="polite">
-          {showAnalyze && analyzeMode === 'diet' ? '饮食识别' : activeMode.label}
+          {showAnalyze ? 'AI 识别中' : '智能拍照'}
         </div>
       ) : null}
       
@@ -1140,8 +1137,16 @@ function CameraView({
               <span className="camera-frame-corner bl"/>
               <span className="camera-frame-corner br"/>
             </div>
-            <div className="camera-hint camera-mode-hint">
-              <span key={activeMode.id}>{activeMode.hint}</span>
+            <div className="camera-hint camera-auto-detect-hint">
+              <div className="camera-hint-roller" aria-label="随手一拍，记录生活；拍饮食记热量；拍咖啡记咖啡因；拍奶茶、饮料识别热量和糖分">
+                <div className="camera-hint-track">
+                  <span>随手一拍，记录生活</span>
+                  <span>拍饮食记热量</span>
+                  <span>拍咖啡记咖啡因</span>
+                  <span>拍奶茶、饮料识别热量和糖分</span>
+                  <span aria-hidden="true">随手一拍，记录生活</span>
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -1187,20 +1192,6 @@ function CameraView({
           )
         ) : (
           <>
-            <div className="camera-mode-switch" role="tablist" aria-label="拍照模式">
-              {CAMERA_PRIMARY_MODES.map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedMode === mode.id}
-                  className={selectedMode === mode.id ? 'is-active' : ''}
-                  onClick={() => onModeChange?.(mode.id)}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
             <div className="camera-controls">
               {!showGallery && (
                 <button
@@ -1217,7 +1208,7 @@ function CameraView({
                   type="button"
                   className={'camera-shutter' + (permPending ? ' is-disabled' : '')}
                   onClick={handleCapture}
-                  aria-label={`拍照并进行${activeMode.label}`}
+                  aria-label="拍照并自动识别记录类型"
                   disabled={permPending}
                 >
                   <span className="camera-shutter-ring"/>
@@ -1254,9 +1245,6 @@ function CameraTransition({
   const [photoPermGranted, setPhotoPermGranted] = React.useState(false);
   const [showPhotoPermDialog, setShowPhotoPermDialog] = React.useState(false);
   const [recognitionResult, setRecognitionResult] = React.useState(null);
-  const [selectedRecognitionMode, setSelectedRecognitionMode] = React.useState(
-    () => preferredRecognitionMode || 'diet'
-  );
   const wrapperRef = React.useRef(null);
   const beverageLabelRetakeRef = React.useRef(false);
 
@@ -1280,10 +1268,9 @@ function CameraTransition({
       setPhotoPermGranted(false);
       setShowPhotoPermDialog(false);
       setRecognitionResult(null);
-      setSelectedRecognitionMode(preferredRecognitionMode || 'diet');
       beverageLabelRetakeRef.current = false;
     }
-  }, [active, sourceRect, phase, preferredRecognitionMode]);
+  }, [active, sourceRect, phase]);
 
   React.useEffect(() => {
     const onScenarioChange = () => {
@@ -1431,10 +1418,10 @@ function CameraTransition({
   };
 
   const handleCapturePhoto = () => {
-    const preferredConfig = selectedRecognitionMode
-      ? CAMERA_RECOGNITION_MODE_MAP[selectedRecognitionMode]
+    const preferredConfig = preferredRecognitionMode
+      ? CAMERA_RECOGNITION_MODE_MAP[preferredRecognitionMode]
       : null;
-    const selectedPhoto = selectedRecognitionMode === 'beverage'
+    const selectedPhoto = preferredRecognitionMode === 'beverage'
       ? getNextBeverageOcrDemoPhoto()
       : preferredConfig
       ? {
@@ -1460,7 +1447,7 @@ function CameraTransition({
       meta: {
         type: 'select',
         photo: selectedPhoto,
-        mode: selectedRecognitionMode || inferCameraRecognitionMode(selectedPhoto),
+        mode: preferredRecognitionMode || inferCameraRecognitionMode(selectedPhoto),
       },
     });
   };
@@ -1574,8 +1561,6 @@ function CameraTransition({
             analyzeExhausted={analyze.isExhausted}
             analyzeErrorKind={analyze.errorKind}
             analyzeMode={analyze.analyzeMode}
-            selectedMode={selectedRecognitionMode}
-            onModeChange={setSelectedRecognitionMode}
             onAnalyzeRetry={analyze.handleRetry}
             onAnalyzeRetake={handleAnalyzeRetake}
             recognitionResult={recognitionResult}
