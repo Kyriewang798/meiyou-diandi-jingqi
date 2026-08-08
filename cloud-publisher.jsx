@@ -605,9 +605,7 @@ function DockPublisher({
   };
 
   const handleDietFanTap = (buttonEl)=>{
-    setQuickOpen(false);
-    setQuickSelected(null);
-    setDockSheet('diet');
+    openRecognitionCamera(buttonEl);
   };
 
   const handleCameraCaptureSuccess = (payload)=>{
