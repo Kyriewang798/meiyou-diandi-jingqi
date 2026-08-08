@@ -82,14 +82,33 @@
   left:12px;
   width:40px;height:40px;
   border:none;
-  background:transparent;
+  background:rgba(0,0,0,0.22);
   color:#fff;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;
-  z-index:100;
-  border-radius:8px;
+  z-index:220;
+  border-radius:50%;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 1px 6px rgba(0,0,0,0.18);
 }
-.camera-close-btn:active{ opacity:0.65; }
+.camera-close-btn:active{ opacity:0.65; transform:scale(.96); }
+
+.camera-mode-title{
+  position:absolute;
+  top:17px;
+  left:64px;
+  right:64px;
+  z-index:210;
+  color:#fff;
+  font-size:17px;
+  line-height:26px;
+  font-weight:600;
+  text-align:center;
+  letter-spacing:.2px;
+  text-shadow:0 1px 8px rgba(0,0,0,.38);
+  pointer-events:none;
+}
 
 .camera-main{
   flex:1;
@@ -149,6 +168,23 @@
 .camera-hint-track{
   animation:cameraHintRoll 12s cubic-bezier(.45,0,.2,1) infinite;
 }
+.camera-main .camera-mode-hint{
+  top:calc(50% + 132px);
+  min-height:44px;
+}
+.camera-mode-hint > span{
+  display:block;
+  padding:7px 14px;
+  border-radius:18px;
+  background:rgba(0,0,0,.28);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  animation:cameraModeCopyIn .24s ease-out;
+}
+@keyframes cameraModeCopyIn{
+  from{opacity:0;transform:translateY(3px)}
+  to{opacity:1;transform:translateY(0)}
+}
 @keyframes cameraHintRoll{
   0%,15%{transform:translateY(0)}
   21%,36%{transform:translateY(-44px)}
@@ -205,6 +241,40 @@
   padding:0 24px 36px;
   z-index:20;
 }
+.camera-mode-switch{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  margin:0 auto 18px;
+  padding:4px;
+  width:max-content;
+  max-width:100%;
+  border-radius:22px;
+  background:rgba(24,24,24,.54);
+  backdrop-filter:blur(18px) saturate(130%);
+  -webkit-backdrop-filter:blur(18px) saturate(130%);
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+.camera-mode-switch button{
+  height:34px;
+  padding:0 13px;
+  border:0;
+  border-radius:17px;
+  background:transparent;
+  color:rgba(255,255,255,.66);
+  font-family:inherit;
+  font-size:13px;
+  font-weight:500;
+  white-space:nowrap;
+  transition:background .2s ease,color .2s ease,transform .14s ease;
+}
+.camera-mode-switch button.is-active{
+  color:#fff;
+  background:linear-gradient(135deg,#ff76a5,#ff4d88);
+  box-shadow:0 3px 10px rgba(255,77,136,.28);
+}
+.camera-mode-switch button:active{transform:scale(.96)}
 .camera-controls{
   display:flex;
   align-items:center;
@@ -587,6 +657,23 @@
 .camera-perm-blocked-enable:active{
   opacity:0.85;
 }
+.camera-perm-blocked-cancel{
+  display:block;
+  margin:14px auto 0;
+  padding:4px 12px;
+  border:0;
+  background:transparent;
+  color:rgba(255,255,255,0.72);
+  font-family:inherit;
+  font-size:14px;
+  line-height:1.5;
+  text-decoration:underline;
+  text-underline-offset:3px;
+  cursor:pointer;
+}
+.camera-perm-blocked-cancel:active{
+  opacity:.58;
+}
 
 /* ============ 相册权限弹窗 ============ */
 .photo-lib-perm-overlay{
@@ -755,26 +842,29 @@
 }
 .photo-picker-header{
   display:grid;
-  grid-template-columns:44px 1fr 44px;
+  grid-template-columns:52px 1fr 52px;
   align-items:center;
   padding:8px 12px 10px;
   background:#fff;
   flex-shrink:0;
 }
 .photo-picker-close{
-  width:36px;
+  width:52px;
   height:36px;
+  padding:0;
   border:none;
-  border-radius:50%;
-  background:rgba(0,0,0,0.06);
-  color:var(--my-text-primary);
+  border-radius:0;
+  background:transparent;
+  color:#4f7cae;
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   cursor:pointer;
+  font-family:inherit;
+  font-size:14px;
 }
 .photo-picker-close:active{
-  background:rgba(0,0,0,0.1);
+  opacity:.58;
 }
 .photo-picker-tabs{
   display:flex;
@@ -806,7 +896,7 @@
   box-shadow:0 1px 4px rgba(0,0,0,0.08);
 }
 .photo-picker-header-spacer{
-  width:36px;
+  width:52px;
   height:36px;
 }
 .photo-picker-content{
@@ -911,6 +1001,40 @@
 .camera-capture-stage .camera-frame-corner.tr{ top:calc(50% - 182px); right:calc(50% - 150px); }
 .camera-capture-stage .camera-frame-corner.bl{ bottom:calc(50% - 118px); left:calc(50% - 150px); }
 .camera-capture-stage .camera-frame-corner.br{ bottom:calc(50% - 118px); right:calc(50% - 150px); }
+.camera-diet-scan-layer{
+  position:absolute;
+  left:calc(50% - 150px);
+  top:calc(50% - 182px);
+  width:300px;
+  height:300px;
+  z-index:8;
+  overflow:hidden;
+  background:rgba(255,77,136,.035);
+}
+.camera-diet-grid{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.13) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.13) 1px,transparent 1px);
+  background-size:75px 75px;
+  opacity:.55;
+}
+.camera-diet-scan-layer i{
+  position:absolute;
+  width:8px;
+  height:8px;
+  margin:-4px 0 0 -4px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 0 8px rgba(255,255,255,.16),0 0 15px rgba(255,122,167,.8);
+  animation:cameraDietPoint 1.55s ease-in-out infinite alternate;
+}
+.camera-diet-scan-layer i:nth-of-type(3n){width:5px;height:5px;opacity:.7}
+@keyframes cameraDietPoint{
+  from{transform:scale(.72);opacity:.42}
+  to{transform:scale(1.16);opacity:1}
+}
 .camera-scan-line{
   position:absolute;
   left:calc(50% - 150px);
@@ -942,6 +1066,12 @@
 .camera-view.is-analyzing .camera-bottom-bar{
   padding:0;
 }
+.camera-view.is-diet-analyzing .camera-capture-photo{
+  filter:brightness(.72) saturate(.92);
+}
+.camera-view.is-diet-analyzing .camera-bottom-bar{
+  z-index:30;
+}
 .camera-analyze-sheet{
   width:100%;
   background:#fff;
@@ -949,6 +1079,37 @@
   padding:24px 22px 34px;
   min-height:220px;
   box-sizing:border-box;
+}
+.camera-analyze-sheet.is-diet-loading{
+  min-height:138px;
+  padding:18px 34px 34px;
+  border-radius:0;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.66));
+  color:#fff;
+}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-progress-track{
+  height:5px;
+  margin:46px 0 20px;
+  background:rgba(255,255,255,.32);
+}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-progress-fill{
+  background:linear-gradient(90deg,#ff8eb4,#ff4d88);
+  box-shadow:0 0 12px rgba(255,77,136,.55);
+}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-progress-logo{display:none}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-loading-copy{
+  flex-direction:column;
+  gap:2px;
+}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-loading-copy strong{
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  text-shadow:0 1px 6px rgba(0,0,0,.45);
+}
+.camera-analyze-sheet.is-diet-loading .camera-analyze-loading-copy span{
+  color:rgba(255,255,255,.78);
+  font-size:13px;
 }
 .camera-analyze-progress-track{
   position:relative;
@@ -1032,6 +1193,21 @@
   color:#fff;
   font-size:16px;
   font-weight:600;
+}
+.camera-analyze-label-cancel{
+  display:block;
+  margin:14px auto 0;
+  padding:4px 12px;
+  border:0;
+  background:transparent;
+  color:#4f7cae;
+  font-size:14px;
+  line-height:1.5;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.camera-analyze-label-cancel:active{
+  opacity:.58;
 }
 .camera-analyze-status-text{
   font-size:15px;

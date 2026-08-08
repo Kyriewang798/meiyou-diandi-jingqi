@@ -330,6 +330,21 @@
   font:inherit;
 }
 .dock-sheet-close:active{background:rgba(0,0,0,0.04)}
+.dock-sheet-cancel{
+  min-width:44px;
+  height:32px;
+  padding:0;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#4f7cae;
+  font:inherit;
+  font-size:14px;
+  line-height:32px;
+  text-align:right;
+  cursor:pointer;
+}
+.dock-sheet-cancel:active{opacity:.58}
 .dock-sheet-foot{
   flex-shrink:0;
   padding:8px 16px 12px;
@@ -545,22 +560,24 @@
 .dock-water-entry-fields input:focus{border-color:rgba(255,77,136,.45)}
 .dock-water-nutrition-readonly{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:10px;
   margin-top:16px;
 }
 .dock-water-nutrition-readonly > div{
   display:grid;
-  grid-template-columns:1fr auto auto;
+  grid-template-columns:auto auto;
   align-items:baseline;
-  gap:4px;
+  justify-content:center;
+  gap:2px 4px;
   min-width:0;
-  padding:14px;
+  padding:12px 8px;
   border-radius:8px;
   background:#f7f7f9;
+  text-align:center;
 }
-.dock-water-nutrition-readonly span{color:#8e8e93;font-size:13px}
-.dock-water-nutrition-readonly strong{color:#323232;font-size:20px;font-weight:600}
+.dock-water-nutrition-readonly span{grid-column:1/-1;color:#8e8e93;font-size:13px;white-space:nowrap}
+.dock-water-nutrition-readonly strong{color:#323232;font-size:18px;font-weight:600}
 .dock-water-nutrition-readonly i{color:#a0a0a5;font-size:12px;font-style:normal}
 .dock-water-nutrition-readonly p{
   grid-column:1/-1;

@@ -1138,6 +1138,7 @@ function V3v2PrimaryBody({entry, showTags = true, tagsAnimate = false, photoAnal
           : [
             { label:'容量', value:entry.capacityMl ? `${entry.capacityMl}ml` : '' },
             { label:'总热量', value:`${entry.calories || 0} 千卡`, accent:true },
+            { label:'糖分', value:`${entry.sugarGrams || 0} 克` },
             { label:'咖啡因', value:`${entry.caffeineMg || 0} 毫克` },
           ]
         : entry.recordType === 'skin'
@@ -1459,6 +1460,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
           spec: p.spec,
           calories: p.calories,
           caffeineMg: p.caffeineMg,
+          sugarGrams: p.sugarGrams,
           area: p.area,
           acne: p.acne,
           redness: p.redness,

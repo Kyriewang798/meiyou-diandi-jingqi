@@ -1,7 +1,7 @@
 // ============ 底部 Dock — 输入栏 + 右下悬浮快捷发布 ============
 
 function UnifiedQuickIcon({type}){
-  const key = type === 'period-feel' ? 'menses' : type;
+  const key = type === 'period-feel' ? 'menses' : (type === 'beverage' ? 'water' : type);
   const colors = {
     menses:['#ff8fb4','#ff5f8f','#ff3d7a'], weight:['#c5a3f8','#ac78f3','#9b5ef0'],
     symptom:['#8fcdff','#4fb0f7','#2e9bf0'], mood:['#ffeb93','#ffd849','#ffc700'],
@@ -272,11 +272,10 @@ function BeverageQuickSheet({onClose, onPhoto, onWater}){
 }
 
 function WaterQuickSheet({onClose, onSave}){
-  const I = window.Icon;
   const categories = ['水', '奶茶', '咖啡', '果茶', '纯茶', '果汁', '果蔬汁', '纯奶饮品', '饮料', '其他'];
   const nutritionPer500 = {
-    奶茶:[420, 60], 咖啡:[120, 95], 果茶:[220, 20], 纯茶:[20, 35],
-    果汁:[230, 0], 果蔬汁:[180, 0], 纯奶饮品:[280, 0], 饮料:[190, 0], 其他:[160, 0],
+    奶茶:[420, 60, 65], 咖啡:[120, 95, 18], 果茶:[220, 20, 45], 纯茶:[20, 35, 0],
+    果汁:[230, 0, 48], 果蔬汁:[180, 0, 34], 纯奶饮品:[280, 0, 24], 饮料:[190, 0, 42], 其他:[160, 0, 30],
   };
   const [category, setCategory] = React.useState('水');
   const [capacityMl, setCapacityMl] = React.useState(300);
@@ -286,6 +285,7 @@ function WaterQuickSheet({onClose, onSave}){
   const nutrition = nutritionPer500[category] || [0, 0];
   const calories = isWater ? 0 : Math.round(nutrition[0] * capacityMl / 500);
   const caffeineMg = isWater ? 0 : Math.round(nutrition[1] * capacityMl / 500);
+  const sugarGrams = isWater ? 0 : Math.round(nutrition[2] * capacityMl / 500);
   const submit = ()=>onSave({
     beverageCategory:category,
     capacityMl,
@@ -295,13 +295,14 @@ function WaterQuickSheet({onClose, onSave}){
     sugarLevel:'',
     calories,
     caffeineMg,
+    sugarGrams,
   });
   return (
     <div className="dock-sheet dock-water-sheet dock-water-entry-sheet">
       <div className="dock-sheet-hd">
         <h3 className="dock-sheet-title">记录喝水</h3>
-        <button type="button" className="dock-sheet-close" onClick={onClose} aria-label="关闭">
-          <I name="x" size={20} stroke={1.8}/>
+        <button type="button" className="dock-sheet-cancel" onClick={onClose} aria-label="取消记录喝水">
+          取消
         </button>
       </div>
       <div className="dock-water-entry-scroll">
@@ -356,8 +357,9 @@ function WaterQuickSheet({onClose, onSave}){
           {!isWater ? (
             <div className="dock-water-nutrition-readonly" aria-label="按容量估算的饮品信息">
               <div><span>热量</span><strong>{calories}</strong><i>千卡</i></div>
+              <div><span>糖分</span><strong>{sugarGrams}</strong><i>克</i></div>
               <div><span>咖啡因</span><strong>{caffeineMg}</strong><i>毫克</i></div>
-              <p>热量与咖啡因随容量自动估算</p>
+              <p>热量、糖分与咖啡因随容量自动估算</p>
             </div>
           ) : null}
         </section>

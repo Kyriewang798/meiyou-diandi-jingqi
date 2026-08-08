@@ -1291,11 +1291,11 @@
   }
   .edit-beverage-nutrition {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
   .edit-beverage-nutrition-item {
-    padding: 13px 14px;
+    padding: 12px 8px;
     border-radius: 8px;
     background: #f8f8fa;
   }
@@ -2885,6 +2885,7 @@
         spec: dailyRecordState.spec,
         calories: dailyRecordState.calories,
         caffeineMg: dailyRecordState.caffeineMg,
+        sugarGrams: dailyRecordState.sugarGrams,
         note: dailyRecordState.note || '',
         dayLabel: dailyRecordState.dayLabel || '今天',
         area: dailyRecordState.area,
@@ -3400,6 +3401,7 @@
       const waterSelected = selectedCategory === '水';
       const baseCalories = Number(dailyRecordState.calories) || 0;
       const baseCaffeine = Number(dailyRecordState.caffeineMg) || 0;
+      const baseSugar = Number(dailyRecordState.sugarGrams) || 0;
       return `
         <section class="edit-diet-card edit-beverage-card">
           <h3 class="edit-diet-title">喝水信息</h3>
@@ -3432,18 +3434,23 @@
             <div class="edit-beverage-range-labels"><span>100</span><span>300</span><span>500</span><span>750</span><span>1000ml</span></div>
           </div>
           <div class="edit-beverage-nutrition" data-beverage-extra ${waterSelected ? 'hidden' : ''}
-            data-base-capacity="${capacity}" data-base-calories="${baseCalories}" data-base-caffeine="${baseCaffeine}">
+            data-base-capacity="${capacity}" data-base-calories="${baseCalories}" data-base-caffeine="${baseCaffeine}" data-base-sugar="${baseSugar}">
             <div class="edit-beverage-nutrition-item">
               <span>热量</span>
               <strong id="editBeverageCaloriesValue">${baseCalories}</strong><i>千卡</i>
               <input type="hidden" class="edit-camera-input" data-field="calories" value="${baseCalories}">
             </div>
             <div class="edit-beverage-nutrition-item">
+              <span>糖分</span>
+              <strong id="editBeverageSugarValue">${baseSugar}</strong><i>克</i>
+              <input type="hidden" class="edit-camera-input" data-field="sugarGrams" value="${baseSugar}">
+            </div>
+            <div class="edit-beverage-nutrition-item">
               <span>咖啡因</span>
               <strong id="editBeverageCaffeineValue">${baseCaffeine}</strong><i>毫克</i>
               <input type="hidden" class="edit-camera-input" data-field="caffeineMg" value="${baseCaffeine}">
             </div>
-            <p class="edit-beverage-nutrition-note">热量与咖啡因根据容量自动换算</p>
+            <p class="edit-beverage-nutrition-note">热量、糖分与咖啡因根据容量自动换算</p>
           </div>
         </section>
       `;
@@ -3503,12 +3510,13 @@
         sugarLevel:'',
         calories:waterSelected ? 0 : (Number(valueOf('calories').replace(/[^\d.]/g, '')) || 0),
         caffeineMg:waterSelected ? 0 : (Number(valueOf('caffeineMg').replace(/[^\d.]/g, '')) || 0),
+        sugarGrams:waterSelected ? 0 : (Number(valueOf('sugarGrams').replace(/[^\d.]/g, '')) || 0),
       };
     }
     return [...document.querySelectorAll('#optionList .edit-camera-input')].reduce((result, input) => {
       const key = input.dataset.field;
       const value = input.value.trim();
-      result[key] = ['calories', 'caffeineMg'].includes(key)
+      result[key] = ['calories', 'caffeineMg', 'sugarGrams'].includes(key)
         ? (Number(value.replace(/[^\d.]/g, '')) || 0)
         : value;
       return result;
@@ -3533,14 +3541,19 @@
     const baseCapacity = Number(panel.dataset.baseCapacity) || capacity;
     const calories = Math.round((Number(panel.dataset.baseCalories) || 0) * capacity / baseCapacity);
     const caffeine = Math.round((Number(panel.dataset.baseCaffeine) || 0) * capacity / baseCapacity);
+    const sugar = Math.round((Number(panel.dataset.baseSugar) || 0) * capacity / baseCapacity);
     const caloriesInput = panel.querySelector('[data-field="calories"]');
     const caffeineInput = panel.querySelector('[data-field="caffeineMg"]');
+    const sugarInput = panel.querySelector('[data-field="sugarGrams"]');
     if(caloriesInput) caloriesInput.value = calories;
     if(caffeineInput) caffeineInput.value = caffeine;
+    if(sugarInput) sugarInput.value = sugar;
     const caloriesValue = document.getElementById('editBeverageCaloriesValue');
     const caffeineValue = document.getElementById('editBeverageCaffeineValue');
+    const sugarValue = document.getElementById('editBeverageSugarValue');
     if(caloriesValue) caloriesValue.textContent = calories;
     if(caffeineValue) caffeineValue.textContent = caffeine;
+    if(sugarValue) sugarValue.textContent = sugar;
   }
 
   function renderDailyRecordEditor() {
@@ -3890,6 +3903,7 @@
         spec: payload.spec || '',
         calories: Number(payload.calories) || 0,
         caffeineMg: Number(payload.caffeineMg) || 0,
+        sugarGrams: Number(payload.sugarGrams) || 0,
         note: payload.note || '',
         area: payload.area || '',
         acne: payload.acne || '',

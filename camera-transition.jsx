@@ -4,6 +4,12 @@ const TRANSITION_DURATION = 520;
 const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
 
+const CAMERA_PRIMARY_MODES = [
+  { id: 'diet', label: '饮食识别', hint: '对准整份餐食，识别会更准确' },
+  { id: 'beverage', label: '饮品识别', hint: '对准饮品与包装标签，信息更清晰' },
+  { id: 'photo', label: '拍照记录', hint: '记录此刻，稍后可以补充文字' },
+];
+
 const CAMERA_RECOGNITION_MODES = [
   {
     id: 'photo',
@@ -45,7 +51,7 @@ const CAMERA_RECOGNITION_MODES = [
     capturePhoto: 'image/菊花茶饮料.jpg',
     iconSrc: 'assets/record-beverage.svg',
     resultTitle: '识别为饮品记录',
-    resultDescription: '已通过包装标签识别饮品名称、品类、容量和热量',
+    resultDescription: '已通过包装标签识别饮品名称、品类、容量、热量和糖分',
     resultNote: '包装标签信息仅供记录，请以实物标注为准',
     saveLabel: '保存记录',
   },
@@ -166,7 +172,9 @@ function inferCameraRecognitionMode(photo) {
 }
 
 function buildCameraRecognitionResult(payload) {
-  const mode = inferCameraRecognitionMode(payload?.photo || payload);
+  const mode = CAMERA_RECOGNITION_MODE_MAP[payload?.mode]
+    ? payload.mode
+    : inferCameraRecognitionMode(payload?.photo || payload);
   const base = { ...payload, mode };
   const sourcePhoto = payload?.photo || payload;
   if (sourcePhoto?.recognitionVariant === 'coffee-no-label-fallback') {
@@ -220,12 +228,14 @@ function buildCameraRecognitionResult(payload) {
         spec: '500ml',
         calories: 286,
         caffeineMg: 95,
+        sugarGrams: 34,
         summary: '星巴克红茶咖啡拿铁鸳鸯 · 500ml',
         summaryItems: [
           { label: '饮品', value: '星巴克 · 红茶咖啡拿铁鸳鸯' },
           { label: '品类', value: '咖啡' },
           { label: '容量', value: '500ml' },
           { label: '热量', value: '286 千卡' },
+          { label: '糖分', value: '34 克' },
           { label: '咖啡因', value: '95 毫克' },
         ],
       };
@@ -242,12 +252,14 @@ function buildCameraRecognitionResult(payload) {
         spec: '700ml',
         calories: 128,
         caffeineMg: 120,
+        sugarGrams: 18,
         summary: '桃子冰美式 · 700ml',
         summaryItems: [
           { label: '饮品', value: '桃子冰美式' },
           { label: '品类', value: '咖啡' },
           { label: '容量', value: '700ml' },
           { label: '热量', value: '128 千卡' },
+          { label: '糖分', value: '18 克' },
           { label: '咖啡因', value: '120 毫克' },
         ],
       };
@@ -263,12 +275,14 @@ function buildCameraRecognitionResult(payload) {
       spec: '248ml',
       calories: 17,
       caffeineMg: 0,
+      sugarGrams: 4,
       summary: '鸳鸯小菊菊花植物饮料 · 248ml',
       summaryItems: [
         { label: '饮品', value: '鸳鸯 · 小菊菊花植物饮料' },
         { label: '品类', value: '饮料' },
         { label: '容量', value: '248ml' },
         { label: '热量', value: '17 千卡' },
+        { label: '糖分', value: '4 克' },
       ],
     };
   }
@@ -370,8 +384,8 @@ function PhotoPicker({ onSelect, onClose }) {
   return (
     <div className="photo-picker">
       <div className="photo-picker-header">
-        <button type="button" className="photo-picker-close" onClick={onClose} aria-label="关闭">
-          <I name="x" size={20} stroke={2.2} />
+        <button type="button" className="photo-picker-close" onClick={onClose} aria-label="取消选择照片">
+          取消
         </button>
         <div className="photo-picker-tabs" role="tablist" aria-label="相册类型">
           <button
@@ -671,7 +685,7 @@ function PermissionPrivacyNote() {
   );
 }
 
-function CameraPermissionBlocked({ onEnable }) {
+function CameraPermissionBlocked({ onEnable, onCancel }) {
   const I = window.Icon;
 
   return (
@@ -693,6 +707,9 @@ function CameraPermissionBlocked({ onEnable }) {
           </div>
           <button type="button" className="camera-perm-blocked-enable" onClick={onEnable}>
             立即开启
+          </button>
+          <button type="button" className="camera-perm-blocked-cancel" onClick={onCancel}>
+            暂不记录
           </button>
         </div>
       </div>
@@ -800,6 +817,7 @@ function CameraCaptureAnalyzePanel({
   errorKind = null,
   onRetry,
   onRetake,
+  onCancel,
   showRetry,
   isExhausted,
 }) {
@@ -808,11 +826,17 @@ function CameraCaptureAnalyzePanel({
   const isNotFoodError = phase === 'error' && errorKind === 'not-food';
   const isBeverageNoLabelError = phase === 'error' && errorKind === 'beverage-no-label';
   const loadingSteps = analyzeMode === 'beverage'
-    ? ['饮品识别中', '成分分析中', '热量咖啡因容量统计中']
-    : ['内容识别中', '信息分析中', '记录整理中'];
-  const loadingStep = loadingSteps[progress < 36 ? 0 : progress < 72 ? 1 : 2];
+    ? ['饮品识别中', '成分分析中', '热量糖分咖啡因统计中']
+    : analyzeMode === 'diet'
+      ? ['正在识别食物', '正在识别重量', '正在识别热量', '正在识别营养素']
+      : ['照片处理中', '画面优化中', '记录整理中'];
+  const loadingStepIndex = Math.min(
+    loadingSteps.length - 1,
+    Math.floor((Math.max(0, progress) / 100) * loadingSteps.length)
+  );
+  const loadingStep = loadingSteps[loadingStepIndex];
   return (
-    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
+    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (isLoading && analyzeMode === 'diet' ? ' is-diet-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
       <div className="camera-analyze-progress-track" aria-hidden={!isLoading}>
         <div
           className="camera-analyze-progress-fill"
@@ -830,7 +854,7 @@ function CameraCaptureAnalyzePanel({
       <div className="camera-analyze-status-row">
         {isLoading && (
           <div className="camera-analyze-loading-copy">
-            <strong>AI小柚子分析中…</strong>
+            <strong>{analyzeMode === 'diet' ? 'AI 小柚子识别中' : 'AI小柚子分析中…'}</strong>
             <span key={loadingStep}>{loadingStep}</span>
           </div>
         )}
@@ -873,6 +897,9 @@ function CameraCaptureAnalyzePanel({
             <p>请对准杯身标签重新拍摄，确保饮品名称、容量等信息清晰可见。</p>
             <button type="button" className="camera-analyze-label-retake" onClick={onRetake}>
               重拍
+            </button>
+            <button type="button" className="camera-analyze-label-cancel" onClick={onCancel}>
+              暂不记录
             </button>
           </div>
         )}
@@ -1045,6 +1072,8 @@ function CameraView({
   analyzeExhausted = false,
   analyzeErrorKind = null,
   analyzeMode = null,
+  selectedMode = 'diet',
+  onModeChange,
   onAnalyzeRetry,
   onAnalyzeRetake,
   recognitionResult,
@@ -1065,16 +1094,22 @@ function CameraView({
 
   const showAnalyze = !!analyzePhase;
   const showPreview = !!capturedPhotoUrl;
+  const activeMode = CAMERA_PRIMARY_MODES.find((mode) => mode.id === selectedMode) || CAMERA_PRIMARY_MODES[0];
   
   return (
-    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '')}>
-      <button type="button" className="camera-close-btn" onClick={onClose} aria-label="返回">
-        <I name="chevron-left" size={24} stroke={2.2} />
+    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
+      <button type="button" className="camera-close-btn" onClick={onClose} aria-label="返回点滴">
+        <I name="arrow-left" size={24} stroke={2.2} />
       </button>
+      {!showGallery && !permDenied ? (
+        <div className="camera-mode-title" aria-live="polite">
+          {showAnalyze && analyzeMode === 'diet' ? '饮食识别' : activeMode.label}
+        </div>
+      ) : null}
       
       <div className="camera-main">
         {permDenied ? (
-          <CameraPermissionBlocked onEnable={onPermissionEnable} />
+          <CameraPermissionBlocked onEnable={onPermissionEnable} onCancel={onClose} />
         ) : showPreview ? (
           <div className="camera-capture-stage">
             <img src={capturedPhotoUrl} alt="" className="camera-capture-photo"/>
@@ -1082,7 +1117,14 @@ function CameraView({
             <span className="camera-frame-corner tr"/>
             <span className="camera-frame-corner bl"/>
             <span className="camera-frame-corner br"/>
-            {analyzePhase === 'loading' && <div className="camera-scan-line" aria-hidden="true"/>}
+            {analyzePhase === 'loading' && analyzeMode === 'diet' ? (
+              <div className="camera-diet-scan-layer" aria-hidden="true">
+                <span className="camera-diet-grid"/>
+                {[12, 27, 43, 58, 71, 84, 36, 66, 19, 78].map((x, index) => (
+                  <i key={index} style={{ left:`${x}%`, top:`${18 + ((index * 23) % 64)}%`, animationDelay:`${index * 120}ms` }}/>
+                ))}
+              </div>
+            ) : analyzePhase === 'loading' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
           </div>
         ) : (
           <>
@@ -1098,16 +1140,8 @@ function CameraView({
               <span className="camera-frame-corner bl"/>
               <span className="camera-frame-corner br"/>
             </div>
-            <div className="camera-hint camera-auto-detect-hint">
-              <div className="camera-hint-roller" aria-label="随手一拍，记录生活；拍饮食记热量；拍咖啡记咖啡因；拍奶茶、饮料识别热量">
-                <div className="camera-hint-track">
-                  <span>随手一拍，记录生活</span>
-                  <span>拍饮食记热量</span>
-                  <span>拍咖啡记咖啡因</span>
-                  <span>拍奶茶、饮料识别热量</span>
-                  <span aria-hidden="true">随手一拍，记录生活</span>
-                </div>
-              </div>
+            <div className="camera-hint camera-mode-hint">
+              <span key={activeMode.id}>{activeMode.hint}</span>
             </div>
           </>
         )}
@@ -1146,12 +1180,27 @@ function CameraView({
               errorKind={analyzeErrorKind}
               onRetry={onAnalyzeRetry}
               onRetake={onAnalyzeRetake}
+              onCancel={onClose}
               showRetry={analyzeFailureCount < analyzeMaxFailures}
               isExhausted={analyzeExhausted}
             />
           )
         ) : (
           <>
+            <div className="camera-mode-switch" role="tablist" aria-label="拍照模式">
+              {CAMERA_PRIMARY_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedMode === mode.id}
+                  className={selectedMode === mode.id ? 'is-active' : ''}
+                  onClick={() => onModeChange?.(mode.id)}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
             <div className="camera-controls">
               {!showGallery && (
                 <button
@@ -1168,7 +1217,7 @@ function CameraView({
                   type="button"
                   className={'camera-shutter' + (permPending ? ' is-disabled' : '')}
                   onClick={handleCapture}
-                  aria-label="拍照并自动识别记录类型"
+                  aria-label={`拍照并进行${activeMode.label}`}
                   disabled={permPending}
                 >
                   <span className="camera-shutter-ring"/>
@@ -1205,6 +1254,9 @@ function CameraTransition({
   const [photoPermGranted, setPhotoPermGranted] = React.useState(false);
   const [showPhotoPermDialog, setShowPhotoPermDialog] = React.useState(false);
   const [recognitionResult, setRecognitionResult] = React.useState(null);
+  const [selectedRecognitionMode, setSelectedRecognitionMode] = React.useState(
+    () => preferredRecognitionMode || 'diet'
+  );
   const wrapperRef = React.useRef(null);
   const beverageLabelRetakeRef = React.useRef(false);
 
@@ -1228,9 +1280,10 @@ function CameraTransition({
       setPhotoPermGranted(false);
       setShowPhotoPermDialog(false);
       setRecognitionResult(null);
+      setSelectedRecognitionMode(preferredRecognitionMode || 'diet');
       beverageLabelRetakeRef.current = false;
     }
-  }, [active, sourceRect, phase]);
+  }, [active, sourceRect, phase, preferredRecognitionMode]);
 
   React.useEffect(() => {
     const onScenarioChange = () => {
@@ -1330,7 +1383,7 @@ function CameraTransition({
 
   const handleAnalyzeSuccess = React.useCallback((payload) => {
     const result = buildCameraRecognitionResult(payload);
-    if (['photo', 'beverage'].includes(result.mode)) {
+    if (['photo', 'beverage', 'diet'].includes(result.mode)) {
       onCaptureSuccess?.({
         ...result,
         recognitionState: 'ready',
@@ -1378,10 +1431,10 @@ function CameraTransition({
   };
 
   const handleCapturePhoto = () => {
-    const preferredConfig = preferredRecognitionMode
-      ? CAMERA_RECOGNITION_MODE_MAP[preferredRecognitionMode]
+    const preferredConfig = selectedRecognitionMode
+      ? CAMERA_RECOGNITION_MODE_MAP[selectedRecognitionMode]
       : null;
-    const selectedPhoto = preferredRecognitionMode === 'beverage'
+    const selectedPhoto = selectedRecognitionMode === 'beverage'
       ? getNextBeverageOcrDemoPhoto()
       : preferredConfig
       ? {
@@ -1407,7 +1460,7 @@ function CameraTransition({
       meta: {
         type: 'select',
         photo: selectedPhoto,
-        mode: inferCameraRecognitionMode(selectedPhoto),
+        mode: selectedRecognitionMode || inferCameraRecognitionMode(selectedPhoto),
       },
     });
   };
@@ -1521,6 +1574,8 @@ function CameraTransition({
             analyzeExhausted={analyze.isExhausted}
             analyzeErrorKind={analyze.errorKind}
             analyzeMode={analyze.analyzeMode}
+            selectedMode={selectedRecognitionMode}
+            onModeChange={setSelectedRecognitionMode}
             onAnalyzeRetry={analyze.handleRetry}
             onAnalyzeRetake={handleAnalyzeRetake}
             recognitionResult={recognitionResult}

@@ -868,6 +868,7 @@ function App(){
               spec:payload.spec ?? item.primary?.spec,
               calories:payload.calories ?? item.primary?.calories,
               caffeineMg:payload.caffeineMg ?? item.primary?.caffeineMg,
+              sugarGrams:payload.sugarGrams ?? item.primary?.sugarGrams,
               area:payload.area ?? item.primary?.area,
               acne:payload.acne ?? item.primary?.acne,
               redness:payload.redness ?? item.primary?.redness,
@@ -2057,6 +2058,7 @@ function App(){
           spec:payload.capacityMl ? `${payload.capacityMl}ml` : '',
           calories:payload.calories,
           caffeineMg:payload.caffeineMg,
+          sugarGrams:payload.sugarGrams,
           inputSource:'camera-beverage',
           area:payload.area,
           acne:payload.acne,
@@ -2090,6 +2092,7 @@ function App(){
     const sugarLevel = '';
     const calories = isWater ? 0 : (Number(payload.calories) || 0);
     const caffeineMg = isWater ? 0 : (Number(payload.caffeineMg) || 0);
+    const sugarGrams = isWater ? 0 : (Number(payload.sugarGrams) || 0);
     const specParts = [`${amount}ml`];
     const recordName = `${brand}${beverageName}`.trim() || category;
     const recordDetail = `${recordName} · ${specParts.join('/')}`;
@@ -2136,6 +2139,7 @@ function App(){
         spec:specParts.join(' / '),
         calories,
         caffeineMg,
+        sugarGrams,
         inputSource:category === '水' ? 'manual-water' : 'manual-beverage',
         tags:[],
       },
