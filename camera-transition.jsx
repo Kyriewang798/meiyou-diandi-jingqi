@@ -4,6 +4,7 @@ const TRANSITION_DURATION = 520;
 const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
 const CAMERA_DIET_ANALYZE_MS = 6000;
+const CAMERA_PHOTO_ANALYZE_MS = 1000;
 
 const CAMERA_PRIMARY_MODES = [
   { id: 'diet', label: '饮食识别', hint: '对准整份餐食，识别会更准确' },
@@ -970,7 +971,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
       ? CAMERA_DIET_ANALYZE_MS
       : recognitionMode === 'beverage'
         ? 6000
-        : 2600;
+        : CAMERA_PHOTO_ANALYZE_MS;
     const isBeverageNoLabel = recognitionMode === 'beverage'
       && meta?.photo?.recognitionVariant === 'coffee-no-label';
     const isEarlySuccess = activeScenario === 'success';
