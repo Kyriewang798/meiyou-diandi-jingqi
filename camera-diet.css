@@ -1156,6 +1156,11 @@
 .camera-analyze-label-cancel:active{
   opacity:.58;
 }
+.camera-analyze-not-food-guide p{
+  margin-top:0;
+  color:rgba(0,0,0,.58);
+  font-size:14px;
+}
 .camera-analyze-status-text{
   font-size:15px;
   line-height:1.47;

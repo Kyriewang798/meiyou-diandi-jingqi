@@ -827,11 +827,13 @@ function CameraCaptureAnalyzePanel({
   const isTimeoutError = phase === 'error' && errorKind === 'timeout';
   const isNotFoodError = phase === 'error' && errorKind === 'not-food';
   const isBeverageNoLabelError = phase === 'error' && errorKind === 'beverage-no-label';
-  const loadingSteps = analyzeMode === 'beverage'
-    ? ['饮品识别中', '成分分析中', '热量糖分咖啡因统计中']
-    : analyzeMode === 'diet'
-      ? ['正在识别食物', '正在识别重量', '正在识别热量', '正在识别营养素']
-      : ['照片处理中', '画面优化中', '记录整理中'];
+  const loadingSteps = analyzeMode === 'diet' && errorKind === 'not-food'
+    ? ['正在识别食物']
+    : analyzeMode === 'beverage'
+      ? ['饮品识别中', '成分分析中', '热量糖分咖啡因统计中']
+      : analyzeMode === 'diet'
+        ? ['正在识别食物', '正在识别重量', '正在识别热量', '正在识别营养素']
+        : ['照片处理中', '画面优化中', '记录整理中'];
   const loadingStepIndex = Math.min(
     loadingSteps.length - 1,
     Math.floor((Math.max(0, progress) / 100) * loadingSteps.length)
@@ -886,12 +888,15 @@ function CameraCaptureAnalyzePanel({
           </>
         )}
         {isNotFoodError && (
-          <>
-            <span className="camera-analyze-status-text">没有检测到食物，重拍一张</span>
-            <button type="button" className="camera-analyze-action-btn" onClick={onRetake}>
+          <div className="camera-analyze-label-guide camera-analyze-not-food-guide">
+            <p>俯拍且距离20cm左右，识别更准确哦</p>
+            <button type="button" className="camera-analyze-label-retake" onClick={onRetake}>
               重拍
             </button>
-          </>
+            <button type="button" className="camera-analyze-label-cancel">
+              手动输入
+            </button>
+          </div>
         )}
         {isBeverageNoLabelError && (
           <div className="camera-analyze-label-guide">
@@ -959,19 +964,24 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
     clearTimers();
     setPhotoUrl(url);
     setPhase('loading');
-    setErrorKind(null);
     if (!isRetry) setFailureCount(0);
     onAnalyzeStart?.();
 
     const recognitionMode = meta?.mode || 'diet';
+    const sourcePhoto = meta?.photo || {};
+    const isDietNotFoodDemo = recognitionMode === 'diet'
+      && [sourcePhoto.thumb, sourcePhoto.url, url].includes('image/公园照片.jpg');
     setAnalyzeMode(recognitionMode);
+    setErrorKind(isDietNotFoodDemo ? 'not-food' : null);
     setProgress(recognitionMode === 'diet' ? 0 : 6);
     const activeScenario = recognitionMode === 'diet' ? readScenario() : 'success';
-    const analyzeMs = recognitionMode === 'diet'
-      ? CAMERA_DIET_ANALYZE_MS
-      : recognitionMode === 'beverage'
-        ? 6000
-        : CAMERA_PHOTO_ANALYZE_MS;
+    const analyzeMs = isDietNotFoodDemo
+      ? 2000
+      : recognitionMode === 'diet'
+        ? CAMERA_DIET_ANALYZE_MS
+        : recognitionMode === 'beverage'
+          ? 6000
+          : CAMERA_PHOTO_ANALYZE_MS;
     const isBeverageNoLabel = recognitionMode === 'beverage'
       && meta?.photo?.recognitionVariant === 'coffee-no-label';
     const isEarlySuccess = activeScenario === 'success';
@@ -988,6 +998,8 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
       clearTimers();
       const result = isBeverageNoLabel
         ? { ok: false, reason: 'beverage-no-label' }
+        : isDietNotFoodDemo
+          ? { ok: false, reason: 'not-food' }
         : recognitionMode === 'diet'
           ? mockRecognize({ scenario: readScenario(), forceSuccess })
           : { ok: true };
