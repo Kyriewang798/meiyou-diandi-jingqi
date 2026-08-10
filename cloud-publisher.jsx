@@ -90,7 +90,7 @@ function computeRadialCards(cards, config = RADIAL_MENU){
 
 const QUICK_CARDS_RADIAL = computeRadialCards(QUICK_CARDS);
 
-const DEMO_VOICE_LINE = '昨天下午来了姨妈，来之前，上午就开始头痛。';
+const DEMO_VOICE_LINE = '午餐吃了香煎鸡胸肉100克，炒土豆丝1盘，炒青菜1盘，还有一碗杂粮饭。';
 
 const DOCK_PLACEHOLDER = '记录生活点滴';
 

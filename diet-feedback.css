@@ -890,15 +890,37 @@
 .diet-fb-text-card .diet-fb-ts{
   padding-bottom:4px;
 }
+.diet-fb-source-record{
+  padding:4px 16px 2px;
+}
 .diet-fb-source-text{
-  margin:0 16px 12px;
-  font-size:14px;
-  line-height:1.47;
-  color:rgba(0,0,0,0.6);
+  margin:0;
+  font-size:16px;
+  line-height:1.65;
+  color:#323232;
 }
 .diet-fb-source-voice{
-  padding:0 16px 12px;
+  padding:0;
+}
+.diet-fb-source-voice .tl-voice-block{
+  align-items:flex-start;
+  font-size:16px;
+  line-height:1.65;
+  color:#323232;
+}
+.diet-fb-source-voice .tl-voice-text{
+  line-height:1.65;
+}
+.diet-fb-source-tags{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:9px;
+  padding-bottom:5px;
+}
+.diet-fb-source-tags .v3-tag[data-cat="饮食"]{
+  color:#ff9500;
 }
 .diet-fb-text-card.is-names-only .diet-fb-sec-a{
-  padding-top:0;
+  padding-top:8px;
 }

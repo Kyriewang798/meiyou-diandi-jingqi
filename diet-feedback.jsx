@@ -534,6 +534,8 @@ function formatFoodTagLabel(item){
 function formatFoodItemText(item){
   if (typeof item === 'string') return item;
   const name = item?.label || item?.name || '';
+  if (item?.portion) return `${name} ${item.portion}`;
+  if (item?.amount) return `${name} ${item.amount}`;
   if (item?.kcal != null) return `${name} ${formatKcal(item.kcal)}千卡`;
   return name;
 }
@@ -585,6 +587,7 @@ function DietFoodResultSummary({
   leadingHeadlineOnly = false,
   photoAboveTotalUrl = '',
   time = '',
+  mealType = '',
 }){
   const showDiversity = revealStep >= 1 && diversityCount != null && diversityCount >= 5;
   const showTotal = revealStep >= 1 && totalKcal != null;
@@ -596,7 +599,7 @@ function DietFoodResultSummary({
   );
   const showGuideBelowTotal = revealStep >= 1 && guideBelowTotalDays != null;
   const foodListText = items.map(formatFoodItemText).filter(Boolean).join('，');
-  const mealTypeLabel = resolveMealTypeFromTime(time);
+  const mealTypeLabel = mealType || resolveMealTypeFromTime(time);
   const resolvedLeadingLabel = formatDietLeadingLabel(leadingLabel, mealTypeLabel);
   const showLeadingHeadline = leadingHeadlineOnly && (leadingIconSrc || resolvedLeadingLabel);
 
@@ -1127,13 +1130,18 @@ function DietTextFeedbackCard({
     <>
       <div className={'diet-fb-card diet-fb-text-card' + (isNew ? ' is-new' : '') + (showCalories ? ' is-ready' : ' is-names-only')}>
         {time && <div className="diet-fb-ts">{time}</div>}
-        {sourceVoice && TlVoiceInline ? (
-          <div className="diet-fb-source-voice">
-            <TlVoiceInline voice={sourceVoice} text={sourceText}/>
+        <div className={'diet-fb-source-record' + (sourceVoice ? ' is-voice' : ' is-text')}>
+          {sourceVoice && TlVoiceInline ? (
+            <div className="diet-fb-source-voice">
+              <TlVoiceInline voice={sourceVoice} text={sourceText}/>
+            </div>
+          ) : sourceText ? (
+            <p className="diet-fb-source-text">{sourceText}</p>
+          ) : null}
+          <div className="diet-fb-source-tags">
+            <span className="v3-tag" data-cat="饮食">饮食</span>
           </div>
-        ) : sourceText ? (
-          <p className="diet-fb-source-text">{sourceText}</p>
-        ) : null}
+        </div>
         <DietFoodResultSummary
           items={tagItems}
           totalKcal={showCalories ? totalKcal : null}
@@ -1145,22 +1153,23 @@ function DietTextFeedbackCard({
           leadingIconSrc={leadingIconSrc}
           leadingLabel={leadingLabel}
           time={time}
+          mealType={data?.mealType}
         />
         {showAiInsights && (
-          <DietAiInsightsShell displayScenario={displayScenario} isNew={isNew}>
-            <DietCalorieAiBody
-              weekData={ctx.weekData || []}
-              todayKcal={ctx.dayTotalKcal || totalKcal}
-              daysWithRecord={ctx.daysWithRecord || 0}
-              avgKcal={ctx.avgKcal}
-              dayMealCount={ctx.dayMealCount || 2}
-              dayTotalKcal={ctx.dayTotalKcal}
-              mealKcal={totalKcal}
-              displayScenario={displayScenario}
-              cycleData={ctx.cycleData}
-              todayFoodCount={ctx.todayFoodCount ?? 0}
-            />
-          </DietAiInsightsShell>
+          <DietAiCollapsibleSection title="卡路里摄入量" defaultOpen animateIn={isNew}>
+            {window.ChartCaloriePanel ? (
+              <window.ChartCaloriePanel
+                data={{
+                  consumed: Number(ctx.dayTotalKcal || totalKcal || 0),
+                  target: 1800,
+                  dayMealCount: ctx.dayMealCount || 1,
+                  dayTotalKcal: Number(ctx.dayTotalKcal || totalKcal || 0),
+                  mealKcal: Number(totalKcal || 0),
+                  todayFoodCount: ctx.todayFoodCount || items.length,
+                }}
+              />
+            ) : null}
+          </DietAiCollapsibleSection>
         )}
       </div>
       {interpretation && (

@@ -353,6 +353,17 @@ function parseDietFromText(text) {
   };
 }
 
+function resolveDietMealTypeFromText(text) {
+  const value = String(text || '');
+  if (/早餐|早饭|早上吃/.test(value)) return '早餐';
+  if (/午餐|午饭|中午吃/.test(value)) return '午餐';
+  if (/晚餐|晚饭|晚上吃/.test(value)) return '晚餐';
+  if (/夜宵|晚加餐/.test(value)) return '晚加餐';
+  if (/下午茶|午加餐/.test(value)) return '午加餐';
+  if (/加餐/.test(value)) return '加餐';
+  return '';
+}
+
 function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
   const lunch = DIET_SCENARIOS.lunch;
   const time = window.formatNowTime?.() || '12:05';
@@ -362,9 +373,12 @@ function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
     time,
     sourceText: text,
     sourceVoice: voice || null,
+    leadingIconSrc: 'assets/quick-icon-diet.png',
+    leadingLabel: '饮食：',
     displayScenario: readDietFeedbackDisplayScenario(),
     dietData: {
       time,
+      mealType: resolveDietMealTypeFromText(text),
       foods: parsed.foods,
       items: parsed.items,
       totalKcal: parsed.totalKcal,
@@ -377,7 +391,6 @@ function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
 }
 
 function tryCreateDietTextFeedbackEntry(text, recordScenario, voice) {
-  if (!window.isDietTextRecordScenario?.(recordScenario)) return null;
   const parsed = parseDietFromText(text);
   if (!parsed) return null;
   return createDietTextFeedbackEntry({ text, voice, parsed });

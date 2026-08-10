@@ -1750,15 +1750,17 @@ function App(){
 
   const submitVoice = (transcript, durSec)=>{
     const recordScenario = window.readCameraPermissionScenario?.() || 'unauthorized';
-    if (window.isDietTextRecordScenario?.(recordScenario)) {
-      markUserRecorded();
-      const text = (transcript || '').trim();
-      if (text) {
-        submitText(text, {
-          voice: { duration: window.formatVoiceDur?.(durSec) || '0:03' },
-        });
-        return;
-      }
+    const text = (transcript || '').trim();
+    const dietEntry = text
+      ? window.tryCreateDietTextFeedbackEntry?.(text, recordScenario, {
+          duration: window.formatVoiceDur?.(durSec) || '0:03',
+        })
+      : null;
+    if (dietEntry) {
+      submitText(text, {
+        voice: { duration: window.formatVoiceDur?.(durSec) || '0:03' },
+      });
+      return;
     }
 
     markUserRecorded();
