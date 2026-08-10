@@ -369,40 +369,54 @@ function ChartWeightTrend({compact = false, data, unit = 'kg'}){
   );
 }
 
-function ChartCaloriePanel({compact = false}){
-  const consumed = 1126;
-  const target = 1800;
-  const pct = consumed / target;
-  const r = compact ? 22 : 28;
+function ChartCaloriePanel({compact = false, data = {}}){
+  const formatNumber = (value)=>Math.round(Number(value) || 0).toLocaleString();
+  const consumed = Number(data?.consumed ?? 1126);
+  const target = Number(data?.target ?? 1800);
+  const remaining = Number(data?.remaining ?? Math.max(0, target - consumed));
+  const dayMealCount = Number(data?.dayMealCount ?? 2);
+  const dayTotalKcal = Number(data?.dayTotalKcal ?? 1100);
+  const mealKcal = Number(data?.mealKcal ?? 700);
+  const todayFoodCount = Number(data?.todayFoodCount ?? 4);
+  const pct = target > 0 ? Math.max(0, Math.min(1, consumed / target)) : 0;
+  const r = compact ? 28 : 32;
   const c = 2 * Math.PI * r;
-  const size = r * 2 + 8;
+  const size = r * 2 + 10;
   const percent = Math.round(pct * 100);
   return (
     <div className="v3-chart-cal">
-      <div className="v3-chart-cal-ring" style={{width:size, height:size}}>
-        <svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size} aria-hidden="true">
-          <circle cx={size / 2} cy={size / 2} r={r} stroke={TL_SOFT} strokeWidth="5" fill="none"/>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            stroke={TL_PRIMARY}
-            strokeWidth="5"
-            fill="none"
-            strokeDasharray={c * pct + ' ' + c}
-            strokeLinecap="round"
-            transform={'rotate(-90 ' + (size / 2) + ' ' + (size / 2) + ')'}
-          />
-        </svg>
-        <div className="v3-chart-cal-pct">{percent}%</div>
-      </div>
-      <div className="v3-chart-cal-meta">
-        <div className="v3-chart-cal-lbl">已摄入</div>
-        <div className="v3-chart-cal-val">
-          {consumed}
-          <span className="v3-chart-cal-target">/ {target} kcal</span>
+      <div className="v3-chart-cal-overview">
+        <div className="v3-chart-cal-ring" style={{width:size, height:size}}>
+          <svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size} aria-hidden="true">
+            <circle cx={size / 2} cy={size / 2} r={r} stroke={TL_SOFT} strokeWidth="5" fill="none"/>
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              stroke={TL_PRIMARY}
+              strokeWidth="5"
+              fill="none"
+              strokeDasharray={c * pct + ' ' + c}
+              strokeLinecap="round"
+              transform={'rotate(-90 ' + (size / 2) + ' ' + (size / 2) + ')'}
+            />
+          </svg>
+          <div className="v3-chart-cal-pct">{percent}%</div>
+        </div>
+        <div className="v3-chart-cal-meta">
+          <div className="v3-chart-cal-lbl">还可以吃</div>
+          <div className="v3-chart-cal-val">
+            {formatNumber(remaining)} <span>kcal</span>
+          </div>
+          <div className="v3-chart-cal-summary">
+            <span>已摄入 {formatNumber(consumed)}</span>
+            <span className="v3-chart-cal-target">目标 {formatNumber(target)} ›</span>
+          </div>
         </div>
       </div>
+      <p className="v3-chart-cal-insight">
+        今天饮食打卡<span>{dayMealCount}</span>餐，合计<span>{formatNumber(dayTotalKcal)}</span>千卡。这顿<span>{formatNumber(mealKcal)}</span>千卡，分量刚刚好。今天的饮食种类很丰富，<span>{todayFoodCount}</span>种食物能给身体带来多元营养
+      </p>
     </div>
   );
 }
@@ -835,7 +849,7 @@ function ChartSymptomDots({data}){
 function TLChart({type, compact = false, data, weightUnit}){
   if(type === 'moodWeek') return <ChartMoodWeek compact={compact}/>;
   if(type === 'weightTrend') return <ChartWeightTrend compact={compact} data={data} unit={weightUnit}/>;
-  if(type === 'caloriePanel') return <ChartCaloriePanel compact={compact}/>;
+  if(type === 'caloriePanel') return <ChartCaloriePanel compact={compact} data={data}/>;
   if(type === 'symptomDots') return <ChartSymptomDots data={data}/>;
   if(type === 'todayMoodWave') return <ChartTodayMoodWave data={data} compact={compact}/>;
   if(type === 'beverageWeek') return <ChartBeverageWeek data={data}/>;
@@ -1672,5 +1686,5 @@ function V3RecordGroupCard({group, isNew}){
 }
 
 Object.assign(window, {
-  V3RecordGroupCard, V3v2Card, V3v2PrimaryBody, V3v2Header, TLChart, TLTag,
+  V3RecordGroupCard, V3v2Card, V3v2PrimaryBody, V3v2Header, TLChart, TLTag, ChartCaloriePanel,
 });

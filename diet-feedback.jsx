@@ -487,7 +487,7 @@ function DietAiInsightsShell({ displayScenario, isNew, children }){
 }
 
 function DietAiCollapsibleSection({
-  title = '近7天饮食热量',
+  title = '卡路里摄入量',
   defaultOpen = true,
   animateIn = false,
   embedded = false,
@@ -697,6 +697,9 @@ function DietRecordSyncPhotoCard({
     displayCfg,
     hasInlineCalorieInsight: !!(displayCfg?.showMealInsight || displayCfg?.showCalorieInsightCard),
   });
+  const CalorieIntakePanel = window.ChartCaloriePanel;
+  const calorieTarget = 1800;
+  const calorieConsumed = Number(ctx.dayTotalKcal || totalKcal || 0);
 
   return (
     <div className={'diet-fb-card diet-fb-photo-card diet-fb-record-sync' + (isNew ? ' is-new' : '') + ' is-ready'}>
@@ -712,20 +715,21 @@ function DietRecordSyncPhotoCard({
         time={time}
       />
       {showAiInsights ? (
-        <DietAiInsightsShell displayScenario={displayScenario} isNew={isNew}>
-          <DietCalorieAiBody
-            weekData={ctx.weekData || []}
-            todayKcal={ctx.dayTotalKcal || totalKcal}
-            daysWithRecord={ctx.daysWithRecord || 0}
-            avgKcal={ctx.avgKcal}
-            dayMealCount={ctx.dayMealCount || 2}
-            dayTotalKcal={ctx.dayTotalKcal}
-            mealKcal={totalKcal}
-            displayScenario={displayScenario}
-            cycleData={ctx.cycleData}
-            todayFoodCount={ctx.todayFoodCount ?? 0}
-          />
-        </DietAiInsightsShell>
+        <DietAiCollapsibleSection title="卡路里摄入量" defaultOpen animateIn={isNew}>
+          {CalorieIntakePanel ? (
+            <CalorieIntakePanel
+              data={{
+                consumed: calorieConsumed,
+                target: calorieTarget,
+                remaining: Math.max(0, calorieTarget - calorieConsumed),
+                dayMealCount: ctx.dayMealCount || 1,
+                dayTotalKcal: calorieConsumed,
+                mealKcal: totalKcal,
+                todayFoodCount: ctx.todayFoodCount || items.length,
+              }}
+            />
+          ) : null}
+        </DietAiCollapsibleSection>
       ) : null}
     </div>
   );
@@ -1022,20 +1026,20 @@ function DietPhotoFeedbackCard({
           />
         )}
         {showAiInsights && (
-          <DietAiInsightsShell displayScenario={displayScenario} isNew={isNew}>
-            <DietCalorieAiBody
-              weekData={ctx.weekData || []}
-              todayKcal={ctx.dayTotalKcal || totalKcal}
-              daysWithRecord={ctx.daysWithRecord || 0}
-              avgKcal={ctx.avgKcal}
-              dayMealCount={ctx.dayMealCount || 2}
-              dayTotalKcal={ctx.dayTotalKcal}
-              mealKcal={totalKcal}
-              displayScenario={displayScenario}
-              cycleData={ctx.cycleData}
-              todayFoodCount={ctx.todayFoodCount ?? 0}
-            />
-          </DietAiInsightsShell>
+          <DietAiCollapsibleSection title="卡路里摄入量" defaultOpen animateIn={isNew}>
+            {window.ChartCaloriePanel ? (
+              <window.ChartCaloriePanel
+                data={{
+                  consumed: Number(ctx.dayTotalKcal || totalKcal || 0),
+                  target: 1800,
+                  dayMealCount: ctx.dayMealCount || 1,
+                  dayTotalKcal: Number(ctx.dayTotalKcal || totalKcal || 0),
+                  mealKcal: Number(totalKcal || 0),
+                  todayFoodCount: ctx.todayFoodCount || items.length,
+                }}
+              />
+            ) : null}
+          </DietAiCollapsibleSection>
         )}
         {showAiInsights && cycleInsight && !displayCfg?.showCycleTip && !usesFeedbackDim && (
           <>

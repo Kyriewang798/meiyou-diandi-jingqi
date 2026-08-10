@@ -3814,9 +3814,12 @@
   font-weight:500;
 }
 .v3-chart-cal{
+  display:block;
+}
+.v3-chart-cal-overview{
   display:flex;
   align-items:center;
-  gap:14px;
+  gap:18px;
 }
 .v3-chart-cal-ring{
   position:relative;
@@ -3828,30 +3831,62 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:11px;
-  font-weight:500;
-  color:#323232;
+  font-size:13px;
+  font-weight:600;
+  color:#ff4d88;
 }
 .v3-chart-cal-meta{
   flex:1;
   min-width:0;
 }
 .v3-chart-cal-lbl{
-  font-size:11px;
+  font-size:13px;
   color:#8E8E93;
-  margin-bottom:4px;
+  margin-bottom:1px;
 }
 .v3-chart-cal-val{
-  font-size:18px;
-  font-weight:500;
-  color:#323232;
+  font-size:27px;
+  line-height:1.15;
+  font-weight:600;
+  color:#ff4d88;
+  font-variant-numeric:tabular-nums;
+}
+.v3-chart-cal-val > span{
+  margin-left:3px;
+  font-size:12px;
+  font-weight:400;
+  color:#8E8E93;
+}
+.v3-chart-cal-summary{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:7px;
+  font-size:12px;
+  color:rgba(0,0,0,.58);
   font-variant-numeric:tabular-nums;
 }
 .v3-chart-cal-target{
-  font-size:11px;
-  font-weight:400;
-  color:#8E8E93;
-  margin-left:4px;
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:0 9px;
+  border-radius:12px;
+  background:rgba(0,0,0,.035);
+  color:rgba(0,0,0,.45);
+  white-space:nowrap;
+}
+.v3-chart-cal-insight{
+  margin:13px 0 0;
+  font-size:16px;
+  line-height:1.68;
+  color:#323232;
+}
+.v3-chart-cal-insight > span{
+  color:#ff4d88;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
 }
 .v3-chart-cal-remain{
   margin-top:6px;

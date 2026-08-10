@@ -372,7 +372,16 @@ const TIMELINE_BLOCKS = [
         },
         ai:{
           id:'t4', time:'12:06', kind:'chart', chartType:'caloriePanel',
-          title:'今日卡路里摄入量', note:'日目标 1800kcal，已摄入 1126kcal，还可以吃 339kcal',
+          title:'卡路里摄入量', note:'',
+          chartData:{
+            consumed:1126,
+            target:1800,
+            remaining:339,
+            dayMealCount:2,
+            dayTotalKcal:1100,
+            mealKcal:700,
+            todayFoodCount:4,
+          },
         },
         aiDefaultOpen:true,
       },
