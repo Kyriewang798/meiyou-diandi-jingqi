@@ -531,11 +531,17 @@ function formatFoodTagLabel(item){
   return item?.name || '';
 }
 
-function formatFoodItemText(item){
+function formatFoodItemText(item, includeKcal = false){
   if (typeof item === 'string') return item;
   const name = item?.label || item?.name || '';
-  if (item?.portion) return `${name} ${item.portion}`;
-  if (item?.amount) return `${name} ${item.amount}`;
+  if (item?.portion) {
+    const kcalText = includeKcal && item?.kcal != null ? `${formatKcal(item.kcal)}kcal` : '';
+    return `${name} ${item.portion}${kcalText}`;
+  }
+  if (item?.amount) {
+    const kcalText = includeKcal && item?.kcal != null ? `${formatKcal(item.kcal)}kcal` : '';
+    return `${name} ${item.amount}${kcalText}`;
+  }
   if (item?.kcal != null) return `${name} ${formatKcal(item.kcal)}千卡`;
   return name;
 }
@@ -585,6 +591,7 @@ function DietFoodResultSummary({
   leadingIconSrc = '',
   leadingLabel = '',
   leadingHeadlineOnly = false,
+  includeItemKcal = false,
   photoAboveTotalUrl = '',
   time = '',
   mealType = '',
@@ -598,7 +605,7 @@ function DietFoodResultSummary({
       : ((compact ? revealStep >= 1 : revealStep >= 2))
   );
   const showGuideBelowTotal = revealStep >= 1 && guideBelowTotalDays != null;
-  const foodListText = items.map(formatFoodItemText).filter(Boolean).join('，');
+  const foodListText = items.map(item => formatFoodItemText(item, includeItemKcal)).filter(Boolean).join('，');
   const mealTypeLabel = mealType || resolveMealTypeFromTime(time);
   const resolvedLeadingLabel = formatDietLeadingLabel(leadingLabel, mealTypeLabel);
   const showLeadingHeadline = leadingHeadlineOnly && (leadingIconSrc || resolvedLeadingLabel);
@@ -1153,6 +1160,7 @@ function DietTextFeedbackCard({
           leadingIconSrc={leadingIconSrc}
           leadingLabel={leadingLabel}
           leadingHeadlineOnly
+          includeItemKcal
           time={time}
           mealType={data?.mealType}
         />
