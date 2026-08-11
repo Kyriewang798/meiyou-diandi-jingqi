@@ -1152,6 +1152,7 @@ function DietTextFeedbackCard({
           guideBelowTotalDays={guideBelowTotalDays}
           leadingIconSrc={leadingIconSrc}
           leadingLabel={leadingLabel}
+          leadingHeadlineOnly
           time={time}
           mealType={data?.mealType}
         />
