@@ -534,13 +534,12 @@ function formatFoodTagLabel(item){
 function formatFoodItemText(item, includeKcal = false){
   if (typeof item === 'string') return item;
   const name = item?.label || item?.name || '';
+  if (includeKcal && item?.kcal != null) return `${name} ${formatKcal(item.kcal)}千卡`;
   if (item?.portion) {
-    const kcalText = includeKcal && item?.kcal != null ? `${formatKcal(item.kcal)}千卡` : '';
-    return `${name} ${item.portion}${kcalText}`;
+    return `${name} ${item.portion}`;
   }
   if (item?.amount) {
-    const kcalText = includeKcal && item?.kcal != null ? `${formatKcal(item.kcal)}千卡` : '';
-    return `${name} ${item.amount}${kcalText}`;
+    return `${name} ${item.amount}`;
   }
   if (item?.kcal != null) return `${name} ${formatKcal(item.kcal)}千卡`;
   return name;
