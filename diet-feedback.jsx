@@ -744,6 +744,39 @@ function DietRecordSyncPhotoCard({
   );
 }
 
+function DietStructuredRecordCard({
+  data,
+  isNew = false,
+  leadingIconSrc = 'assets/quick-icon-diet.png',
+  leadingLabel = '饮食：',
+}){
+  const {
+    time,
+    items = [],
+    totalKcal,
+    matchStatus = 'all',
+    mealType = '',
+  } = data || {};
+  const showCalories = matchStatus !== 'names-only' && totalKcal != null;
+
+  return (
+    <div className={'diet-fb-card diet-fb-structured-card' + (isNew ? ' is-new' : '')}>
+      {time && <div className="diet-fb-ts">{time}</div>}
+      <DietFoodResultSummary
+        items={items}
+        totalKcal={showCalories ? totalKcal : null}
+        revealStep={3}
+        leadingIconSrc={leadingIconSrc}
+        leadingLabel={leadingLabel}
+        leadingHeadlineOnly
+        includeItemKcal={showCalories}
+        time={time}
+        mealType={mealType}
+      />
+    </div>
+  );
+}
+
 function DietSecALoading(){
   return (
     <div className="diet-fb-sec-a diet-fb-sec-loading" aria-hidden="true">
@@ -1087,6 +1120,7 @@ function DietTextFeedbackCard({
   const readDisplayScenario = window.readDietFeedbackDisplayScenario || (() => null);
   const displayScenario = displayScenarioProp || readDisplayScenario();
   const showCalories = matchStatus !== 'names-only' && totalKcal != null;
+  const showInlineRecognition = !sourceText && !sourceVoice;
   const TlVoiceInline = window.TlVoiceInline;
 
   const [revealStep, setRevealStep] = React.useState(isNew ? 0 : 3);
@@ -1106,9 +1140,6 @@ function DietTextFeedbackCard({
     return () => window.clearTimeout(tagsTimer);
   }, [isNew, showCalories]);
 
-  const tagItems = showCalories
-    ? items
-    : items.map((item) => (typeof item === 'string' ? item : (item.label || item.name)));
   const displayCfg = displayScenario && window.getDietFeedbackDisplayConfig
     ? window.getDietFeedbackDisplayConfig(displayScenario)
     : null;
@@ -1148,21 +1179,23 @@ function DietTextFeedbackCard({
             <span className="v3-tag" data-cat="饮食">饮食</span>
           </div>
         </div>
-        <DietFoodResultSummary
-          items={tagItems}
-          totalKcal={showCalories ? totalKcal : null}
-          revealStep={revealStep}
-          calorieInsight={calorieInsight}
-          diversityCount={diversityCount}
-          compact={!!displayCfg?.useCompactMeal}
-          guideBelowTotalDays={guideBelowTotalDays}
-          leadingIconSrc={leadingIconSrc}
-          leadingLabel={leadingLabel}
-          leadingHeadlineOnly
-          includeItemKcal
-          time={time}
-          mealType={data?.mealType}
-        />
+        {showInlineRecognition && (
+          <DietFoodResultSummary
+            items={items}
+            totalKcal={showCalories ? totalKcal : null}
+            revealStep={revealStep}
+            calorieInsight={calorieInsight}
+            diversityCount={diversityCount}
+            compact={!!displayCfg?.useCompactMeal}
+            guideBelowTotalDays={guideBelowTotalDays}
+            leadingIconSrc={leadingIconSrc}
+            leadingLabel={leadingLabel}
+            leadingHeadlineOnly
+            includeItemKcal
+            time={time}
+            mealType={data?.mealType}
+          />
+        )}
         {showAiInsights && (
           <DietAiCollapsibleSection title="卡路里摄入量" defaultOpen animateIn={isNew}>
             {window.ChartCaloriePanel ? (
@@ -1712,6 +1745,7 @@ Object.assign(window, {
   DietFeedbackCard,
   DietPhotoFeedbackCard,
   DietTextFeedbackCard,
+  DietStructuredRecordCard,
   DietFoodResultSummary,
   DietPhotoStackedPreview,
   resolveMealTypeFromTime,

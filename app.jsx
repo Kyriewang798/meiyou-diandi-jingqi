@@ -1603,7 +1603,11 @@ function App(){
       markUserRecorded();
       const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
         || window.resolveEntryDayId('', timeline);
-      setTimeline(blocks=>window.appendTimelineEntry(blocks, dietEntry, { dayId }));
+      const dietEntries = Array.isArray(dietEntry.entries) ? dietEntry.entries : [dietEntry];
+      setTimeline(blocks=>dietEntries.reduce(
+        (nextBlocks, entry)=>window.appendTimelineEntry(nextBlocks, entry, { dayId }),
+        blocks
+      ));
       requestAnimationFrame(()=>{
         if (typeof window.scrollTimelineToBottom === 'function') {
           window.scrollTimelineToBottom('smooth');

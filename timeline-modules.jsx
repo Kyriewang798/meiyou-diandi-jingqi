@@ -1005,10 +1005,16 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
             leadingLabel={item.leadingLabel}
           />
       : null;
-    body = item.pendingDrop ? null : (
-      <EditableTimelineBody item={item} editPayload={buildDietEditPayload(item)}>
-        {card}
-      </EditableTimelineBody>
+    body = item.pendingDrop ? null : card;
+  } else if(item.kind === 'diet-structured-record'){
+    const DietStructuredRecordCard = window.DietStructuredRecordCard;
+    body = item.pendingDrop || !DietStructuredRecordCard ? null : (
+      <DietStructuredRecordCard
+        data={item.dietData}
+        isNew={isNew}
+        leadingIconSrc={item.leadingIconSrc}
+        leadingLabel={item.leadingLabel}
+      />
     );
   } else if(item.kind === 'record-group'){
     body = item.pendingDrop ? null : <V3RecordGroupCard group={item} isNew={isNew}/>;

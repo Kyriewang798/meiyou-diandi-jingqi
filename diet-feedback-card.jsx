@@ -367,26 +367,42 @@ function resolveDietMealTypeFromText(text) {
 function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
   const lunch = DIET_SCENARIOS.lunch;
   const time = window.formatNowTime?.() || '12:05';
-  return {
+  const stamp = Date.now();
+  const dietData = {
+    time,
+    mealType: resolveDietMealTypeFromText(text),
+    foods: parsed.foods,
+    items: parsed.items,
+    totalKcal: parsed.totalKcal,
+    matchStatus: parsed.matchStatus,
+    foodTags: parsed.foodTags || [],
+  };
+  const recordEntry = {
+    kind: 'diet-structured-record',
+    id: 'e-diet-record-' + stamp,
+    time,
+    leadingIconSrc: 'assets/quick-icon-diet.png',
+    leadingLabel: '饮食：',
+    dietData,
+    isNew: true,
+  };
+  const sourceEntry = {
     kind: 'diet-text-feedback',
-    id: 'e-diet-text-' + Date.now(),
+    id: 'e-diet-text-' + stamp,
     time,
     sourceText: text,
     sourceVoice: voice || null,
     leadingIconSrc: 'assets/quick-icon-diet.png',
     leadingLabel: '饮食：',
     displayScenario: readDietFeedbackDisplayScenario(),
-    dietData: {
-      time,
-      mealType: resolveDietMealTypeFromText(text),
-      foods: parsed.foods,
-      items: parsed.items,
-      totalKcal: parsed.totalKcal,
-      matchStatus: parsed.matchStatus,
-      foodTags: parsed.foodTags || [],
-    },
+    dietData,
     userContext: buildDietUserContext(lunch),
     isNew: true,
+  };
+  return {
+    kind: 'diet-text-feedback-group',
+    id: 'e-diet-group-' + stamp,
+    entries: [recordEntry, sourceEntry],
   };
 }
 
