@@ -1878,10 +1878,10 @@
       <!-- 记录项列表 -->
       <div class="section">
         <div class="section-header">
-          <span class="section-title">识别到 2 条记录</span>
+          <span class="section-title" id="mixedRecognizedTitle">识别到 2 条记录</span>
           <span class="section-meta"></span>
         </div>
-        <div class="records-list">
+        <div class="records-list" id="mixedRecognizedList">
           <div class="record-item" data-record-id="r1">
             <div class="record-icon menstruation">🩸</div>
             <div class="record-main">
@@ -1950,10 +1950,10 @@
 
       <div class="section">
         <div class="section-header">
-          <span class="section-title">识别到 3 条记录</span>
+          <span class="section-title" id="textRecognizedTitle">识别到 3 条记录</span>
           <span class="section-meta"></span>
         </div>
-        <div class="records-list">
+        <div class="records-list" id="textRecognizedList">
           <div class="record-item">
             <div class="record-icon emotion">😣</div>
             <div class="record-main">
@@ -2240,6 +2240,37 @@
   });
 
   const isEmbedded = window.parent !== window;
+  function formatSourceEditTime(time){
+    return `今天 ${String(time || '09:15').replace(/^今天\s*/, '')}`;
+  }
+
+  function renderSourceRecognizedItems(scene, items){
+    const list = document.getElementById(scene + 'RecognizedList');
+    const title = document.getElementById(scene + 'RecognizedTitle');
+    if(!list || !title) return;
+    const rows = Array.isArray(items) ? items : [];
+    title.textContent = `识别内容`;
+    list.innerHTML = rows.map((item) => `
+      <div class="record-item">
+        <div class="record-icon diet">🍲</div>
+        <div class="record-main">
+          <div class="record-type">${escapeHtml(item.label || '饮食：饮食')}</div>
+          <div class="record-time">${escapeHtml(formatSourceEditTime(item.time))}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function initSourceRecordEditor(payload){
+    const scene = payload.kind === 'mixed' ? 'mixed' : 'text';
+    const time = formatSourceEditTime(payload.time);
+    const timeEl = document.getElementById('recordTime-' + scene);
+    if(timeEl) timeEl.textContent = time;
+    const quoteEl = document.getElementById(scene === 'mixed' ? 'voiceQuote' : 'textQuote');
+    if(quoteEl) quoteEl.textContent = payload.sourceText || '';
+    renderSourceRecognizedItems(scene, payload.recognizedItems);
+  }
+
   const PERIOD_DETAIL_OPTIONS = {
     flow: { label: '流量', icon: 'flow', className: 'menstruation', emoji: '💧', options: ['非常少量', '少量', '中量', '大量', '非常大量'] },
     color: { label: '颜色', icon: 'color', className: 'menstruation', emoji: '🎨', options: ['浅红色', '鲜红色', '深红色', '褐色', '黑色'] },
@@ -3867,6 +3898,11 @@
   window.addEventListener('message', function(event){
     if(!event.data || event.data.type !== 'edit-init') return;
     const payload = event.data.payload || {};
+    if(payload.kind === 'mixed' || payload.kind === 'text'){
+      initSourceRecordEditor(payload);
+      resetDirty();
+      return;
+    }
     if(payload.kind === 'quick'){
       quickRecordState = {
         time: payload.time || '09:15',

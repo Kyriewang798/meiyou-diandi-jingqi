@@ -1166,7 +1166,7 @@ window.__BUILD__ = '20260522-v101-dev';
 <script type="text/babel" src="timeline-v3v2-cards.jsx?v=20260811-diet-calorie-card-v1"></script>
 <script type="text/babel" src="mood-picker.jsx?v=20260629-mood-band"></script>
 <script type="text/babel" src="quick-pickers.jsx?v=20260629-analysis-title-unify"></script>
-<script type="text/babel" src="timeline-modules.jsx?v=20260812-diet-dual-record-v1"></script>
+<script type="text/babel" src="timeline-modules.jsx?v=20260812-diet-source-edit-v1"></script>
 <script type="text/babel" src="timeline.jsx?v=20260713-hide-period-feeding"></script>
 <script type="text/babel" src="record-empty.jsx?v=20260602-v102"></script>
 <script type="text/babel" src="record-blank.jsx?v=20260714-plan-carousel"></script>
@@ -1231,9 +1231,9 @@ if(new URLSearchParams(location.search).get('dev')==='1'){
       : (editingPayload && editingPayload.periodDetailItems) ? 'period-detail'
       : entryKind;
     var scene = (['mixed','text','image','quick','period-detail','daily-record'].indexOf(inferredKind) >= 0) ? inferredKind : 'text';
-    iframe.src = 'diandi_edit.html?scene=' + scene + '&v=20260808-camera-modes-sugar-v1';
+    iframe.src = 'diandi_edit.html?scene=' + scene + '&v=20260812-diet-source-edit-v1';
     iframe.onload = function(){
-      if((scene === 'period-detail' || scene === 'daily-record' || scene === 'quick') && iframe.contentWindow){
+      if(iframe.contentWindow){
         iframe.contentWindow.postMessage({
           type:'edit-init',
           entryId: editingEntryId,

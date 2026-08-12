@@ -131,6 +131,22 @@ function buildDietEditPayload(item){
   };
 }
 
+function buildDietSourceEditPayload(item){
+  if(!item || item.kind !== 'diet-text-feedback') return null;
+  const data = item.dietData || {};
+  return {
+    kind: item.sourceVoice ? 'mixed' : 'text',
+    time: data.time || item.time,
+    sourceText: item.sourceText || '',
+    sourceVoice: item.sourceVoice || null,
+    recognizedItems: [{
+      type: 'diet',
+      label: `饮食：${data.mealType || '饮食'}`,
+      time: data.time || item.time,
+    }],
+  };
+}
+
 function EditableTimelineBody({item, editPayload, children}){
   const canEdit = !!(editPayload && item?.id && typeof window.openEditModal === 'function');
   const open = React.useCallback((event)=>{
@@ -1005,7 +1021,11 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
             leadingLabel={item.leadingLabel}
           />
       : null;
-    body = item.pendingDrop ? null : card;
+    body = item.pendingDrop ? null : (
+      <EditableTimelineBody item={item} editPayload={buildDietSourceEditPayload(item)}>
+        {card}
+      </EditableTimelineBody>
+    );
   } else if(item.kind === 'diet-structured-record'){
     const DietStructuredRecordCard = window.DietStructuredRecordCard;
     body = item.pendingDrop || !DietStructuredRecordCard ? null : (
