@@ -2252,7 +2252,7 @@
     title.textContent = `识别内容`;
     list.innerHTML = rows.map((item) => `
       <div class="record-item">
-        <div class="record-icon diet">🍲</div>
+        <div class="record-icon diet"><img src="assets/quick-icon-diet.png" alt="" aria-hidden="true"></div>
         <div class="record-main">
           <div class="record-type">${escapeHtml(item.label || '饮食：饮食')}</div>
           <div class="record-time">${escapeHtml(formatSourceEditTime(item.time))}</div>
