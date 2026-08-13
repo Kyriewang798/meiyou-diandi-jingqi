@@ -277,6 +277,60 @@
   .source-edit-btn:active {
     background: var(--my-brand-soft);
   }
+  .source-editor-section.is-diet-source .source-header-with-delete {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 12px 12px 8px;
+  }
+  .source-editor-section.is-diet-source .section-title {
+    color: var(--my-text-primary);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .source-editor-section.is-diet-source .source-origin-note {
+    color: var(--my-text-tertiary);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .source-editor-section.is-diet-source .source-delete-link,
+  .source-editor-section.is-diet-source .source-meta-row {
+    display: none;
+  }
+  .source-editor-section.is-diet-source .source-block {
+    padding: 0 12px 12px;
+  }
+  .source-editor-section.is-diet-source .source-quote {
+    min-height: 24px;
+    padding: 8px 10px;
+    border-left: 0;
+    border-radius: 8px;
+    background: #f5f5f7;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .source-voice-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .source-voice-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 12px;
+    background: #ececef;
+    color: #343434;
+    font-size: 13px;
+    line-height: 24px;
+  }
+  .source-voice-play {
+    color: #ff5b9a;
+    font-size: 12px;
+    line-height: 1;
+  }
   .source-type-tag {
     display: inline-flex;
     align-items: center;
@@ -382,6 +436,17 @@
     height: 22px;
     display: block;
     object-fit: contain;
+  }
+  .record-icon.diet-source-icon {
+    overflow: hidden;
+    background: transparent;
+  }
+  .record-icon.diet-source-icon img {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    transform: scale(1.16);
   }
 
   .record-main {
@@ -1861,9 +1926,9 @@
       </div>
 
       <!-- 语音输入源 -->
-      <div class="section">
+      <div class="section source-editor-section" id="mixedSourceSection">
         <div class="source-header-with-delete">
-          <span class="section-title">📣 语音转写</span>
+          <span class="section-title" id="mixedSourceTitle">📣 语音转写</span>
           <button class="source-delete-link" onclick="confirmDeleteVoice()">删除语音</button>
         </div>
         <div class="source-block" style="padding-top: 0;">
@@ -1935,9 +2000,9 @@
         </div>
       </div>
 
-      <div class="section">
+      <div class="section source-editor-section" id="textSourceSection">
         <div class="source-header-with-delete">
-          <span class="section-title">✏️ 文字记录</span>
+          <span class="section-title" id="textSourceTitle">✏️ 文字记录</span>
         </div>
         <div class="source-block" style="padding-top: 0;">
           <div class="source-quote" id="textQuote">今天心情有点烦躁，吃了一碗番茄牛腩面，体重 52kg。</div>
@@ -2252,7 +2317,7 @@
     title.textContent = `识别内容`;
     list.innerHTML = rows.map((item) => `
       <div class="record-item">
-        <div class="record-icon diet"><img src="assets/quick-icon-diet.png" alt="" aria-hidden="true"></div>
+        <div class="record-icon diet-source-icon"><img src="assets/quick-icon-diet.png" alt="" aria-hidden="true"></div>
         <div class="record-main">
           <div class="record-type">${escapeHtml(item.label || '饮食：饮食')}</div>
           <div class="record-time">${escapeHtml(formatSourceEditTime(item.time))}</div>
@@ -2266,8 +2331,23 @@
     const time = formatSourceEditTime(payload.time);
     const timeEl = document.getElementById('recordTime-' + scene);
     if(timeEl) timeEl.textContent = time;
+    const sourceSection = document.getElementById(scene + 'SourceSection');
+    if(sourceSection) sourceSection.classList.add('is-diet-source');
+    const sourceTitle = document.getElementById(scene + 'SourceTitle');
+    if(sourceTitle){
+      sourceTitle.innerHTML = scene === 'mixed'
+        ? '记录内容 <span class="source-origin-note">内容来自语音转文字</span>'
+        : '记录内容';
+    }
     const quoteEl = document.getElementById(scene === 'mixed' ? 'voiceQuote' : 'textQuote');
-    if(quoteEl) quoteEl.textContent = payload.sourceText || '';
+    if(quoteEl){
+      if(scene === 'mixed'){
+        const duration = String(payload.sourceVoice?.duration || '0:02').replace(/^0:/, '').replace(/^0+/, '') || '2';
+        quoteEl.innerHTML = `<span class="source-voice-content"><span class="source-voice-pill"><span class="source-voice-play">▶</span>${escapeHtml(duration)}'</span><span>${escapeHtml(payload.sourceText || '')}</span></span>`;
+      } else {
+        quoteEl.textContent = payload.sourceText || '';
+      }
+    }
     renderSourceRecognizedItems(scene, payload.recognizedItems);
   }
 
