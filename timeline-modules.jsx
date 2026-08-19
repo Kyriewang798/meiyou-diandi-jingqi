@@ -1018,6 +1018,7 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
             sourceVoice={item.sourceVoice}
             data={item.dietData}
             userContext={item.userContext}
+            recognitionDeleted={!!item.recognitionDeleted}
             isNew={isNew}
             displayScenario={item.displayScenario}
             leadingIconSrc={item.leadingIconSrc}

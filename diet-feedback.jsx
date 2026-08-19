@@ -1104,6 +1104,7 @@ function DietTextFeedbackCard({
   sourceVoice,
   data,
   userContext,
+  recognitionDeleted = false,
   isNew = false,
   displayScenario: displayScenarioProp,
   leadingIconSrc = '',
@@ -1175,9 +1176,11 @@ function DietTextFeedbackCard({
           ) : sourceText ? (
             <p className="diet-fb-source-text">{sourceText}</p>
           ) : null}
-          <div className="diet-fb-source-tags">
-            <span className="v3-tag" data-cat="饮食">饮食</span>
-          </div>
+          {!recognitionDeleted && (
+            <div className="diet-fb-source-tags">
+              <span className="v3-tag" data-cat="饮食">饮食</span>
+            </div>
+          )}
         </div>
         {showInlineRecognition && (
           <DietFoodResultSummary

@@ -2508,6 +2508,8 @@
     const title = document.getElementById(scene + 'RecognizedTitle');
     if(!list || !title) return;
     const rows = Array.isArray(items) ? items : [];
+    const section = list.closest('.section');
+    if(section) section.style.display = rows.length ? '' : 'none';
     if(sourceEditState) sourceEditState.recognizedItems = rows;
     title.textContent = `识别内容`;
     list.innerHTML = rows.map((item, index) => `
