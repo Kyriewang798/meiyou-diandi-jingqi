@@ -928,34 +928,10 @@
 .camera-view.is-analyzing .camera-main{
   background:#000;
 }
-.camera-view.is-recognition-shell .camera-main{
-  background:#000;
-}
-.camera-view.is-recognition-shell .camera-close-btn.is-recognition-close{
-  top:14px;
-  left:12px;
-  width:34px;
-  height:34px;
-  border-radius:0;
-  background:transparent;
-  backdrop-filter:none;
-  -webkit-backdrop-filter:none;
-  box-shadow:none;
-}
 .camera-capture-stage{
   position:absolute;
   inset:0;
   overflow:hidden;
-}
-.camera-view.is-recognition-shell .camera-capture-stage{
-  top:64px;
-  right:0;
-  bottom:132px;
-  left:0;
-  background:#000;
-}
-.camera-view.is-recognition-shell.is-recognition-error .camera-capture-stage{
-  bottom:156px;
 }
 .camera-capture-photo{
   width:100%;
@@ -1074,15 +1050,8 @@
 .camera-view.is-analyzing .camera-bottom-bar{
   padding:0;
 }
-.camera-view.is-recognition-shell .camera-bottom-bar{
-  min-height:132px;
-  background:#000;
-}
-.camera-view.is-recognition-shell.is-recognition-error .camera-bottom-bar{
-  min-height:156px;
-}
 .camera-view.is-diet-analyzing .camera-capture-photo{
-  filter:brightness(.88) saturate(.96);
+  filter:brightness(.76) saturate(.94);
 }
 .camera-view.is-image-routing .camera-capture-photo{
   filter:brightness(.88) saturate(.98);
@@ -1094,20 +1063,6 @@
 .camera-view.is-diet-analyzing .camera-bottom-bar{
   z-index:30;
 }
-.camera-image-routing-status{
-  width:100%;
-  min-height:132px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:18px 24px 34px;
-  box-sizing:border-box;
-  background:#000;
-  color:rgba(255,255,255,.88);
-  font-size:14px;
-  line-height:1.5;
-  text-align:center;
-}
 .camera-analyze-sheet{
   width:100%;
   background:#fff;
@@ -1117,19 +1072,19 @@
   box-sizing:border-box;
 }
 .camera-analyze-sheet.is-diet-loading{
-  min-height:132px;
+  min-height:126px;
   display:flex;
-  flex-direction:column;
+  flex-direction:column-reverse;
   justify-content:flex-start;
-  padding:18px 30px 32px;
+  padding:22px 30px 32px;
   border-radius:0;
-  background:#000;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.78) 54%,rgba(0,0,0,.94));
   color:#fff;
 }
 .camera-analyze-sheet.is-diet-loading .camera-analyze-progress-track{
   width:100%;
   height:3px;
-  margin:0 0 20px;
+  margin:14px 0 0;
   background:rgba(255,255,255,.38);
 }
 .camera-analyze-sheet.is-diet-loading .camera-analyze-progress-fill{
@@ -1138,7 +1093,7 @@
 }
 .camera-analyze-sheet.is-diet-loading .camera-analyze-progress-logo{display:none}
 .camera-analyze-sheet.is-diet-loading .camera-analyze-loading-copy{
-  min-height:30px;
+  min-height:24px;
   gap:0;
 }
 .camera-analyze-sheet.is-diet-loading .camera-analyze-loading-copy span{
@@ -1146,44 +1101,6 @@
   font-size:14px;
   font-weight:400;
   text-shadow:0 1px 7px rgba(0,0,0,.72);
-}
-.camera-view.is-diet-analyzing .camera-analyze-sheet.is-error{
-  min-height:156px;
-  padding:18px 28px 30px;
-  border-radius:0;
-  background:#000;
-  color:#fff;
-}
-.camera-view.is-diet-analyzing .camera-analyze-sheet.is-error .camera-analyze-status-row{
-  min-height:108px;
-  flex-direction:column;
-  gap:14px;
-}
-.camera-view.is-diet-analyzing .camera-analyze-status-text,
-.camera-view.is-diet-analyzing .camera-analyze-label-guide p{
-  color:rgba(255,255,255,.82);
-}
-.camera-view.is-diet-analyzing .camera-analyze-actions{
-  justify-content:center;
-  gap:12px;
-}
-.camera-view.is-diet-analyzing .camera-analyze-action-btn,
-.camera-view.is-diet-analyzing .camera-analyze-label-retake{
-  width:136px;
-  height:40px;
-  padding:0 18px;
-  border:0;
-  border-radius:999px;
-  background:#ff4d88;
-  color:#fff;
-  font-size:14px;
-  font-weight:500;
-}
-.camera-view.is-diet-analyzing .camera-analyze-label-guide p{
-  margin:0 auto 14px;
-}
-.camera-view.is-diet-analyzing .camera-analyze-label-cancel{
-  color:rgba(255,255,255,.7);
 }
 .camera-analyze-progress-track{
   position:relative;

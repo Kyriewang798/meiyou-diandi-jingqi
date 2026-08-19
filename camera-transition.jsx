@@ -924,14 +924,6 @@ function CameraCaptureAnalyzePanel({
   );
 }
 
-function CameraImageRoutingStatus() {
-  return (
-    <div className="camera-image-routing-status" role="status" aria-live="polite">
-      图片识别中…
-    </div>
-  );
-}
-
 function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
   const mockRecognize = window.mockRecognizeDietPhoto || (() => ({ ok: true }));
   const readScenario = window.readDietRecognitionScenario || (() => 'success');
@@ -1170,15 +1162,13 @@ function CameraView({
   const showPreview = !!capturedPhotoUrl;
   const showPlainPhotoPreview = showAnalyze && analyzeMode === 'photo';
   const showImageRoutingPreview = showAnalyze && analyzeMode === 'classifying';
-  const showRecognitionShell = showImageRoutingPreview || (showAnalyze && analyzeMode === 'diet');
-  const showRecognitionError = showRecognitionShell && analyzePhase === 'error';
   
   return (
-    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showRecognitionShell ? ' is-recognition-shell' : '') + (showRecognitionError ? ' is-recognition-error' : '') + (showImageRoutingPreview ? ' is-image-routing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
-      <button type="button" className={'camera-close-btn' + (showRecognitionShell ? ' is-recognition-close' : '')} onClick={onClose} aria-label={showRecognitionShell ? '关闭识别' : '返回点滴'}>
-        <I name={showRecognitionShell ? 'close' : 'arrow-left'} size={showRecognitionShell ? 20 : 24} stroke={showRecognitionShell ? 1.8 : 2.2} />
+    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showImageRoutingPreview ? ' is-image-routing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
+      <button type="button" className="camera-close-btn" onClick={onClose} aria-label="返回点滴">
+        <I name="arrow-left" size={24} stroke={2.2} />
       </button>
-      {!showGallery && !permDenied && !showRecognitionShell ? (
+      {!showGallery && !permDenied ? (
         <div className="camera-mode-title" aria-live="polite">
           {showAnalyze && analyzeMode === 'classifying' ? '图片识别中' : showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
         </div>
@@ -1246,9 +1236,7 @@ function CameraView({
 
       <div className="camera-bottom-bar">
         {showAnalyze ? (
-          showPlainPhotoPreview ? null : showImageRoutingPreview ? (
-            <CameraImageRoutingStatus />
-          ) : recognitionResult ? (
+          showPlainPhotoPreview || showImageRoutingPreview ? null : recognitionResult ? (
             <CameraRecognitionResult
               result={recognitionResult}
               onChange={onRecognitionChange}
