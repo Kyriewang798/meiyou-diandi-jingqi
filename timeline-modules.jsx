@@ -134,18 +134,19 @@ function buildDietEditPayload(item){
 function buildDietSourceEditPayload(item){
   if(!item || item.kind !== 'diet-text-feedback') return null;
   const data = item.dietData || {};
+  const recognizedItems = item.recognitionDeleted ? [] : [{
+    type: 'diet',
+    label: `饮食：${data.mealType || '饮食'}`,
+    time: data.time || item.time,
+    editPayload: buildDietEditPayload(item),
+  }];
   return {
     kind: item.sourceVoice ? 'mixed' : 'text',
     time: data.time || item.time,
     sourceText: item.sourceText || '',
     sourceVoice: item.sourceVoice || null,
-    linkedDietRecordId: item.linkedDietRecordId || null,
-    recognizedItems: [{
-      type: 'diet',
-      label: `饮食：${data.mealType || '饮食'}`,
-      time: data.time || item.time,
-      editPayload: buildDietEditPayload(item),
-    }],
+    linkedDietRecordId: item.recognitionDeleted ? null : (item.linkedDietRecordId || null),
+    recognizedItems,
   };
 }
 

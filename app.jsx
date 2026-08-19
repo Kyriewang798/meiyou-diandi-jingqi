@@ -749,14 +749,44 @@ function App(){
   React.useEffect(()=>{
     const removeTimelineEntry = (entryId)=>{
       if(!entryId) return;
-      setTimeline(blocks=>blocks.map(block=>{
-        if(block.type !== 'day') return block;
-        const items = (block.items || block.entries || []).filter(item=>{
-          const primaryId = item?.primary?.id;
-          return item?.id !== entryId && primaryId !== entryId;
+      setTimeline(blocks=>{
+        const allItems = blocks.flatMap(block=>block.type === 'day' ? (block.items || block.entries || []) : []);
+        const deletedItem = allItems.find(item=>item?.id === entryId || item?.primary?.id === entryId);
+        const linkedSourceEntryId = deletedItem?.kind === 'diet-structured-record'
+          ? (deletedItem.sourceEntryId || allItems.find(item=>item?.linkedDietRecordId === entryId)?.id || null)
+          : null;
+        return blocks.map(block=>{
+          if(block.type !== 'day') return block;
+          const items = (block.items || block.entries || []).map(item=>{
+            const primaryId = item?.primary?.id;
+            if(item?.id === entryId || primaryId === entryId) return null;
+            if(linkedSourceEntryId && item?.id === linkedSourceEntryId){
+              const previousMealKcal = Number(item.dietData?.totalKcal) || 0;
+              const previousDayTotal = Number(item.userContext?.dayTotalKcal) || previousMealKcal;
+              return {
+                ...item,
+                linkedDietRecordId: null,
+                recognitionDeleted: true,
+                dietData: {
+                  ...(item.dietData || {}),
+                  items: [],
+                  foods: [],
+                  totalKcal: null,
+                  mealType: '',
+                  matchStatus: 'names-only',
+                },
+                userContext: {
+                  ...(item.userContext || {}),
+                  dayTotalKcal: Math.max(0, previousDayTotal - previousMealKcal),
+                  todayFoodCount: 0,
+                },
+              };
+            }
+            return item;
+          }).filter(Boolean);
+          return { ...block, items, entries: undefined };
         });
-        return { ...block, items, entries: undefined };
-      }));
+      });
       window.__showEditToast && window.__showEditToast('记录已删除');
     };
     window.deleteTimelineEntry = removeTimelineEntry;
