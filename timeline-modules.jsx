@@ -110,7 +110,7 @@ function TimelineRailNode({phaseKind, railDot, isFeedLast, nodeKind, children, d
 }
 
 function buildDietEditPayload(item){
-  if(!item || (item.kind !== 'diet-photo-feedback' && item.kind !== 'diet-text-feedback')) return null;
+  if(!item || !['diet-photo-feedback', 'diet-text-feedback', 'diet-structured-record'].includes(item.kind)) return null;
   const data = item.dietData || {};
   const items = Array.isArray(data.items) ? data.items : [];
   const foods = data.foods || items.map(food => food?.name).filter(Boolean);
@@ -139,10 +139,12 @@ function buildDietSourceEditPayload(item){
     time: data.time || item.time,
     sourceText: item.sourceText || '',
     sourceVoice: item.sourceVoice || null,
+    linkedDietRecordId: item.linkedDietRecordId || null,
     recognizedItems: [{
       type: 'diet',
       label: `饮食：${data.mealType || '饮食'}`,
       time: data.time || item.time,
+      editPayload: buildDietEditPayload(item),
     }],
   };
 }
@@ -1028,13 +1030,18 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
     );
   } else if(item.kind === 'diet-structured-record'){
     const DietStructuredRecordCard = window.DietStructuredRecordCard;
-    body = item.pendingDrop || !DietStructuredRecordCard ? null : (
-      <DietStructuredRecordCard
-        data={item.dietData}
-        isNew={isNew}
-        leadingIconSrc={item.leadingIconSrc}
-        leadingLabel={item.leadingLabel}
-      />
+    const card = !DietStructuredRecordCard ? null : (
+        <DietStructuredRecordCard
+          data={item.dietData}
+          isNew={isNew}
+          leadingIconSrc={item.leadingIconSrc}
+          leadingLabel={item.leadingLabel}
+        />
+      );
+    body = item.pendingDrop ? null : (
+      <EditableTimelineBody item={item} editPayload={buildDietEditPayload(item)}>
+        {card}
+      </EditableTimelineBody>
     );
   } else if(item.kind === 'record-group'){
     body = item.pendingDrop ? null : <V3RecordGroupCard group={item} isNew={isNew}/>;

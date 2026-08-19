@@ -331,6 +331,18 @@
     font-size: 12px;
     line-height: 1;
   }
+  .record-item.is-linked-record {
+    cursor: pointer;
+  }
+  .record-item.is-linked-record:active {
+    background: #fafafd;
+  }
+  .record-item.is-linked-record .chevron {
+    color: var(--my-text-tertiary);
+    font-size: 26px;
+    line-height: 1;
+    padding-left: 8px;
+  }
   .source-type-tag {
     display: inline-flex;
     align-items: center;
@@ -1902,7 +1914,7 @@
         <line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
-    <div class="nav-title">编辑记录<span class="unsaved-indicator" id="unsavedDot"></span></div>
+    <div class="nav-title"><span id="navTitleText">编辑记录</span><span class="unsaved-indicator" id="unsavedDot"></span></div>
     <button class="nav-btn save-btn" id="saveBtn" onclick="handleSave()">保存</button>
   </div>
 
@@ -2305,6 +2317,24 @@
   });
 
   const isEmbedded = window.parent !== window;
+  let sourceEditState = null;
+  let nestedDietEditor = null;
+
+  function cloneEditorData(value){
+    return value == null ? value : JSON.parse(JSON.stringify(value));
+  }
+
+  function showEditorScene(scene){
+    document.querySelectorAll('.scene').forEach(item => item.classList.remove('active'));
+    document.getElementById('scene-' + scene)?.classList.add('active');
+  }
+
+  function setEditorNav(title, nested){
+    const titleEl = document.getElementById('navTitleText');
+    const saveBtn = document.getElementById('saveBtn');
+    if(titleEl) titleEl.textContent = title || '编辑记录';
+    if(saveBtn) saveBtn.style.visibility = nested ? 'hidden' : '';
+  }
   function formatSourceEditTime(time){
     return `今天 ${String(time || '09:15').replace(/^今天\s*/, '')}`;
   }
@@ -2314,20 +2344,34 @@
     const title = document.getElementById(scene + 'RecognizedTitle');
     if(!list || !title) return;
     const rows = Array.isArray(items) ? items : [];
+    if(sourceEditState) sourceEditState.recognizedItems = rows;
     title.textContent = `识别内容`;
-    list.innerHTML = rows.map((item) => `
-      <div class="record-item">
+    list.innerHTML = rows.map((item, index) => `
+      <div class="record-item${item.editPayload ? ' is-linked-record' : ''}"${item.editPayload ? ` role="button" tabindex="0" onclick="openSourceDietEditor(${index})" onkeydown="handleSourceDietKey(event, ${index})"` : ''}>
         <div class="record-icon diet-source-icon"><img src="assets/quick-icon-diet.png" alt="" aria-hidden="true"></div>
         <div class="record-main">
           <div class="record-type">${escapeHtml(item.label || '饮食：饮食')}</div>
           <div class="record-time">${escapeHtml(formatSourceEditTime(item.time))}</div>
         </div>
+        ${item.editPayload ? '<span class="chevron" aria-hidden="true">›</span>' : ''}
       </div>
     `).join('');
   }
 
   function initSourceRecordEditor(payload){
     const scene = payload.kind === 'mixed' ? 'mixed' : 'text';
+    sourceEditState = {
+      scene,
+      sourceText: payload.sourceText || '',
+      sourceVoice: cloneEditorData(payload.sourceVoice || null),
+      linkedDietRecordId: payload.linkedDietRecordId || null,
+      recognizedItems: cloneEditorData(payload.recognizedItems || []),
+      dietDraft: cloneEditorData(payload.recognizedItems?.[0]?.editPayload || null),
+      dietDeleted: false,
+    };
+    nestedDietEditor = null;
+    showEditorScene(scene);
+    setEditorNav('编辑记录', false);
     const time = formatSourceEditTime(payload.time);
     const timeEl = document.getElementById('recordTime-' + scene);
     if(timeEl) timeEl.textContent = time;
@@ -2348,7 +2392,7 @@
         quoteEl.textContent = payload.sourceText || '';
       }
     }
-    renderSourceRecognizedItems(scene, payload.recognizedItems);
+    renderSourceRecognizedItems(scene, sourceEditState.recognizedItems);
   }
 
   const PERIOD_DETAIL_OPTIONS = {
@@ -2534,6 +2578,125 @@
     icon: 'love',
     iconText: '',
   };
+
+  function setDailyRecordStateFromPayload(payload){
+    const config = getDailyRecordConfig(payload.recordType);
+    dailyRecordState = {
+      time: payload.time || '09:15',
+      dayLabel: payload.dayLabel || '今天',
+      recordType: payload.recordType || 'love',
+      recordLabel: payload.recordLabel || config.label,
+      recordValue: payload.recordValue || payload.recordDetail || config.options[0] || '',
+      recordDetail: payload.recordDetail || payload.recordValue || config.options[0] || '',
+      icon: payload.icon || payload.recordType || 'love',
+      iconText: payload.iconText || '',
+      dietItems: normalizeDietItems(payload.dietItems),
+      totalKcal: Number(payload.totalKcal) || 0,
+      mealType: payload.mealType || '',
+      photoUrl: payload.photoUrl || null,
+      brand: payload.brand || '',
+      beverageName: payload.beverageName || '',
+      beverageCategory: payload.beverageCategory || '',
+      capacityMl: Number(payload.capacityMl) || 0,
+      iceLevel: payload.iceLevel || '',
+      sugarLevel: payload.sugarLevel || '',
+      spec: payload.spec || '',
+      calories: Number(payload.calories) || 0,
+      caffeineMg: Number(payload.caffeineMg) || 0,
+      sugarGrams: Number(payload.sugarGrams) || 0,
+      note: payload.note || '',
+      area: payload.area || '',
+      acne: payload.acne || '',
+      redness: payload.redness || '',
+      acneMarks: payload.acneMarks || '',
+      product: payload.product || '',
+      managementStatus: payload.managementStatus || '',
+    };
+    document.getElementById('recordTime-daily-record').textContent =
+      `${dailyRecordState.dayLabel} ${normalizePeriodDetailTime(dailyRecordState.time)}`;
+    renderDailyRecordEditor();
+  }
+
+  function buildDailyRecordSavePayload(){
+    return {
+      kind: 'daily-record',
+      time: normalizePeriodDetailTime(document.getElementById('recordTime-daily-record').textContent),
+      recordType: dailyRecordState.recordType,
+      recordLabel: dailyRecordState.recordLabel,
+      recordValue: dailyRecordState.recordValue,
+      recordDetail: dailyRecordState.recordDetail,
+      icon: dailyRecordState.icon,
+      iconText: dailyRecordState.iconText || '',
+      dietItems: dailyRecordState.dietItems ? dailyRecordState.dietItems.map(item => ({ ...item })) : undefined,
+      totalKcal: dailyRecordState.totalKcal,
+      mealType: dailyRecordState.mealType,
+      photoUrl: dailyRecordState.photoUrl,
+      brand: dailyRecordState.brand,
+      beverageName: dailyRecordState.beverageName,
+      beverageCategory: dailyRecordState.beverageCategory,
+      capacityMl: dailyRecordState.capacityMl,
+      iceLevel: dailyRecordState.iceLevel,
+      sugarLevel: dailyRecordState.sugarLevel,
+      spec: dailyRecordState.spec,
+      calories: dailyRecordState.calories,
+      caffeineMg: dailyRecordState.caffeineMg,
+      sugarGrams: dailyRecordState.sugarGrams,
+      note: dailyRecordState.note || '',
+      dayLabel: dailyRecordState.dayLabel || '今天',
+      area: dailyRecordState.area,
+      acne: dailyRecordState.acne,
+      redness: dailyRecordState.redness,
+      acneMarks: dailyRecordState.acneMarks,
+      product: dailyRecordState.product,
+      managementStatus: dailyRecordState.managementStatus,
+    };
+  }
+
+  function handleSourceDietKey(event, index){
+    if(event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openSourceDietEditor(index);
+  }
+
+  function openSourceDietEditor(index){
+    const item = sourceEditState?.recognizedItems?.[index];
+    if(!item?.editPayload) return;
+    setDailyRecordStateFromPayload(item.editPayload);
+    nestedDietEditor = {
+      sourceScene: sourceEditState.scene,
+      itemIndex: index,
+      wasDirty: dirty,
+      initialPayload: JSON.stringify(buildDailyRecordSavePayload()),
+    };
+    showEditorScene('daily-record');
+    setEditorNav('编辑饮食记录', true);
+  }
+
+  function returnFromSourceDietEditor({ deleted = false } = {}){
+    if(!nestedDietEditor || !sourceEditState) return false;
+    const context = nestedDietEditor;
+    const draft = deleted ? null : buildDailyRecordSavePayload();
+    const changed = deleted || JSON.stringify(draft) !== context.initialPayload;
+    const item = sourceEditState.recognizedItems[context.itemIndex];
+    if(deleted){
+      sourceEditState.recognizedItems.splice(context.itemIndex, 1);
+      sourceEditState.dietDraft = null;
+      sourceEditState.dietDeleted = true;
+    } else if(item){
+      item.editPayload = cloneEditorData(draft);
+      item.time = draft.time;
+      item.label = `饮食：${draft.mealType || '饮食'}`;
+      sourceEditState.dietDraft = cloneEditorData(draft);
+      sourceEditState.dietDeleted = false;
+    }
+    nestedDietEditor = null;
+    showEditorScene(context.sourceScene);
+    setEditorNav('编辑记录', false);
+    renderSourceRecognizedItems(context.sourceScene, sourceEditState.recognizedItems);
+    if(context.wasDirty || changed) markDirty();
+    else resetDirty();
+    return true;
+  }
   let quickRecordState = {
     time: '09:15',
     recordLabel: '情绪 · 开心',
@@ -2940,6 +3103,10 @@
     if(isEmbedded) window.parent.postMessage({type:'edit-close', action: action, payload: payload}, '*');
   }
   function handleClose() {
+    if(nestedDietEditor){
+      returnFromSourceDietEditor();
+      return;
+    }
     if (dirty) {
       showDialog({
         title: '放弃修改？',
@@ -2963,6 +3130,25 @@
 
   function getActiveSavePayload() {
     const activeScene = document.querySelector('.scene.active');
+    if((activeScene?.id === 'scene-mixed' || activeScene?.id === 'scene-text') && sourceEditState){
+      const scene = sourceEditState.scene;
+      const quote = document.getElementById(scene === 'mixed' ? 'voiceQuote' : 'textQuote');
+      const sourceText = scene === 'mixed'
+        ? (quote?.querySelector('.source-voice-content > span:last-child')?.textContent || sourceEditState.sourceText)
+        : (quote?.textContent || sourceEditState.sourceText);
+      const time = normalizePeriodDetailTime(document.getElementById('recordTime-' + scene)?.textContent);
+      const dietDraft = cloneEditorData(sourceEditState.dietDraft);
+      if(dietDraft) dietDraft.time = time;
+      return {
+        kind: 'diet-source-record',
+        time,
+        sourceText,
+        sourceVoice: cloneEditorData(sourceEditState.sourceVoice),
+        linkedDietRecordId: sourceEditState.linkedDietRecordId,
+        dietDraft,
+        dietDeleted: !!sourceEditState.dietDeleted,
+      };
+    }
     if(activeScene?.id === 'scene-quick'){
       return {
         kind: 'quick',
@@ -2974,38 +3160,7 @@
       };
     }
     if(activeScene?.id === 'scene-daily-record'){
-      return {
-        kind: 'daily-record',
-        time: normalizePeriodDetailTime(document.getElementById('recordTime-daily-record').textContent),
-        recordType: dailyRecordState.recordType,
-        recordLabel: dailyRecordState.recordLabel,
-        recordValue: dailyRecordState.recordValue,
-        recordDetail: dailyRecordState.recordDetail,
-        icon: dailyRecordState.icon,
-        iconText: dailyRecordState.iconText || '',
-        dietItems: dailyRecordState.dietItems ? dailyRecordState.dietItems.map(item => ({ ...item })) : undefined,
-        totalKcal: dailyRecordState.totalKcal,
-        mealType: dailyRecordState.mealType,
-        photoUrl: dailyRecordState.photoUrl,
-        brand: dailyRecordState.brand,
-        beverageName: dailyRecordState.beverageName,
-        beverageCategory: dailyRecordState.beverageCategory,
-        capacityMl: dailyRecordState.capacityMl,
-        iceLevel: dailyRecordState.iceLevel,
-        sugarLevel: dailyRecordState.sugarLevel,
-        spec: dailyRecordState.spec,
-        calories: dailyRecordState.calories,
-        caffeineMg: dailyRecordState.caffeineMg,
-        sugarGrams: dailyRecordState.sugarGrams,
-        note: dailyRecordState.note || '',
-        dayLabel: dailyRecordState.dayLabel || '今天',
-        area: dailyRecordState.area,
-        acne: dailyRecordState.acne,
-        redness: dailyRecordState.redness,
-        acneMarks: dailyRecordState.acneMarks,
-        product: dailyRecordState.product,
-        managementStatus: dailyRecordState.managementStatus,
-      };
+      return buildDailyRecordSavePayload();
     }
     if(activeScene?.id !== 'scene-period-detail') return null;
     return {
@@ -3996,41 +4151,11 @@
       return;
     }
     if(payload.kind === 'daily-record'){
-      const config = getDailyRecordConfig(payload.recordType);
-      dailyRecordState = {
-        time: payload.time || '09:15',
-        dayLabel: payload.dayLabel || '今天',
-        recordType: payload.recordType || 'love',
-        recordLabel: payload.recordLabel || config.label,
-        recordValue: payload.recordValue || payload.recordDetail || config.options[0] || '',
-        recordDetail: payload.recordDetail || payload.recordValue || config.options[0] || '',
-        icon: payload.icon || payload.recordType || 'love',
-        iconText: payload.iconText || '',
-        dietItems: normalizeDietItems(payload.dietItems),
-        totalKcal: Number(payload.totalKcal) || 0,
-        mealType: payload.mealType || '',
-        photoUrl: payload.photoUrl || null,
-        brand: payload.brand || '',
-        beverageName: payload.beverageName || '',
-        beverageCategory: payload.beverageCategory || '',
-        capacityMl: Number(payload.capacityMl) || 0,
-        iceLevel: payload.iceLevel || '',
-        sugarLevel: payload.sugarLevel || '',
-        spec: payload.spec || '',
-        calories: Number(payload.calories) || 0,
-        caffeineMg: Number(payload.caffeineMg) || 0,
-        sugarGrams: Number(payload.sugarGrams) || 0,
-        note: payload.note || '',
-        area: payload.area || '',
-        acne: payload.acne || '',
-        redness: payload.redness || '',
-        acneMarks: payload.acneMarks || '',
-        product: payload.product || '',
-        managementStatus: payload.managementStatus || '',
-      };
-      document.getElementById('recordTime-daily-record').textContent =
-        `${dailyRecordState.dayLabel} ${normalizePeriodDetailTime(dailyRecordState.time)}`;
-      renderDailyRecordEditor();
+      sourceEditState = null;
+      nestedDietEditor = null;
+      showEditorScene('daily-record');
+      setEditorNav(payload.recordType === 'diet' ? '编辑饮食记录' : '编辑记录', false);
+      setDailyRecordStateFromPayload(payload);
       resetDirty();
       return;
     }
@@ -4128,6 +4253,11 @@
       `,
       confirmText: '删除',
       onConfirm: () => {
+        if(sceneType === 'daily-record' && nestedDietEditor){
+          returnFromSourceDietEditor({ deleted:true });
+          showToast('饮食记录将在保存后删除');
+          return;
+        }
         setTimeout(() => notifyParent('delete'), 200);
       }
     });

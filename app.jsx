@@ -767,6 +767,82 @@ function App(){
       const entryId = event?.detail?.entryId;
       const payload = event?.detail?.payload;
       if(!entryId || !payload?.kind) return;
+      if(payload.kind === 'diet-source-record'){
+        setTimeline(blocks=>blocks.map(block=>{
+          if(block.type !== 'day') return block;
+          let linkedDietRecordId = payload.linkedDietRecordId || null;
+          const currentItems = block.items || block.entries || [];
+          const sourceItem = currentItems.find(item=>item?.id === entryId);
+          linkedDietRecordId = linkedDietRecordId || sourceItem?.linkedDietRecordId || null;
+          const draft = payload.dietDraft || {};
+          const dietItems = (draft.dietItems || []).map((food, index)=>({
+            ...food,
+            id: food.id || `food-${index + 1}`,
+            name: food.name || food.title || '食物',
+            kcal: Number(food.kcal) || 0,
+          }));
+          const totalKcal = Number(draft.totalKcal) || dietItems.reduce((sum, food)=>sum + (Number(food.kcal) || 0), 0);
+          const foods = dietItems.map(food=>food.name).filter(Boolean);
+          const nextItems = currentItems.map(item=>{
+            if(item?.id === entryId){
+              const previousMealKcal = Number(item.dietData?.totalKcal) || 0;
+              const previousDayTotal = Number(item.userContext?.dayTotalKcal) || previousMealKcal;
+              const nextDietData = payload.dietDeleted ? {
+                ...(item.dietData || {}),
+                time: payload.time || item.time,
+                items: [],
+                foods: [],
+                totalKcal: null,
+                mealType: '',
+                matchStatus: 'names-only',
+              } : {
+                ...(item.dietData || {}),
+                time: draft.time || payload.time || item.time,
+                items: dietItems,
+                foods,
+                totalKcal,
+                mealType: draft.mealType || item.dietData?.mealType || '',
+                matchStatus: totalKcal > 0 ? 'all' : 'names-only',
+              };
+              return {
+                ...item,
+                time: payload.time || item.time,
+                sourceText: payload.sourceText ?? item.sourceText,
+                sourceVoice: payload.sourceVoice ?? item.sourceVoice,
+                linkedDietRecordId: payload.dietDeleted ? null : linkedDietRecordId,
+                recognitionDeleted: !!payload.dietDeleted,
+                dietData: nextDietData,
+                userContext: {
+                  ...(item.userContext || {}),
+                  dayTotalKcal: payload.dietDeleted
+                    ? Math.max(0, previousDayTotal - previousMealKcal)
+                    : Math.max(0, previousDayTotal - previousMealKcal + totalKcal),
+                  todayFoodCount: payload.dietDeleted ? 0 : dietItems.length,
+                },
+              };
+            }
+            if(linkedDietRecordId && item?.id === linkedDietRecordId){
+              if(payload.dietDeleted) return null;
+              return {
+                ...item,
+                time: draft.time || payload.time || item.time,
+                dietData: {
+                  ...(item.dietData || {}),
+                  time: draft.time || payload.time || item.time,
+                  items: dietItems,
+                  foods,
+                  totalKcal,
+                  mealType: draft.mealType || item.dietData?.mealType || '',
+                  matchStatus: totalKcal > 0 ? 'all' : 'names-only',
+                },
+              };
+            }
+            return item;
+          }).filter(Boolean);
+          return { ...block, items:nextItems, entries:undefined };
+        }));
+        return;
+      }
       if(payload.kind === 'daily-record'){
         const iconMap = {
           love: 'love',
@@ -803,8 +879,37 @@ function App(){
           let sourceDayId = null;
           const updatedBlocks = blocks.map(block=>{
             if(block.type !== 'day') return block;
-            const nextItems = (block.items || block.entries || []).map(item=>{
+            const blockItems = block.items || block.entries || [];
+            const editedDietRecord = blockItems.find(item=>item?.id === entryId && item?.kind === 'diet-structured-record');
+            const linkedSourceEntryId = editedDietRecord?.sourceEntryId || null;
+            const nextItems = blockItems.map(item=>{
             const primaryId = item?.primary?.id;
+            if(linkedSourceEntryId && item?.id === linkedSourceEntryId){
+              const dietItems = normalizeDietItems(payload);
+              const foods = dietItems.map(food=>food.name).filter(Boolean);
+              const totalKcal = Number(payload.totalKcal) || dietItems.reduce((sum, food)=>sum + (Number(food.kcal) || 0), 0);
+              const previousMealKcal = Number(item.dietData?.totalKcal) || 0;
+              const previousDayTotal = Number(item.userContext?.dayTotalKcal) || previousMealKcal;
+              return {
+                ...item,
+                time: payload.time || item.time,
+                recognitionDeleted: false,
+                dietData:{
+                  ...(item.dietData || {}),
+                  time: payload.time || item.dietData?.time || item.time,
+                  items: dietItems,
+                  foods,
+                  totalKcal,
+                  mealType: payload.mealType || item.dietData?.mealType || '',
+                  matchStatus: totalKcal > 0 ? 'all' : 'names-only',
+                },
+                userContext:{
+                  ...(item.userContext || {}),
+                  dayTotalKcal: Math.max(0, previousDayTotal - previousMealKcal + totalKcal),
+                  todayFoodCount: dietItems.length,
+                },
+              };
+            }
             if(item?.id !== entryId && primaryId !== entryId) return item;
             sourceDayId = block.id;
             const type = payload.recordType || item.primary?.recordType;
@@ -829,6 +934,24 @@ function App(){
                   totalKcal,
                   mealType: payload.mealType || item.dietData?.mealType || '',
                   matchStatus: item.dietData?.matchStatus || 'all',
+                },
+              };
+            }
+            if(type === 'diet' && item.kind === 'diet-structured-record'){
+              const dietItems = normalizeDietItems(payload);
+              const foods = dietItems.map(food=>food.name).filter(Boolean);
+              const totalKcal = Number(payload.totalKcal) || dietItems.reduce((sum, food)=>sum + (Number(food.kcal) || 0), 0);
+              return {
+                ...item,
+                time: payload.time || item.time,
+                dietData:{
+                  ...(item.dietData || {}),
+                  time: payload.time || item.dietData?.time || item.time,
+                  items: dietItems,
+                  foods,
+                  totalKcal,
+                  mealType: payload.mealType || item.dietData?.mealType || '',
+                  matchStatus: totalKcal > 0 ? 'all' : 'names-only',
                 },
               };
             }

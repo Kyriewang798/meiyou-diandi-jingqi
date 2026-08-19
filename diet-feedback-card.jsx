@@ -384,6 +384,7 @@ function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
     leadingIconSrc: 'assets/quick-icon-diet.png',
     leadingLabel: '饮食：',
     dietData,
+    sourceEntryId: 'e-diet-text-' + stamp,
     isNew: true,
   };
   const sourceEntry = {
@@ -396,6 +397,7 @@ function createDietTextFeedbackEntry({ text, voice, parsed } = {}) {
     leadingLabel: '饮食：',
     displayScenario: readDietFeedbackDisplayScenario(),
     dietData,
+    linkedDietRecordId: recordEntry.id,
     userContext: buildDietUserContext(lunch),
     isNew: true,
   };
