@@ -451,6 +451,42 @@
     color: var(--my-text-tertiary);
     margin-top: 4px;
   }
+  .record-nutrition-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .record-nutrition-summary span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    color: var(--my-text-tertiary);
+    white-space: nowrap;
+  }
+  .record-nutrition-summary span + span::before {
+    content: "";
+    width: 1px;
+    height: 12px;
+    margin-right: 3px;
+    background: var(--my-line-strong);
+  }
+  .record-nutrition-summary i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: 0 0 6px;
+  }
+  .record-nutrition-summary .is-caffeine i { background: #35b887; }
+  .record-nutrition-summary .is-sugar i { background: #ff8a65; }
+  .record-nutrition-summary b {
+    color: var(--my-text-primary);
+    font-weight: 500;
+  }
   .record-delete {
     background: transparent;
     border: none;
@@ -2768,8 +2804,8 @@
       sugarLevel: payload.sugarLevel || '',
       spec: payload.spec || '',
       calories: Number(payload.calories) || 0,
-      caffeineMg: Number(payload.caffeineMg) || 0,
-      sugarGrams: Number(payload.sugarGrams) || 0,
+      caffeineMg: payload.caffeineMg == null || payload.caffeineMg === '' ? null : (Number(payload.caffeineMg) || 0),
+      sugarGrams: payload.sugarGrams == null || payload.sugarGrams === '' ? null : (Number(payload.sugarGrams) || 0),
       note: payload.note || '',
       area: payload.area || '',
       acne: payload.acne || '',
@@ -4140,6 +4176,9 @@
     const displayLabel = label;
     const value = dailyRecordState.recordDetail || dailyRecordState.recordValue || '';
     const iconHtml = renderDailyRecordIconHtml();
+    const isBeverageRecord = dailyRecordState.recordType === 'beverage';
+    const caffeineText = dailyRecordState.caffeineMg == null ? '未识别' : `${dailyRecordState.caffeineMg}mg`;
+    const sugarText = dailyRecordState.sugarGrams == null ? '未识别' : `${dailyRecordState.sugarGrams}g`;
     title.textContent = displayLabel;
     list.innerHTML = `
       <div class="record-item" data-record-kind="daily">
@@ -4147,7 +4186,12 @@
         <div class="record-main">
           <div class="record-type">${displayLabel}</div>
           <div class="record-value">${value}</div>
-          <div class="record-time">${dailyRecordState.dayLabel || '今天'} ${normalizePeriodDetailTime(dailyRecordState.time)}</div>
+          ${isBeverageRecord ? `
+            <div class="record-nutrition-summary" aria-label="饮品成分摘要">
+              <span class="is-caffeine"><i aria-hidden="true"></i>咖啡因 <b>${caffeineText}</b></span>
+              <span class="is-sugar"><i aria-hidden="true"></i>糖分 <b>${sugarText}</b></span>
+            </div>
+          ` : `<div class="record-time">${dailyRecordState.dayLabel || '今天'} ${normalizePeriodDetailTime(dailyRecordState.time)}</div>`}
         </div>
         <div class="record-actions">
           <button class="record-edit" onclick="openDailyOptionPicker()" aria-label="编辑${label}">

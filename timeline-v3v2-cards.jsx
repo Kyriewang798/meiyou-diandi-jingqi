@@ -532,149 +532,182 @@ function readSavedDailyGoal(kind, fallback){
   }
 }
 
-function DailyGoalSettingPage({kind, value, onCancel, onSave}){
-  const isWater = kind === 'water';
-  const I = window.Icon;
-  const unit = isWater ? 'ml' : 'mg';
-  const min = isWater ? 500 : 50;
-  const max = isWater ? 3500 : 600;
-  const step = isWater ? 100 : 50;
-  const presets = isWater ? [1200, 1500, 2000, 2500] : [100, 200, 300, 400];
-  const [draft, setDraft] = React.useState(value);
+const DAILY_BEVERAGE_GOALS = {
+  water: {
+    label:'饮水目标', helper:'每天希望达到', unit:'ml', min:500, max:3500, step:100,
+    fallback:1500, color:'#4aa9e9', soft:'#eaf4ff', short:'水', targetLabel:'目标',
+  },
+  sugar: {
+    label:'糖分上限', helper:'每天建议不超过', unit:'g', min:10, max:100, step:5,
+    fallback:50, color:'#ff8a65', soft:'#fff0eb', short:'糖', targetLabel:'上限',
+  },
+  caffeine: {
+    label:'咖啡因上限', helper:'每天建议不超过', unit:'mg', min:50, max:600, step:25,
+    fallback:300, color:'#35b887', soft:'#e9f8f1', short:'咖', targetLabel:'上限',
+  },
+};
+
+function DailyGoalSettingItem({kind, value, onChange}){
+  const config = DAILY_BEVERAGE_GOALS[kind];
+  const changeBy = (delta)=>onChange(Math.max(config.min, Math.min(config.max, value + delta)));
   return (
-    <div className="daily-goal-setting-page" role="dialog" aria-modal="true" aria-label={isWater ? '设置每日饮水目标' : '设置每日咖啡因目标'}>
+    <section className={'daily-goal-setting-item is-' + kind}>
+      <div className="daily-goal-setting-item-head">
+        <span className="daily-goal-setting-item-icon" style={{backgroundColor:config.soft, color:config.color}} aria-hidden="true">{config.short}</span>
+        <div>
+          <strong>{config.label}</strong>
+          <span>{config.helper}</span>
+        </div>
+        <em>系统建议</em>
+      </div>
+      <div className="daily-goal-setting-stepper">
+        <button type="button" onClick={()=>changeBy(-config.step)} aria-label={`减少${config.step}${config.unit}`}>−</button>
+        <div><strong>{value}</strong><span>{config.unit}</span></div>
+        <button type="button" onClick={()=>changeBy(config.step)} aria-label={`增加${config.step}${config.unit}`}>＋</button>
+      </div>
+      <input
+        className="daily-goal-setting-range"
+        style={{accentColor:config.color}}
+        type="range"
+        min={config.min}
+        max={config.max}
+        step={config.step}
+        value={value}
+        onChange={(event)=>onChange(Number(event.target.value))}
+        aria-label={config.label + '值'}
+      />
+    </section>
+  );
+}
+
+function DailyGoalSettingPage({values, onCancel, onSave}){
+  const [draft, setDraft] = React.useState(values);
+  const updateGoal = (kind, value)=>setDraft(current=>({ ...current, [kind]:value }));
+  return (
+    <div className="daily-goal-setting-page" role="dialog" aria-modal="true" aria-label="每日饮品目标与上限">
       <div className="daily-goal-setting-nav">
         <button type="button" onClick={onCancel} aria-label="取消">
-          <I name="x" size={23} stroke={2}/>
+          <span className="daily-goal-setting-close" aria-hidden="true">×</span>
         </button>
-        <h2>{isWater ? '每日饮水目标' : '每日咖啡因目标'}</h2>
+        <h2>每日饮品目标与上限</h2>
         <button type="button" className="is-save" onClick={()=>onSave(draft)}>保存</button>
       </div>
       <div className="daily-goal-setting-content">
-        <div className={'daily-goal-setting-icon is-' + kind} aria-hidden="true">
-          {isWater
-            ? <img src="assets/baby-feeding-icons/water.png" alt=""/>
-            : <I name="coffee" size={30} stroke={1.8}/>}
-        </div>
-        <p>设置后将用于计算每天的摄入进度</p>
-        <div className="daily-goal-setting-value">
-          <button type="button" onClick={()=>setDraft(current=>Math.max(min, current - step))} aria-label={`减少${step}${unit}`}>
-            <I name="minus" size={21} stroke={2}/>
-          </button>
-          <div><strong>{draft}</strong><span>{unit}</span></div>
-          <button type="button" onClick={()=>setDraft(current=>Math.min(max, current + step))} aria-label={`增加${step}${unit}`}>
-            <I name="plus" size={21} stroke={2}/>
-          </button>
-        </div>
-        <input
-          className="daily-goal-setting-range"
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={draft}
-          onChange={(event)=>setDraft(Number(event.target.value))}
-          aria-label={isWater ? '每日饮水目标值' : '每日咖啡因目标值'}
-        />
-        <div className="daily-goal-setting-presets">
-          {presets.map(preset=>(
-            <button
-              type="button"
-              key={preset}
-              className={draft === preset ? 'is-active' : ''}
-              onClick={()=>setDraft(preset)}
-            >
-              {preset}{unit}
-            </button>
-          ))}
-        </div>
+        <p className="daily-goal-setting-intro">集中设置每天的饮水目标，以及糖分和咖啡因摄入上限。</p>
+        {Object.keys(DAILY_BEVERAGE_GOALS).map(kind=>(
+          <DailyGoalSettingItem
+            key={kind}
+            kind={kind}
+            value={draft[kind]}
+            onChange={(value)=>updateGoal(kind, value)}
+          />
+        ))}
+        <p className="daily-goal-setting-note">修改后将按新目标重新计算今天的进度，不会改变已经保存的饮品记录。</p>
       </div>
     </div>
   );
 }
 
 function ChartDailyGoal({data}){
-  const consumed = Math.max(0, Number(data?.consumed) || 0);
-  const isWater = data?.kind === 'water';
-  const kind = isWater ? 'water' : 'caffeine';
-  const defaultGoal = Math.max(1, Number(data?.goal) || (isWater ? 1500 : 300));
-  const [goal, setGoal] = React.useState(()=>readSavedDailyGoal(kind, defaultGoal));
+  const consumed = {
+    water:Math.max(0, Number(data?.waterConsumed ?? data?.consumed) || 0),
+    sugar:Math.max(0, Number(data?.sugarConsumed) || 0),
+    caffeine:Math.max(0, Number(data?.caffeineConsumed) || 0),
+  };
+  const defaults = {
+    water:Math.max(1, Number(data?.waterGoal ?? data?.goal) || DAILY_BEVERAGE_GOALS.water.fallback),
+    sugar:Math.max(1, Number(data?.sugarLimit) || DAILY_BEVERAGE_GOALS.sugar.fallback),
+    caffeine:Math.max(1, Number(data?.caffeineLimit) || DAILY_BEVERAGE_GOALS.caffeine.fallback),
+  };
+  const [goals, setGoals] = React.useState(()=>({
+    water:readSavedDailyGoal('water', defaults.water),
+    sugar:readSavedDailyGoal('sugar', defaults.sugar),
+    caffeine:readSavedDailyGoal('caffeine', defaults.caffeine),
+  }));
   const [settingOpen, setSettingOpen] = React.useState(false);
-  const remaining = Math.max(0, goal - consumed);
-  const ratio = Math.min(1, consumed / goal);
-  const radius = 43;
-  const circumference = 2 * Math.PI * radius;
-  const unit = data?.unit || (isWater ? 'ml' : 'mg');
-  const color = isWater ? '#4aa9e9' : '#2db7aa';
   React.useEffect(()=>{
     const handleGoalChange = (event)=>{
-      if(event?.detail?.kind !== kind) return;
-      setGoal(event.detail.value);
+      if(event?.detail?.values){
+        setGoals(event.detail.values);
+        return;
+      }
+      const kind = event?.detail?.kind;
+      if(!DAILY_BEVERAGE_GOALS[kind]) return;
+      setGoals(current=>({ ...current, [kind]:event.detail.value }));
     };
     window.addEventListener('dailyGoalChange', handleGoalChange);
     return ()=>window.removeEventListener('dailyGoalChange', handleGoalChange);
-  }, [kind]);
-  const saveGoal = (nextGoal)=>{
-    try {
-      const key = kind === 'water' ? 'meiyou-daily-goal-water-v2' : `meiyou-daily-goal-${kind}`;
-      window.localStorage?.setItem(key, String(nextGoal));
-    } catch (error) {}
-    setGoal(nextGoal);
+  }, []);
+  const saveGoals = (nextGoals)=>{
+    Object.entries(nextGoals).forEach(([kind, value])=>{
+      try {
+        const key = kind === 'water' ? 'meiyou-daily-goal-water-v2' : `meiyou-daily-goal-${kind}`;
+        window.localStorage?.setItem(key, String(value));
+      } catch (error) {}
+    });
+    setGoals(nextGoals);
     window.dispatchEvent(new CustomEvent('dailyGoalChange', {
-      detail:{ kind, value:nextGoal },
+      detail:{ values:nextGoals },
     }));
     setSettingOpen(false);
   };
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
+  const metrics = Object.keys(DAILY_BEVERAGE_GOALS).map(kind=>{
+    const config = DAILY_BEVERAGE_GOALS[kind];
+    const value = consumed[kind];
+    const goal = goals[kind];
+    const ratio = Math.min(1, value / goal);
+    const remaining = Math.max(0, goal - value);
+    const exceeded = Math.max(0, value - goal);
+    const isLimit = kind !== 'water';
+    const color = isLimit && value >= goal ? '#ff5b5f'
+      : isLimit && ratio >= .8 ? '#f4a340'
+      : config.color;
+    const status = kind === 'water'
+      ? (remaining ? `还需${remaining}${config.unit}` : '今日已达成')
+      : (exceeded ? `已超${exceeded}${config.unit}` : ratio >= .8 ? '接近上限' : `还可${remaining}${config.unit}`);
+    return { kind, config, value, goal, ratio, color, status };
+  });
   const settingPage = settingOpen && window.ReactDOM?.createPortal
     ? window.ReactDOM.createPortal(
         <DailyGoalSettingPage
-          kind={kind}
-          value={goal}
+          values={goals}
           onCancel={()=>setSettingOpen(false)}
-          onSave={saveGoal}
+          onSave={saveGoals}
         />,
         document.querySelector('.phone') || document.body
       )
     : null;
   return (
-    <div className="v3-daily-goal-card">
-      <div className={'v3-daily-goal is-' + kind}>
-        <div className="v3-daily-goal-ring" role="img" aria-label={`已完成今日目标的${Math.round(ratio * 100)}%`}>
-          <svg viewBox="0 0 104 104" aria-hidden="true">
-            <circle cx="52" cy="52" r={radius} className="v3-daily-goal-track"/>
-            <circle
-              cx="52"
-              cy="52"
-              r={radius}
-              className="v3-daily-goal-progress"
-              stroke={color}
-              strokeDasharray={`${circumference * ratio} ${circumference}`}
-            />
-          </svg>
-          <div className="v3-daily-goal-value">
-            <strong>{consumed}</strong>
-            <span>{unit}</span>
-          </div>
-        </div>
-        <div className="v3-daily-goal-summary">
-          <div className="v3-daily-goal-target-label">
-            <span>今日目标</span>
-            {isWater ? (
-              <button type="button" onClick={()=>setSettingOpen(true)} aria-label="编辑饮水目标">编辑</button>
-            ) : null}
-          </div>
-          <strong>{goal}{unit}</strong>
-          <div className="v3-daily-goal-remaining">
-            <i style={{backgroundColor:color}} aria-hidden="true"/>
-            {isWater ? '还需饮水' : '还可摄入'} {remaining}{unit}
-          </div>
-        </div>
+    <div className="v3-beverage-goals-card">
+      <div className="v3-beverage-goals-toolbar">
+        <span>今日摄入</span>
+        <button type="button" onClick={()=>setSettingOpen(true)}>设置目标与上限</button>
       </div>
-      <p className="v3-daily-goal-copy">
-        {isWater
-          ? `今天已饮水${consumed}ml，距离${goal}ml目标还差${remaining}ml。`
-          : `今天摄入${consumed}mg，还可以摄入${remaining}mg。`}
-      </p>
+      <div className="v3-beverage-goals-grid">
+        {metrics.map(({kind, config, value, goal, ratio, color, status})=>(
+          <div className={'v3-beverage-goal-metric is-' + kind} key={kind}>
+            <div className="v3-beverage-goal-ring" role="img" aria-label={`${config.label}已使用${Math.round(ratio * 100)}%`}>
+              <svg viewBox="0 0 80 80" aria-hidden="true">
+                <circle cx="40" cy="40" r={radius} className="v3-beverage-goal-track"/>
+                <circle
+                  cx="40"
+                  cy="40"
+                  r={radius}
+                  className="v3-beverage-goal-progress"
+                  stroke={color}
+                  strokeDasharray={`${circumference * ratio} ${circumference}`}
+                />
+              </svg>
+              <div className="v3-beverage-goal-value"><strong>{value}</strong><span>{config.unit}</span></div>
+            </div>
+            <strong className="v3-beverage-goal-name">{kind === 'water' ? '饮水' : kind === 'sugar' ? '糖分' : '咖啡因'}</strong>
+            <span className="v3-beverage-goal-target">{config.targetLabel} {goal}{config.unit}</span>
+            <span className="v3-beverage-goal-status" style={{color}}>{status}</span>
+          </div>
+        ))}
+      </div>
       {settingPage}
     </div>
   );

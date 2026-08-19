@@ -1036,13 +1036,16 @@ function App(){
             const nextCapacity = Number(payload.capacityMl ?? item.primary?.capacityMl) || 0;
             const nextAi = type === 'beverage' ? {
               ...item.ai,
-              title:'今日饮水进度',
+              title:'今日饮品摄入',
               chartType:'dailyGoal',
               chartData:{
-                kind:'water',
-                consumed:Math.min(1500, 550 + nextCapacity),
-                goal:1500,
-                unit:'ml',
+                kind:'beverage',
+                waterConsumed:Math.min(3500, 550 + nextCapacity),
+                waterGoal:1500,
+                sugarConsumed:Number(payload.sugarGrams ?? item.primary?.sugarGrams) || 0,
+                sugarLimit:50,
+                caffeineConsumed:Number(payload.caffeineMg ?? item.primary?.caffeineMg) || 0,
+                caffeineLimit:300,
               },
               note:'',
             } : item.ai;
@@ -2152,13 +2155,16 @@ function App(){
           return `${name}${data.capacityMl ? ` · ${data.capacityMl}ml` : ''}`;
         },
         buildAi:(data)=>({
-          title:'今日饮水进度',
+          title:'今日饮品摄入',
           chartType:'dailyGoal',
           chartData:{
-            kind:'water',
-            consumed:Math.min(1500, 550 + (Number(data.capacityMl) || 0)),
-            goal:1500,
-            unit:'ml',
+            kind:'beverage',
+            waterConsumed:Math.min(3500, 550 + (Number(data.capacityMl) || 0)),
+            waterGoal:1500,
+            sugarConsumed:Number(data.sugarGrams) || 0,
+            sugarLimit:50,
+            caffeineConsumed:Number(data.caffeineMg) || 0,
+            caffeineLimit:300,
           },
           note:'',
         }),
@@ -2271,7 +2277,7 @@ function App(){
 
     markUserRecorded();
     const stamp = Date.now();
-    const todayTotal = Math.min(1500, 550 + amount);
+    const todayTotal = Math.min(3500, 550 + amount);
     const entry = {
       kind:'record-group',
       id:'e-water-camera-'+stamp+'-g',
@@ -2306,13 +2312,16 @@ function App(){
         id:'e-water-camera-'+stamp+'-ai',
         time:window.formatNowTime(),
         kind:'camera-ai-feedback',
-        title:'今日饮水进度',
+        title:'今日饮品摄入',
         chartType:'dailyGoal',
         chartData:{
-          kind:'water',
-          consumed:todayTotal,
-          goal:1500,
-          unit:'ml',
+          kind:'beverage',
+          waterConsumed:todayTotal,
+          waterGoal:1500,
+          sugarConsumed:sugarGrams,
+          sugarLimit:50,
+          caffeineConsumed:caffeineMg,
+          caffeineLimit:300,
         },
         note:'',
       },
