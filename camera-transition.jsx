@@ -834,6 +834,7 @@ function CameraCaptureAnalyzePanel({
   const isNotFoodError = phase === 'error' && errorKind === 'not-food';
   const isBeverageNoLabelError = phase === 'error' && errorKind === 'beverage-no-label';
   const isClassifying = analyzeMode === 'classifying';
+  const isDietLoading = isLoading && analyzeMode === 'diet';
   const loadingSteps = isClassifying
     ? ['正在判断图片类型']
     : analyzeMode === 'diet' && errorKind === 'not-food'
@@ -849,7 +850,7 @@ function CameraCaptureAnalyzePanel({
   );
   const loadingStep = loadingSteps[loadingStepIndex];
   return (
-    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (isLoading && analyzeMode === 'diet' ? ' is-diet-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
+    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (isDietLoading ? ' is-diet-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
       <div className="camera-analyze-progress-track" aria-hidden={!isLoading}>
         <div
           className="camera-analyze-progress-fill"
@@ -867,8 +868,10 @@ function CameraCaptureAnalyzePanel({
       <div className="camera-analyze-status-row">
         {isLoading && (
           <div className="camera-analyze-loading-copy">
-            <strong>{isClassifying ? '图片识别中' : analyzeMode === 'diet' ? 'AI 小柚子识别中' : 'AI小柚子分析中…'}</strong>
-            <span key={loadingStep}>{loadingStep}</span>
+            {!isDietLoading ? (
+              <strong>{isClassifying ? '图片识别中' : 'AI小柚子分析中…'}</strong>
+            ) : null}
+            <span key={loadingStep}>{loadingStep}{isDietLoading ? '…' : ''}</span>
           </div>
         )}
         {isTimeoutError && !isExhausted && (
@@ -1185,10 +1188,8 @@ function CameraView({
             <span className="camera-frame-corner br"/>
             {analyzePhase === 'loading' && analyzeMode === 'diet' ? (
               <div className="camera-diet-scan-layer" aria-hidden="true">
-                <span className="camera-diet-grid"/>
-                {[12, 27, 43, 58, 71, 84, 36, 66, 19, 78].map((x, index) => (
-                  <i key={index} style={{ left:`${x}%`, top:`${18 + ((index * 23) % 64)}%`, animationDelay:`${index * 120}ms` }}/>
-                ))}
+                <span className="camera-diet-scan-shade"/>
+                <span className="camera-diet-scan-line"/>
               </div>
             ) : analyzePhase === 'loading' && analyzeMode !== 'photo' ? <div className="camera-scan-line" aria-hidden="true"/> : null}
           </div>
