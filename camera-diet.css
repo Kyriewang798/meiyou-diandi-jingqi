@@ -951,6 +951,8 @@
 .camera-diet-scan-layer{
   position:absolute;
   inset:0;
+  width:100%;
+  height:100%;
   z-index:8;
   overflow:hidden;
   pointer-events:none;
@@ -969,7 +971,7 @@
   left:0;
   right:0;
   top:9%;
-  height:2px;
+  height:3px;
   background:linear-gradient(90deg,rgba(255,255,255,.26),#fff 10%,#fff 90%,rgba(255,255,255,.26));
   box-shadow:
     0 1px 1px rgba(0,0,0,.28),
@@ -989,17 +991,17 @@
   will-change:opacity;
 }
 .camera-diet-scan-line::before{
-  bottom:2px;
-  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.04) 35%,rgba(255,255,255,.24) 100%);
+  bottom:3px;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.06) 35%,rgba(255,255,255,.34) 100%);
   animation:cameraDietTrailDown var(--camera-scan-duration) linear infinite;
 }
 .camera-diet-scan-line::after{
-  top:2px;
-  background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.04) 65%,transparent 100%);
+  top:3px;
+  background:linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 65%,transparent 100%);
   animation:cameraDietTrailUp var(--camera-scan-duration) linear infinite;
 }
 .camera-diet-scan-layer.is-image-routing{
-  --camera-scan-duration:1.2s;
+  --camera-scan-duration:1.55s;
 }
 @keyframes cameraDietScanSweep{
   0%{top:9%;opacity:.78}

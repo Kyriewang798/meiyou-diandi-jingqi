@@ -5,7 +5,7 @@ const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
 const CAMERA_DIET_ANALYZE_MS = 6000;
 const CAMERA_PHOTO_ANALYZE_MS = 1000;
-const CAMERA_IMAGE_CLASSIFY_MS = 1200;
+const CAMERA_IMAGE_CLASSIFY_MS = 1600;
 
 const CAMERA_RECOGNITION_MODES = [
   {
@@ -1184,7 +1184,7 @@ function CameraView({
             <span className="camera-frame-corner tr"/>
             <span className="camera-frame-corner bl"/>
             <span className="camera-frame-corner br"/>
-            {analyzePhase === 'loading' && (analyzeMode === 'classifying' || analyzeMode === 'diet') ? (
+            {showImageRoutingPreview || (analyzePhase === 'loading' && analyzeMode === 'diet') ? (
               <div className={'camera-diet-scan-layer' + (analyzeMode === 'classifying' ? ' is-image-routing' : '')} aria-hidden="true">
                 <span className="camera-diet-scan-shade"/>
                 <span className="camera-diet-scan-line"/>
