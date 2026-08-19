@@ -5,6 +5,7 @@ const TRANSITION_EASING = 'cubic-bezier(0.5, 0.02, 0.1, 1)';
 const OVERLAY_FADE_DURATION = Math.round(TRANSITION_DURATION * 0.55);
 const CAMERA_DIET_ANALYZE_MS = 6000;
 const CAMERA_PHOTO_ANALYZE_MS = 1000;
+const CAMERA_IMAGE_CLASSIFY_MS = 1200;
 
 const CAMERA_RECOGNITION_MODES = [
   {
@@ -171,6 +172,11 @@ function inferCameraRecognitionMode(photo) {
   const candidate = photo?.mode || photo?.type;
   if (candidate === 'food') return 'diet';
   return CAMERA_RECOGNITION_MODE_MAP[candidate] ? candidate : 'photo';
+}
+
+function inferMultimodalRoutingMode(photo) {
+  const mode = inferCameraRecognitionMode(photo);
+  return mode === 'diet' || mode === 'beverage' ? mode : 'photo';
 }
 
 function buildCameraRecognitionResult(payload) {
@@ -827,7 +833,10 @@ function CameraCaptureAnalyzePanel({
   const isTimeoutError = phase === 'error' && errorKind === 'timeout';
   const isNotFoodError = phase === 'error' && errorKind === 'not-food';
   const isBeverageNoLabelError = phase === 'error' && errorKind === 'beverage-no-label';
-  const loadingSteps = analyzeMode === 'diet' && errorKind === 'not-food'
+  const isClassifying = analyzeMode === 'classifying';
+  const loadingSteps = isClassifying
+    ? ['正在判断图片类型']
+    : analyzeMode === 'diet' && errorKind === 'not-food'
     ? ['正在识别食物']
     : analyzeMode === 'beverage'
       ? ['饮品识别中', '成分分析中', '热量糖分咖啡因统计中']
@@ -858,7 +867,7 @@ function CameraCaptureAnalyzePanel({
       <div className="camera-analyze-status-row">
         {isLoading && (
           <div className="camera-analyze-loading-copy">
-            <strong>{analyzeMode === 'diet' ? 'AI 小柚子识别中' : 'AI小柚子分析中…'}</strong>
+            <strong>{isClassifying ? '图片识别中' : analyzeMode === 'diet' ? 'AI 小柚子识别中' : 'AI小柚子分析中…'}</strong>
             <span key={loadingStep}>{loadingStep}</span>
           </div>
         )}
@@ -929,6 +938,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
   const analyzeTimerRef = React.useRef(null);
   const progressTimerRef = React.useRef(null);
   const finishTimerRef = React.useRef(null);
+  const analyzeMetaRef = React.useRef(null);
 
   const scenario = readScenario();
   const maxFailures = getMaxFailures(scenario);
@@ -957,23 +967,23 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
     setFailureCount(0);
     setErrorKind(null);
     setAnalyzeMode(null);
+    analyzeMetaRef.current = null;
   }, [clearTimers]);
 
   const runAnalyze = React.useCallback(({ url, isRetry = false, forceSuccess = false, meta } = {}) => {
     if (!url) return;
     clearTimers();
+    const effectiveMeta = meta || analyzeMetaRef.current || {};
+    if (!isRetry) analyzeMetaRef.current = effectiveMeta;
     setPhotoUrl(url);
     setPhase('loading');
     if (!isRetry) setFailureCount(0);
     onAnalyzeStart?.();
 
-    const recognitionMode = meta?.mode || 'diet';
-    const sourcePhoto = meta?.photo || {};
+    const recognitionMode = effectiveMeta?.mode || 'diet';
+    const sourcePhoto = effectiveMeta?.photo || {};
     const isDietNotFoodDemo = recognitionMode === 'diet'
       && [sourcePhoto.thumb, sourcePhoto.url, url].includes('image/公园照片.jpg');
-    setAnalyzeMode(recognitionMode);
-    setErrorKind(isDietNotFoodDemo ? 'not-food' : null);
-    setProgress(recognitionMode === 'diet' ? 0 : 6);
     const activeScenario = recognitionMode === 'diet' ? readScenario() : 'success';
     const analyzeMs = isDietNotFoodDemo
       ? 2000
@@ -983,48 +993,91 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
           ? 6000
           : CAMERA_PHOTO_ANALYZE_MS;
     const isBeverageNoLabel = recognitionMode === 'beverage'
-      && meta?.photo?.recognitionVariant === 'coffee-no-label';
+      && effectiveMeta?.photo?.recognitionVariant === 'coffee-no-label';
     const isEarlySuccess = activeScenario === 'success';
-    const startedAt = Date.now();
-    progressTimerRef.current = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      const pct = recognitionMode === 'diet'
-        ? Math.min(99, (elapsed / analyzeMs) * 100)
-        : Math.min(isEarlySuccess ? 86 : 92, 6 + (elapsed / analyzeMs) * 86);
-      setProgress(pct);
-    }, 100);
+    const startRouteAnalyze = () => {
+      setPhase('loading');
+      setAnalyzeMode(recognitionMode);
+      setErrorKind(isDietNotFoodDemo ? 'not-food' : null);
+      setProgress(recognitionMode === 'diet' ? 0 : 6);
+      const startedAt = Date.now();
+      progressTimerRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - startedAt;
+        const pct = recognitionMode === 'diet'
+          ? Math.min(99, (elapsed / analyzeMs) * 100)
+          : Math.min(isEarlySuccess ? 86 : 92, 6 + (elapsed / analyzeMs) * 86);
+        setProgress(pct);
+      }, 100);
 
+      analyzeTimerRef.current = window.setTimeout(() => {
+        if (progressTimerRef.current) {
+          window.clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
+        analyzeTimerRef.current = null;
+        const result = isBeverageNoLabel
+          ? { ok: false, reason: 'beverage-no-label' }
+          : isDietNotFoodDemo
+            ? { ok: false, reason: 'not-food' }
+          : recognitionMode === 'diet'
+            ? mockRecognize({ scenario: readScenario(), forceSuccess })
+            : { ok: true };
+        if (result?.ok) {
+          setProgress(100);
+          setPhase('ready');
+          finishTimerRef.current = window.setTimeout(() => {
+            onSuccess?.({ photoUrl: url, ...effectiveMeta });
+          }, 160);
+          return;
+        }
+        setProgress(0);
+        setPhase('error');
+        setErrorKind(
+          result?.reason === 'not-food'
+            ? 'not-food'
+            : result?.reason === 'beverage-no-label'
+              ? 'beverage-no-label'
+              : 'timeout'
+        );
+        if (isRetry && result?.reason !== 'not-food') {
+          setFailureCount((count) => count + 1);
+        }
+      }, analyzeMs);
+    };
+
+    if (isRetry) {
+      startRouteAnalyze();
+      return;
+    }
+
+    setAnalyzeMode('classifying');
+    setErrorKind(null);
+    setProgress(0);
+    const classifyStartedAt = Date.now();
+    progressTimerRef.current = window.setInterval(() => {
+      const elapsed = Date.now() - classifyStartedAt;
+      setProgress(Math.min(98, (elapsed / CAMERA_IMAGE_CLASSIFY_MS) * 100));
+    }, 80);
     analyzeTimerRef.current = window.setTimeout(() => {
-      clearTimers();
-      const result = isBeverageNoLabel
-        ? { ok: false, reason: 'beverage-no-label' }
-        : isDietNotFoodDemo
-          ? { ok: false, reason: 'not-food' }
-        : recognitionMode === 'diet'
-          ? mockRecognize({ scenario: readScenario(), forceSuccess })
-          : { ok: true };
-      if (result?.ok) {
-        setProgress(100);
+      if (progressTimerRef.current) {
+        window.clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      analyzeTimerRef.current = null;
+      setProgress(100);
+      if (recognitionMode === 'photo') {
         setPhase('ready');
         finishTimerRef.current = window.setTimeout(() => {
-          onSuccess?.({ photoUrl: url, ...meta });
-        }, 160);
+          onSuccess?.({ photoUrl: url, ...effectiveMeta });
+        }, 180);
         return;
       }
-      setProgress(0);
-      setPhase('error');
-      setErrorKind(
-        result?.reason === 'not-food'
-          ? 'not-food'
-          : result?.reason === 'beverage-no-label'
-            ? 'beverage-no-label'
-            : 'timeout'
-      );
-      if (isRetry && result?.reason !== 'not-food') {
-        setFailureCount((count) => count + 1);
-      }
-    }, analyzeMs);
-  }, [clearTimers, mockRecognize, onAnalyzeStart, onSuccess, readScenario, reset]);
+      finishTimerRef.current = window.setTimeout(() => {
+        finishTimerRef.current = null;
+        startRouteAnalyze();
+      }, 180);
+    }, CAMERA_IMAGE_CLASSIFY_MS);
+  }, [clearTimers, mockRecognize, onAnalyzeStart, onSuccess, readScenario]);
 
   const handleRetry = React.useCallback((event) => {
     if (phase !== 'error' || errorKind !== 'timeout' || failureCount >= maxFailures || !photoUrl) return;
@@ -1040,6 +1093,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
     setFailureCount(0);
     setErrorKind(null);
     setAnalyzeMode(null);
+    analyzeMetaRef.current = null;
   }, [clearTimers]);
 
   React.useEffect(() => () => clearTimers(), [clearTimers]);
@@ -1115,7 +1169,7 @@ function CameraView({
       </button>
       {!showGallery && !permDenied ? (
         <div className="camera-mode-title" aria-live="polite">
-          {showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
+          {showAnalyze && analyzeMode === 'classifying' ? '图片识别中' : showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
         </div>
       ) : null}
       
@@ -1447,7 +1501,7 @@ function CameraTransition({
     const photo = resolveBeverageRetakePhoto(selectedPhoto);
     analyze.runAnalyze({
       url: photo.thumb,
-      meta: { type: 'capture', photo, mode: inferCameraRecognitionMode(photo) },
+      meta: { type: 'capture', photo, mode: preferredRecognitionMode || inferMultimodalRoutingMode(photo) },
     });
   };
   
@@ -1460,7 +1514,7 @@ function CameraTransition({
       meta: {
         type: 'select',
         photo: selectedPhoto,
-        mode: preferredRecognitionMode || inferCameraRecognitionMode(selectedPhoto),
+        mode: preferredRecognitionMode || inferMultimodalRoutingMode(selectedPhoto),
       },
     });
   };

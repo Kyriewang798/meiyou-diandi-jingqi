@@ -1228,6 +1228,226 @@
     font-size: 13px;
     text-align: right;
   }
+  #scene-daily-record.is-diet-record #dailyRecordDetailsSection {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #scene-daily-record.is-diet-record #dailyRecordDetailsSection > .section-header {
+    display: none;
+  }
+  #scene-daily-record.is-diet-record #dailyRecordList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .diet-record-card {
+    overflow: hidden;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .diet-record-card-title {
+    margin: 0;
+    padding: 14px 14px 10px;
+    color: #323232;
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  .diet-record-meals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0 14px 14px;
+  }
+  .diet-record-meal {
+    height: 36px;
+    border: 0;
+    border-radius: 9px;
+    background: #f7f7f9;
+    color: #66666b;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .diet-record-meal.active {
+    background: #ffd7e5;
+    color: #f04f86;
+    font-weight: 500;
+  }
+  .diet-record-food-row {
+    width: 100%;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 0;
+    border-top: 0.5px solid #f0f0f2;
+    background: #ffffff;
+    color: #323232;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .diet-record-food-row:first-of-type {
+    border-top: 0;
+  }
+  .diet-record-food-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 0.5px solid #ececef;
+    border-radius: 9px;
+    background: #fffaf8;
+  }
+  .diet-record-food-icon img {
+    width: 34px;
+    height: 34px;
+    display: block;
+    object-fit: contain;
+  }
+  .diet-record-food-copy {
+    min-width: 0;
+    flex: 1;
+  }
+  .diet-record-food-copy strong,
+  .diet-record-food-copy span {
+    display: block;
+  }
+  .diet-record-food-copy strong {
+    overflow: hidden;
+    color: #323232;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .diet-record-food-copy span {
+    margin-top: 2px;
+    color: #a0a0a5;
+    font-size: 13px;
+  }
+  .diet-record-food-chevron {
+    color: #c4c4c8;
+    font-size: 24px;
+    line-height: 1;
+  }
+  .diet-record-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 14px;
+    font-size: 15px;
+  }
+  .diet-record-total strong {
+    font-weight: 600;
+  }
+  .diet-record-total span {
+    color: #99999e;
+  }
+  .diet-record-photo-wrap {
+    margin: 0 14px 14px;
+    min-height: 96px;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 9px;
+    background: #fafafd;
+  }
+  .diet-record-photo-wrap img {
+    width: 64px;
+    height: 64px;
+    display: block;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .option-sheet.is-diet-food-picker .sheet-body {
+    padding: 12px 12px 18px;
+    background: #f2f2f5;
+  }
+  .edit-food-portion-card {
+    padding: 26px 14px 20px;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .edit-food-portion-summary {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+  .edit-food-portion-summary > span {
+    color: #323232;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .edit-food-portion-value {
+    min-width: 96px;
+    color: #f04f86;
+    font-size: 40px;
+    line-height: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-food-portion-meta {
+    color: #a8a8ad;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  .edit-food-portion-unit {
+    margin: 28px 0 10px;
+    color: #f04f86;
+    font-size: 14px;
+    text-align: center;
+  }
+  .edit-food-ruler-wrap {
+    position: relative;
+    padding-top: 26px;
+  }
+  .edit-food-ruler-wrap::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    width: 3px;
+    height: 62px;
+    border-radius: 2px;
+    background: #f04f86;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .edit-food-ruler {
+    width: 100%;
+    height: 42px;
+    margin: 0;
+    opacity: 0.001;
+    cursor: ew-resize;
+  }
+  .edit-food-ruler-track {
+    height: 36px;
+    margin-top: -36px;
+    background:
+      repeating-linear-gradient(to right, #b9c1cc 0 1px, transparent 1px 13px),
+      repeating-linear-gradient(to right, #9ea8b5 0 2px, transparent 2px 65px);
+    background-position: left bottom;
+    background-repeat: repeat-x;
+    background-size: auto 22px, auto 36px;
+    pointer-events: none;
+  }
+  .edit-food-ruler-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: #9b9ba0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
   .edit-camera-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2193,7 +2413,7 @@
         <div class="time-row" onclick="openTimePicker()">
           <div class="time-label">
             <span class="icon-circle">🕐</span>
-            <span>记录时间</span>
+            <span id="dailyRecordTimeLabel">记录时间</span>
           </div>
           <div class="time-value">
             <span id="recordTime-daily-record">今天 09:15</span>
@@ -2202,7 +2422,7 @@
         </div>
       </div>
 
-      <div class="section">
+      <div class="section" id="dailyRecordDetailsSection">
         <div class="section-header">
           <span class="section-title" id="dailyRecordTitle">记录项</span>
         </div>
@@ -2947,6 +3167,7 @@
     sheet.classList.remove('is-temp-picker');
     sheet.classList.remove('is-weight-picker');
     sheet.classList.remove('is-diet-picker');
+    sheet.classList.remove('is-diet-food-picker');
     sheet.classList.remove('is-beverage-picker');
     sheet.classList.remove('is-skin-picker');
     sheet.classList.remove('is-cosmetic-picker');
@@ -3822,11 +4043,133 @@
     if(sugarValue) sugarValue.textContent = sugar;
   }
 
+  function dietFoodGrams(item) {
+    const amount = String(item?.amount || '');
+    const match = amount.match(/([\d.]+)\s*克/);
+    return Math.max(5, Math.round(Number(match?.[1]) || 100));
+  }
+
+  function selectDietMeal(mealType) {
+    if(!mealType || dailyRecordState.mealType === mealType) return;
+    dailyRecordState.mealType = mealType;
+    renderDailyRecordEditor();
+    markDirty();
+  }
+
+  function renderDietRecordEditor() {
+    const list = document.getElementById('dailyRecordList');
+    const items = normalizeDietItems(dailyRecordState.dietItems);
+    const mealType = dailyRecordState.mealType || '午餐';
+    const totalKcal = items.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0);
+    dailyRecordState.totalKcal = totalKcal;
+    list.innerHTML = `
+      <section class="diet-record-card">
+        <h3 class="diet-record-card-title">餐次</h3>
+        <div class="diet-record-meals">
+          ${['早餐', '早加餐', '午餐', '午加餐', '晚餐', '晚加餐', '其他'].map(meal => `
+            <button type="button" class="diet-record-meal${meal === mealType ? ' active' : ''}" onclick="selectDietMeal('${meal}')">${meal}</button>
+          `).join('')}
+        </div>
+      </section>
+      <section class="diet-record-card">
+        <h3 class="diet-record-card-title">食物详情</h3>
+        ${items.map((item, index) => `
+          <button type="button" class="diet-record-food-row" onclick="openDietFoodPortionEditor(${index})">
+            <span class="diet-record-food-icon" aria-hidden="true"><img src="assets/quick-icon-diet.png" alt=""></span>
+            <span class="diet-record-food-copy">
+              <strong>${escapeHtml(item.name || '食物')} · ${escapeHtml(item.amount || `${dietFoodGrams(item)}克`)}</strong>
+              <span>${Math.round(Number(item.kcal) || 0)} 千卡</span>
+            </span>
+            <span class="diet-record-food-chevron" aria-hidden="true">›</span>
+          </button>
+        `).join('')}
+      </section>
+      <section class="diet-record-card diet-record-total">
+        <strong>总热量</strong>
+        <span>${Math.round(totalKcal)} 千卡</span>
+      </section>
+      ${dailyRecordState.photoUrl ? `
+        <section class="diet-record-card">
+          <h3 class="diet-record-card-title">识别图片</h3>
+          <div class="diet-record-photo-wrap"><img src="${escapeHtml(dailyRecordState.photoUrl)}" alt="识别图片"></div>
+        </section>
+      ` : ''}
+    `;
+  }
+
+  function openDietFoodPortionEditor(index) {
+    const item = normalizeDietItems(dailyRecordState.dietItems)[index];
+    if(!item) return;
+    const grams = dietFoodGrams(item);
+    const min = Math.max(20, Math.floor((grams - 120) / 10) * 10);
+    const max = Math.max(min + 140, Math.ceil((grams + 120) / 10) * 10);
+    resetOptionSheetMode();
+    currentOptionTarget = {
+      kind:'diet-food',
+      index,
+      baseGrams:grams,
+      baseKcal:Number(item.kcal) || 0,
+      min,
+      max,
+    };
+    const sheet = document.getElementById('optionSheet');
+    sheet.classList.add('is-diet-food-picker');
+    document.getElementById('optionSheetTitle').textContent = item.name || '食物摄入量';
+    document.getElementById('optionSheetConfirm').textContent = '确定';
+    document.getElementById('optionList').innerHTML = renderDietFoodPortionPicker(item, grams, min, max);
+    document.getElementById('optionSheetMask').classList.add('show');
+    sheet.classList.add('show');
+  }
+
+  function renderDietFoodPortionPicker(item, grams, min, max) {
+    const kcal = Math.round(Number(item.kcal) || 0);
+    const labels = Array.from({ length:7 }, (_, index) => Math.round(min + ((max - min) * index / 6)));
+    return `
+      <section class="edit-food-portion-card">
+        <div class="edit-food-portion-summary">
+          <span>摄入量</span>
+          <strong class="edit-food-portion-value" id="editFoodPortionValue">${grams}</strong>
+          <div class="edit-food-portion-meta"><span id="editFoodPortionMetaGrams">${grams}克</span><br><span id="editFoodPortionMetaKcal">${kcal}千卡</span></div>
+        </div>
+        <div class="edit-food-portion-unit">克</div>
+        <div class="edit-food-ruler-wrap">
+          <input id="editFoodPortionRange" class="edit-food-ruler" type="range" min="${min}" max="${max}" step="5" value="${grams}" oninput="syncDietFoodPortion(this)">
+          <div class="edit-food-ruler-track" aria-hidden="true"></div>
+          <div class="edit-food-ruler-labels">${labels.map(value => `<span>${value}</span>`).join('')}</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function syncDietFoodPortion(input) {
+    const grams = Number(input?.value) || currentOptionTarget?.baseGrams || 100;
+    const baseGrams = Number(currentOptionTarget?.baseGrams) || grams;
+    const baseKcal = Number(currentOptionTarget?.baseKcal) || 0;
+    const kcal = Math.round(baseKcal * grams / baseGrams);
+    const value = document.getElementById('editFoodPortionValue');
+    const gramsMeta = document.getElementById('editFoodPortionMetaGrams');
+    const kcalMeta = document.getElementById('editFoodPortionMetaKcal');
+    if(value) value.textContent = grams;
+    if(gramsMeta) gramsMeta.textContent = `${grams}克`;
+    if(kcalMeta) kcalMeta.textContent = `${kcal}千卡`;
+    input.dataset.kcal = String(kcal);
+  }
+
   function renderDailyRecordEditor() {
     const list = document.getElementById('dailyRecordList');
     const title = document.getElementById('dailyRecordTitle');
     const config = getDailyRecordConfig(dailyRecordState.recordType);
     const label = dailyRecordState.recordLabel || config.label;
+    const scene = document.getElementById('scene-daily-record');
+    const timeLabel = document.getElementById('dailyRecordTimeLabel');
+    const isDietRecord = dailyRecordState.recordType === 'diet';
+    scene?.classList.toggle('is-diet-record', isDietRecord);
+    if(timeLabel) timeLabel.textContent = isDietRecord ? '用餐时间' : '记录时间';
+    if(isDietRecord){
+      title.textContent = '饮食';
+      renderDietRecordEditor();
+      return;
+    }
     if(dailyRecordState.recordType === 'photo'){
       const note = dailyRecordState.note || '';
       title.textContent = '照片备注';
@@ -4047,6 +4390,25 @@
   function confirmOptionPicker() {
     const selected = document.querySelector('#optionList .option-btn.active, #optionList .edit-prp-opt.active, #optionList .flow-picker-option.active');
     if(currentOptionTarget == null) return;
+    if(typeof currentOptionTarget === 'object' && currentOptionTarget.kind === 'diet-food'){
+      const input = document.getElementById('editFoodPortionRange');
+      const grams = Number(input?.value) || currentOptionTarget.baseGrams || 100;
+      const kcal = Number(input?.dataset.kcal)
+        || Math.round((Number(currentOptionTarget.baseKcal) || 0) * grams / (Number(currentOptionTarget.baseGrams) || grams));
+      const items = normalizeDietItems(dailyRecordState.dietItems);
+      const item = items[currentOptionTarget.index];
+      if(!item) return;
+      items[currentOptionTarget.index] = { ...item, amount:`${grams}克`, kcal };
+      dailyRecordState.dietItems = items;
+      dailyRecordState.totalKcal = items.reduce((sum, food) => sum + (Number(food.kcal) || 0), 0);
+      const names = items.map(food => food.name).filter(Boolean).join('、');
+      dailyRecordState.recordValue = names;
+      dailyRecordState.recordDetail = names;
+      renderDailyRecordEditor();
+      markDirty();
+      closeOptionPicker();
+      return;
+    }
     if(typeof currentOptionTarget === 'object' && currentOptionTarget.kind === 'quick-record'){
       if(!selected) return;
       const nextValue = selected.dataset.value;
