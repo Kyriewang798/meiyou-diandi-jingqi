@@ -960,6 +960,9 @@
   inset:0;
   background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.02) 48%,rgba(0,0,0,.24));
 }
+.camera-diet-scan-layer.is-image-routing .camera-diet-scan-shade{
+  background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,0) 48%,rgba(0,0,0,.12));
+}
 .camera-diet-scan-line{
   position:absolute;
   left:0;
@@ -981,6 +984,9 @@
   top:-36px;
   height:36px;
   background:linear-gradient(180deg,transparent,rgba(255,255,255,.08));
+}
+.camera-diet-scan-layer.is-image-routing .camera-diet-scan-line{
+  animation-duration:1.05s;
 }
 @keyframes cameraDietScanSweep{
   from{top:9%;opacity:.72}
@@ -1020,7 +1026,11 @@
 .camera-view.is-diet-analyzing .camera-capture-photo{
   filter:brightness(.76) saturate(.94);
 }
-.camera-view.is-diet-analyzing .camera-capture-stage .camera-frame-corner{
+.camera-view.is-image-routing .camera-capture-photo{
+  filter:brightness(.88) saturate(.98);
+}
+.camera-view.is-diet-analyzing .camera-capture-stage .camera-frame-corner,
+.camera-view.is-image-routing .camera-capture-stage .camera-frame-corner{
   display:none;
 }
 .camera-view.is-diet-analyzing .camera-bottom-bar{
