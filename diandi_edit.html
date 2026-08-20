@@ -3991,7 +3991,8 @@
 
   function renderDailyCameraPicker(type) {
     if(type === 'beverage'){
-      const capacity = Math.max(100, Math.min(1000, Number(dailyRecordState.capacityMl) || 500));
+      const rawCapacity = Number(dailyRecordState.capacityMl);
+      const capacity = Math.max(0, Math.min(1000, Number.isFinite(rawCapacity) ? rawCapacity : 500));
       const categoryOptions = ['水', '奶茶', '咖啡', '果茶', '纯茶', '果汁', '果蔬汁', '纯奶饮品', '饮料', '其他'];
       const selectedCategory = dailyRecordState.beverageCategory
         || (dailyRecordState.beverageName === '白水' ? '水' : '奶茶');
@@ -4027,8 +4028,8 @@
               <span>容量</span>
               <strong id="editBeverageCapacityValue">${capacity} ml</strong>
             </div>
-            <input id="editBeverageCapacity" class="edit-beverage-range" type="range" min="100" max="1000" step="1" value="${capacity}" aria-label="饮品容量">
-            <div class="edit-beverage-range-labels"><span>100</span><span>300</span><span>500</span><span>750</span><span>1000ml</span></div>
+            <input id="editBeverageCapacity" class="edit-beverage-range" type="range" min="0" max="1000" step="1" value="${capacity}" aria-label="饮品容量">
+            <div class="edit-beverage-range-labels"><span>0</span><span>250</span><span>500</span><span>750</span><span>1000ml</span></div>
           </div>
           <div class="edit-beverage-nutrition" data-beverage-extra ${waterSelected ? 'hidden' : ''}
             data-base-capacity="${capacity}" data-base-calories="${baseCalories}" data-base-caffeine="${baseCaffeine}" data-base-sugar="${baseSugar}">
@@ -4134,11 +4135,12 @@
   function syncBeverageNutritionByCapacity() {
     const panel = document.querySelector('#optionList .edit-beverage-nutrition');
     const capacity = Number(document.getElementById('editBeverageCapacity')?.value) || 0;
-    if(!panel || !capacity) return;
-    const baseCapacity = Number(panel.dataset.baseCapacity) || capacity;
-    const calories = Math.round((Number(panel.dataset.baseCalories) || 0) * capacity / baseCapacity);
-    const caffeine = Math.round((Number(panel.dataset.baseCaffeine) || 0) * capacity / baseCapacity);
-    const sugar = Math.round((Number(panel.dataset.baseSugar) || 0) * capacity / baseCapacity);
+    if(!panel) return;
+    const baseCapacity = Number(panel.dataset.baseCapacity) || 0;
+    const ratio = baseCapacity > 0 ? capacity / baseCapacity : 0;
+    const calories = Math.round((Number(panel.dataset.baseCalories) || 0) * ratio);
+    const caffeine = Math.round((Number(panel.dataset.baseCaffeine) || 0) * ratio);
+    const sugar = Math.round((Number(panel.dataset.baseSugar) || 0) * ratio);
     const caloriesInput = panel.querySelector('[data-field="calories"]');
     const caffeineInput = panel.querySelector('[data-field="caffeineMg"]');
     const sugarInput = panel.querySelector('[data-field="sugarGrams"]');

@@ -682,7 +682,6 @@ function ChartDailyGoal({data}){
   return (
     <div className="v3-beverage-goals-card">
       <div className="v3-beverage-goals-toolbar">
-        <span>今日摄入</span>
         <button type="button" onClick={()=>setSettingOpen(true)}>设置目标与上限</button>
       </div>
       <div className="v3-beverage-goals-grid">

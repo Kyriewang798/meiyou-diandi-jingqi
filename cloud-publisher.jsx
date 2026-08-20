@@ -378,7 +378,7 @@ function WaterQuickSheet({onClose, onSave}){
             </div>
             <input
               type="range"
-              min="100"
+              min="0"
               max="1000"
               step="50"
               value={capacityMl}
@@ -386,7 +386,7 @@ function WaterQuickSheet({onClose, onSave}){
               aria-label="饮品容量"
             />
             <div className="dock-water-capacity-labels">
-              <span>100</span><span>300</span><span>500</span><span>750</span><span>1000ml</span>
+              <span>0</span><span>250</span><span>500</span><span>750</span><span>1000ml</span>
             </div>
           </div>
 
