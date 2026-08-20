@@ -836,6 +836,8 @@ function CameraCaptureAnalyzePanel({
   const isFullscreenRecognitionLoading = isLoading && ['diet', 'beverage'].includes(analyzeMode);
   const loadingSteps = analyzeMode === 'diet' && errorKind === 'not-food'
     ? ['正在识别食物']
+    : analyzeMode === 'beverage' && errorKind === 'beverage-no-label'
+      ? ['正在识别饮品']
     : analyzeMode === 'beverage'
       ? ['正在识别饮品', '正在分析成分', '正在统计热量糖分咖啡因']
       : analyzeMode === 'diet'
@@ -992,19 +994,29 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
         : recognitionMode === 'beverage'
           ? 6000
           : CAMERA_PHOTO_ANALYZE_MS;
-    const isBeverageNoLabel = recognitionMode === 'beverage'
-      && effectiveMeta?.photo?.recognitionVariant === 'coffee-no-label';
+    const beverageRecognitionVariant = effectiveMeta?.photo?.recognitionVariant;
+    const isBeverageWithoutLabel = recognitionMode === 'beverage'
+      && ['coffee-no-label', 'coffee-no-label-fallback'].includes(beverageRecognitionVariant);
+    const isBeverageNoLabel = beverageRecognitionVariant === 'coffee-no-label';
     const isEarlySuccess = activeScenario === 'success';
     const startRouteAnalyze = () => {
       setPhase('loading');
       setAnalyzeMode(recognitionMode);
-      setErrorKind(isDietNotFoodDemo ? 'not-food' : null);
+      setErrorKind(
+        isDietNotFoodDemo
+          ? 'not-food'
+          : isBeverageWithoutLabel
+            ? 'beverage-no-label'
+            : null
+      );
       setProgress(recognitionMode === 'diet' ? 0 : 6);
       const startedAt = Date.now();
       progressTimerRef.current = window.setInterval(() => {
         const elapsed = Date.now() - startedAt;
         const pct = recognitionMode === 'diet'
           ? Math.min(99, (elapsed / analyzeMs) * 100)
+          : isBeverageWithoutLabel
+            ? Math.min(30, 6 + (elapsed / analyzeMs) * 24)
           : Math.min(isEarlySuccess ? 86 : 92, 6 + (elapsed / analyzeMs) * 86);
         setProgress(pct);
       }, 100);
