@@ -1376,6 +1376,32 @@
     border-radius: 8px;
     object-fit: cover;
   }
+  #dailyRecognitionPhotoSection[hidden] {
+    display: none;
+  }
+  .daily-recognition-photo-button {
+    width: calc(100% - 28px);
+    min-height: 96px;
+    display: flex;
+    align-items: center;
+    margin: 0 14px 14px;
+    padding: 12px;
+    border: 0;
+    border-radius: 9px;
+    background: #fafafd;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .daily-recognition-photo-button img {
+    width: 64px;
+    height: 64px;
+    display: block;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .daily-recognition-photo-button:active {
+    opacity: 0.76;
+  }
   .option-sheet.is-diet-food-picker .sheet-body {
     padding: 12px 12px 18px;
     background: #f2f2f5;
@@ -2079,6 +2105,68 @@
   .dialog-actions .cancel { color: var(--my-text-secondary); }
   .dialog-actions .confirm-danger { color: var(--my-danger); font-weight: 500; }
 
+  /* ==== 识别图片预览 ==== */
+  .recognition-photo-viewer {
+    position: absolute;
+    inset: 0;
+    z-index: 180;
+    display: none;
+    flex-direction: column;
+    background: #000;
+    color: #fff;
+  }
+  .recognition-photo-viewer.show {
+    display: flex;
+  }
+  .recognition-photo-viewer .status-bar {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    background: #000;
+    color: #fff;
+  }
+  .recognition-photo-viewer-nav {
+    position: relative;
+    z-index: 2;
+    height: 58px;
+    flex: 0 0 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    background: #000;
+  }
+  .recognition-photo-viewer-btn {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+  }
+  .recognition-photo-viewer-btn svg {
+    width: 25px;
+    height: 25px;
+  }
+  .recognition-photo-viewer-image {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #000;
+  }
+  .recognition-photo-viewer-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+  }
+
   /* Toast */
   .toast {
     position: absolute;
@@ -2432,6 +2520,15 @@
         <div class="records-list" id="dailyRecordList"></div>
       </div>
 
+      <div class="section" id="dailyRecognitionPhotoSection" hidden>
+        <div class="section-header">
+          <span class="section-title">识别图片</span>
+        </div>
+        <button type="button" class="daily-recognition-photo-button" onclick="openRecognitionPhotoViewer()" aria-label="查看识别图片">
+          <img id="dailyRecognitionPhotoThumb" src="" alt="识别图片">
+        </button>
+      </div>
+
       <div class="danger-zone">
         <button class="danger-btn" onclick="confirmDeleteEntry('daily-record')">删除这条记录</button>
       </div>
@@ -2480,6 +2577,32 @@
     </header>
     <div class="symptom-picker-scroll" id="symptomPickerList"></div>
     <div class="symptom-picker-toast" id="symptomPickerToast"></div>
+  </div>
+
+  <!-- ==== 识别图片全屏预览 ==== -->
+  <div class="recognition-photo-viewer" id="recognitionPhotoViewer" aria-hidden="true">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span class="right">●●● 5G ▮</span>
+    </div>
+    <div class="recognition-photo-viewer-nav">
+      <button type="button" class="recognition-photo-viewer-btn" onclick="closeRecognitionPhotoViewer()" aria-label="关闭图片预览">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <button type="button" class="recognition-photo-viewer-btn" onclick="confirmDeleteRecognitionPhoto()" aria-label="删除这张照片">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M9 6V4h6v2M10 10v7M14 10v7"/>
+        </svg>
+      </button>
+    </div>
+    <div class="recognition-photo-viewer-image">
+      <img id="recognitionPhotoViewerImage" src="" alt="识别图片">
+    </div>
   </div>
 
   <!-- ==== 二次确认对话框 ==== -->
@@ -4150,8 +4273,14 @@
     const scene = document.getElementById('scene-daily-record');
     const timeLabel = document.getElementById('dailyRecordTimeLabel');
     const isDietRecord = dailyRecordState.recordType === 'diet';
+    const isBeverageRecord = dailyRecordState.recordType === 'beverage';
+    const recognitionPhotoSection = document.getElementById('dailyRecognitionPhotoSection');
+    const recognitionPhotoThumb = document.getElementById('dailyRecognitionPhotoThumb');
+    const showBeverageRecognitionPhoto = isBeverageRecord && !!dailyRecordState.photoUrl;
     scene?.classList.toggle('is-diet-record', isDietRecord);
     if(timeLabel) timeLabel.textContent = isDietRecord ? '用餐时间' : '记录时间';
+    if(recognitionPhotoSection) recognitionPhotoSection.hidden = !showBeverageRecognitionPhoto;
+    if(recognitionPhotoThumb) recognitionPhotoThumb.src = showBeverageRecognitionPhoto ? dailyRecordState.photoUrl : '';
     if(isDietRecord){
       title.textContent = '饮食';
       renderDietRecordEditor();
@@ -4181,7 +4310,6 @@
     const displayLabel = label;
     const value = dailyRecordState.recordDetail || dailyRecordState.recordValue || '';
     const iconHtml = renderDailyRecordIconHtml();
-    const isBeverageRecord = dailyRecordState.recordType === 'beverage';
     const caffeineText = dailyRecordState.caffeineMg == null ? '未识别' : `${dailyRecordState.caffeineMg}mg`;
     const sugarText = dailyRecordState.sugarGrams == null ? '未识别' : `${dailyRecordState.sugarGrams}g`;
     title.textContent = isBeverageRecord ? '喝水详情' : displayLabel;
@@ -4224,6 +4352,36 @@
     const count = document.getElementById('editPhotoNoteCount');
     if(count) count.textContent = `${input.value.length}/160`;
     markDirty();
+  }
+
+  function openRecognitionPhotoViewer() {
+    if(!dailyRecordState.photoUrl) return;
+    const viewer = document.getElementById('recognitionPhotoViewer');
+    const image = document.getElementById('recognitionPhotoViewerImage');
+    if(image) image.src = dailyRecordState.photoUrl;
+    viewer?.classList.add('show');
+    viewer?.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeRecognitionPhotoViewer() {
+    const viewer = document.getElementById('recognitionPhotoViewer');
+    viewer?.classList.remove('show');
+    viewer?.setAttribute('aria-hidden', 'true');
+  }
+
+  function confirmDeleteRecognitionPhoto() {
+    if(!dailyRecordState.photoUrl) return;
+    showDialog({
+      title: '要删除这张照片吗？',
+      desc: '',
+      confirmText: '删除',
+      onConfirm: () => {
+        dailyRecordState.photoUrl = null;
+        closeRecognitionPhotoViewer();
+        renderDailyRecordEditor();
+        markDirty();
+      }
+    });
   }
 
   function getQuickRecordTarget(index){

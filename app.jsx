@@ -1028,6 +1028,7 @@ function App(){
               acneMarks:payload.acneMarks ?? item.primary?.acneMarks,
               product:payload.product ?? item.primary?.product,
               managementStatus:payload.managementStatus ?? item.primary?.managementStatus,
+              photoUrl:type === 'beverage' ? (payload.photoUrl || null) : item.primary?.photoUrl,
               note:payload.note ?? item.primary?.note,
               dayLabel:payload.dayLabel ?? item.primary?.dayLabel,
               text:`${label}：${detail}`,
@@ -1051,6 +1052,7 @@ function App(){
             } : item.ai;
             editedItem = {
               ...item,
+              ...(type === 'beverage' ? { photoUrl:payload.photoUrl || null } : {}),
               primary:nextPrimary,
               ai:nextAi,
             };

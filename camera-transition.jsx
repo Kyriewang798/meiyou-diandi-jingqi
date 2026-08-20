@@ -833,7 +833,7 @@ function CameraCaptureAnalyzePanel({
   const isTimeoutError = phase === 'error' && errorKind === 'timeout';
   const isNotFoodError = phase === 'error' && errorKind === 'not-food';
   const isBeverageNoLabelError = phase === 'error' && errorKind === 'beverage-no-label';
-  const isDietLoading = isLoading && analyzeMode === 'diet';
+  const isFullscreenRecognitionLoading = isLoading && ['diet', 'beverage'].includes(analyzeMode);
   const loadingSteps = analyzeMode === 'diet' && errorKind === 'not-food'
     ? ['正在识别食物']
     : analyzeMode === 'beverage'
@@ -847,7 +847,7 @@ function CameraCaptureAnalyzePanel({
   );
   const loadingStep = loadingSteps[loadingStepIndex];
   return (
-    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (isDietLoading ? ' is-diet-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
+    <div className={'camera-analyze-sheet' + (isLoading ? ' is-loading' : '') + (isFullscreenRecognitionLoading ? ' is-diet-loading' : '') + (phase === 'error' ? ' is-error' : '') + (isNotFoodError ? ' is-not-food' : '') + (isBeverageNoLabelError ? ' is-beverage-no-label' : '')}>
       <div className="camera-analyze-progress-track" aria-hidden={!isLoading}>
         <div
           className="camera-analyze-progress-fill"
@@ -865,10 +865,10 @@ function CameraCaptureAnalyzePanel({
       <div className="camera-analyze-status-row">
         {isLoading && (
           <div className="camera-analyze-loading-copy">
-            {!isDietLoading ? (
+            {!isFullscreenRecognitionLoading ? (
               <strong>AI小柚子分析中…</strong>
             ) : null}
-            <span key={loadingStep}>{loadingStep}{isDietLoading ? '…' : ''}</span>
+            <span key={loadingStep}>{loadingStep}{analyzeMode === 'diet' ? '…' : ''}</span>
           </div>
         )}
         {isTimeoutError && !isExhausted && (
@@ -1164,7 +1164,7 @@ function CameraView({
   const showImageRoutingPreview = showAnalyze && analyzeMode === 'classifying';
   
   return (
-    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showImageRoutingPreview ? ' is-image-routing' : '') + (showAnalyze && analyzeMode === 'diet' ? ' is-diet-analyzing' : '')}>
+    <div className={'camera-view' + (visible ? ' is-visible' : '') + (permPending ? ' is-perm-pending' : '') + (permDenied ? ' is-perm-denied' : '') + (showGallery ? ' is-gallery-open' : '') + (showAnalyze ? ' is-analyzing' : '') + (showImageRoutingPreview ? ' is-image-routing' : '') + (showAnalyze && ['diet', 'beverage'].includes(analyzeMode) ? ' is-diet-analyzing' : '')}>
       <button type="button" className="camera-close-btn" onClick={onClose} aria-label="返回点滴">
         <I name="arrow-left" size={24} stroke={2.2} />
       </button>
@@ -1184,7 +1184,7 @@ function CameraView({
             <span className="camera-frame-corner tr"/>
             <span className="camera-frame-corner bl"/>
             <span className="camera-frame-corner br"/>
-            {showImageRoutingPreview || (analyzePhase === 'loading' && analyzeMode === 'diet') ? (
+            {showImageRoutingPreview || (analyzePhase === 'loading' && ['diet', 'beverage'].includes(analyzeMode)) ? (
               <div className={'camera-diet-scan-layer' + (analyzeMode === 'classifying' ? ' is-image-routing' : '')} aria-hidden="true">
                 <span className="camera-diet-scan-shade"/>
                 <span className="camera-diet-scan-line"/>
