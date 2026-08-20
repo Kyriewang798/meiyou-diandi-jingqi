@@ -2534,7 +2534,7 @@
   background:var(--my-brand-red);
   display:flex;
   align-items:center;
-  justify-content:flex-end;
+  justify-content:space-between;
   padding-right:8px;
   color:#fff;
   font-size:12px;
