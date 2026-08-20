@@ -837,7 +837,7 @@ function CameraCaptureAnalyzePanel({
   const loadingSteps = analyzeMode === 'diet' && errorKind === 'not-food'
     ? ['正在识别食物']
     : analyzeMode === 'beverage'
-      ? ['饮品识别中', '成分分析中', '热量糖分咖啡因统计中']
+      ? ['正在识别饮品', '正在分析成分', '正在统计热量糖分咖啡因']
       : analyzeMode === 'diet'
         ? ['正在识别食物', '正在识别重量', '正在识别热量', '正在识别营养素']
         : ['照片处理中', '画面优化中', '记录整理中'];
@@ -1170,7 +1170,7 @@ function CameraView({
       </button>
       {!showGallery && !permDenied ? (
         <div className="camera-mode-title" aria-live="polite">
-          {showAnalyze && analyzeMode === 'classifying' ? '图片识别中' : showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
+          {showAnalyze && analyzeMode === 'classifying' ? '图片识别中' : showAnalyze && analyzeMode === 'diet' ? '饮食识别' : showAnalyze && analyzeMode === 'beverage' ? '饮品识别中' : showAnalyze && analyzeMode !== 'photo' ? 'AI 识别中' : '智能拍照'}
         </div>
       ) : null}
       
