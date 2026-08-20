@@ -2534,7 +2534,7 @@
   background:var(--my-brand-red);
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-end;
   padding-right:8px;
   color:#fff;
   font-size:12px;
@@ -3406,7 +3406,7 @@
   min-height:24px;
   display:flex;
   align-items:center;
-  justify-content:flex-end;
+  justify-content:space-between;
   gap:12px;
   margin-bottom:8px;
 }
