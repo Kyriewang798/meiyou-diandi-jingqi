@@ -2179,13 +2179,6 @@ function App(){
       const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
         || window.resolveEntryDayId('', timeline);
       setTimeline(blocks=>window.appendTimelineEntry(blocks, entry, { dayId }));
-      if(payload.fallbackFromBeverage){
-        pushToast({
-          text:'未识别到饮品信息，帮您创建照片卡片',
-          placement:'center',
-          duration:3000,
-        });
-      }
       setTimeout(()=>scrollTimelineToBottom('smooth'), 80);
       return;
     }

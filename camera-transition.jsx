@@ -105,11 +105,6 @@ const BEVERAGE_OCR_DEMO_PHOTOS = [
 
 const BEVERAGE_OCR_CAPTURE_SEQUENCE = [
   BEVERAGE_OCR_DEMO_PHOTOS[0],
-  {
-    ...BEVERAGE_OCR_DEMO_PHOTOS[0],
-    id: 'beverage-coffee-no-label-fallback',
-    recognitionVariant: 'coffee-no-label-fallback',
-  },
   BEVERAGE_OCR_DEMO_PHOTOS[1],
 ];
 
@@ -185,15 +180,6 @@ function buildCameraRecognitionResult(payload) {
     : inferCameraRecognitionMode(payload?.photo || payload);
   const base = { ...payload, mode };
   const sourcePhoto = payload?.photo || payload;
-  if (sourcePhoto?.recognitionVariant === 'coffee-no-label-fallback') {
-    return {
-      ...base,
-      mode: 'photo',
-      fallbackFromBeverage: true,
-      summary: '',
-      summaryItems: [],
-    };
-  }
   if (mode === 'photo') {
     return {
       ...base,
@@ -996,7 +982,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
           : CAMERA_PHOTO_ANALYZE_MS;
     const beverageRecognitionVariant = effectiveMeta?.photo?.recognitionVariant;
     const isBeverageWithoutLabel = recognitionMode === 'beverage'
-      && ['coffee-no-label', 'coffee-no-label-fallback'].includes(beverageRecognitionVariant);
+      && beverageRecognitionVariant === 'coffee-no-label';
     const isBeverageNoLabel = beverageRecognitionVariant === 'coffee-no-label';
     const isEarlySuccess = activeScenario === 'success';
     const startRouteAnalyze = () => {
@@ -1324,7 +1310,6 @@ function CameraTransition({
   const [showPhotoPermDialog, setShowPhotoPermDialog] = React.useState(false);
   const [recognitionResult, setRecognitionResult] = React.useState(null);
   const wrapperRef = React.useRef(null);
-  const beverageLabelRetakeRef = React.useRef(false);
 
   const containerSize = React.useMemo(() => {
     const el = containerRef?.current;
@@ -1346,7 +1331,6 @@ function CameraTransition({
       setPhotoPermGranted(false);
       setShowPhotoPermDialog(false);
       setRecognitionResult(null);
-      beverageLabelRetakeRef.current = false;
     }
   }, [active, sourceRect, phase]);
 
@@ -1358,7 +1342,6 @@ function CameraTransition({
       setPhotoPermGranted(false);
       setShowPhotoPermDialog(false);
       setRecognitionResult(null);
-      beverageLabelRetakeRef.current = false;
     };
     window.addEventListener('cameraPermissionScenarioChange', onScenarioChange);
     return () => window.removeEventListener('cameraPermissionScenarioChange', onScenarioChange);
@@ -1464,7 +1447,6 @@ function CameraTransition({
   React.useEffect(() => {
     if (active) return;
     setRecognitionResult(null);
-    beverageLabelRetakeRef.current = false;
     analyze.reset();
   }, [active, analyze.reset]);
 
@@ -1474,25 +1456,8 @@ function CameraTransition({
       return;
     }
     setRecognitionResult(null);
-    beverageLabelRetakeRef.current = false;
     analyze.reset();
     onClose?.();
-  };
-
-  const resolveBeverageRetakePhoto = (photo) => {
-    if (!beverageLabelRetakeRef.current) return photo;
-    beverageLabelRetakeRef.current = false;
-    const isNoLabelPhoto = photo?.recognitionVariant === 'coffee-no-label'
-      || photo?.thumb === 'image/咖啡无标签图.jpg'
-      || photo?.url === 'image/咖啡无标签图.jpg';
-    if (!isNoLabelPhoto) return photo;
-    return {
-      ...photo,
-      id: `${photo?.id || 'beverage-coffee-no-label'}-fallback`,
-      mode: 'beverage',
-      type: 'beverage',
-      recognitionVariant: 'coffee-no-label-fallback',
-    };
   };
 
   const handleCapturePhoto = () => {
@@ -1509,31 +1474,26 @@ function CameraTransition({
           mode: preferredConfig.id,
         }
       : getNextAutoDetectDemoPhoto();
-    const photo = resolveBeverageRetakePhoto(selectedPhoto);
     analyze.runAnalyze({
-      url: photo.thumb,
-      meta: { type: 'capture', photo, mode: preferredRecognitionMode || inferMultimodalRoutingMode(photo) },
+      url: selectedPhoto.thumb,
+      meta: { type: 'capture', photo:selectedPhoto, mode: preferredRecognitionMode || inferMultimodalRoutingMode(selectedPhoto) },
     });
   };
   
   const handleSelectPhoto = (photo) => {
     setShowGallery(false);
-    const selectedPhoto = resolveBeverageRetakePhoto(photo);
-    const photoUrl = selectedPhoto?.thumb || selectedPhoto?.url || window.pickFallbackPhoto?.() || null;
+    const photoUrl = photo?.thumb || photo?.url || window.pickFallbackPhoto?.() || null;
     analyze.runAnalyze({
       url: photoUrl,
       meta: {
         type: 'select',
-        photo: selectedPhoto,
-        mode: preferredRecognitionMode || inferMultimodalRoutingMode(selectedPhoto),
+        photo,
+        mode: preferredRecognitionMode || inferMultimodalRoutingMode(photo),
       },
     });
   };
 
   const handleAnalyzeRetake = () => {
-    if (analyze.errorKind === 'beverage-no-label') {
-      beverageLabelRetakeRef.current = true;
-    }
     setRecognitionResult(null);
     analyze.handleRetake();
   };
