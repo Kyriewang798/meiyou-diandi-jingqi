@@ -3113,6 +3113,18 @@
   color:#ff4d88;
   font-weight:500;
 }
+.v3-camera-insight-detail strong.is-water{
+  color:#4aa9e9;
+  font-weight:500;
+}
+.v3-camera-insight-detail strong.is-sugar{
+  color:#ff8a65;
+  font-weight:500;
+}
+.v3-camera-insight-detail strong.is-caffeine{
+  color:#35b887;
+  font-weight:500;
+}
 .v3-photo-memory{
   display:flex;
   flex-direction:column;

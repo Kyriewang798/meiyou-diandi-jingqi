@@ -90,6 +90,55 @@ function buildTimelineEntry(text, hits, opts={}){
   return entry;
 }
 
+const DAILY_BEVERAGE_DEMO_BASELINE = {
+  water:550,
+  sugar:0,
+  caffeine:0,
+};
+
+function getTimelineBeverageRecord(item){
+  if(item?.kind === 'daily-record' && item.recordType === 'beverage') return item;
+  if(item?.primary?.recordType === 'beverage') return item.primary;
+  return null;
+}
+
+function refreshDailyBeverageGoalCharts(blocks){
+  return (blocks || []).map(block=>{
+    if(block?.type !== 'day') return block;
+    const sourceItems = block.items || block.entries || [];
+    const totals = sourceItems.reduce((sum, item)=>{
+      const record = getTimelineBeverageRecord(item);
+      if(!record) return sum;
+      return {
+        water:Math.min(3500, sum.water + Math.max(0, Number(record.capacityMl) || 0)),
+        sugar:sum.sugar + Math.max(0, Number(record.sugarGrams) || 0),
+        caffeine:sum.caffeine + Math.max(0, Number(record.caffeineMg) || 0),
+      };
+    }, { ...DAILY_BEVERAGE_DEMO_BASELINE });
+    const items = sourceItems.map(item=>{
+      const record = getTimelineBeverageRecord(item);
+      if(!record || item?.ai?.chartType !== 'dailyGoal') return item;
+      return {
+        ...item,
+        ai:{
+          ...item.ai,
+          chartData:{
+            ...(item.ai.chartData || {}),
+            kind:'beverage',
+            waterConsumed:totals.water,
+            waterGoal:Number(item.ai.chartData?.waterGoal) || 1500,
+            sugarConsumed:totals.sugar,
+            sugarLimit:Number(item.ai.chartData?.sugarLimit) || 50,
+            caffeineConsumed:totals.caffeine,
+            caffeineLimit:Number(item.ai.chartData?.caffeineLimit) || 300,
+          },
+        },
+      };
+    });
+    return { ...block, items, entries:undefined };
+  });
+}
+
 function BabyVoiceOverlay({session, success}){
   const waveBars = React.useMemo(()=>Array.from({length:26}, (_, i)=>({
     delay: (i * 0.05).toFixed(2) + 's',
@@ -333,7 +382,7 @@ function App(){
 
   const initial = window.getSceneInitialState(t.demoScene);
   const [draft, setDraft] = useState(initial.draft);
-  const [timeline, setTimeline] = useState(initial.timeline);
+  const [timeline, setTimeline] = useState(()=>refreshDailyBeverageGoalCharts(initial.timeline));
   const [toasts, setToasts] = useState([]);
   const [showPhoto, setShowPhoto] = useState(false);
   const [activeTab, setActiveTab] = useState(()=>{
@@ -497,7 +546,7 @@ function App(){
   const resetSceneState = (demoSceneId)=>{
     const next = window.getSceneInitialState(demoSceneId);
     setDraft(next.draft);
-    setTimeline(next.timeline);
+    setTimeline(refreshDailyBeverageGoalCharts(next.timeline));
     setShowAnalysisNotice(next.showAnalysisNotice);
     setAnalysisNoticeTitle(PERIOD_START_NOTICE_TITLE);
     setAnalysisNoticeKind('period-start');
@@ -755,7 +804,7 @@ function App(){
         const linkedSourceEntryId = deletedItem?.kind === 'diet-structured-record'
           ? (deletedItem.sourceEntryId || allItems.find(item=>item?.linkedDietRecordId === entryId)?.id || null)
           : null;
-        return blocks.map(block=>{
+        const nextBlocks = blocks.map(block=>{
           if(block.type !== 'day') return block;
           const items = (block.items || block.entries || []).map(item=>{
             const primaryId = item?.primary?.id;
@@ -786,6 +835,9 @@ function App(){
           }).filter(Boolean);
           return { ...block, items, entries: undefined };
         });
+        return getTimelineBeverageRecord(deletedItem)
+          ? refreshDailyBeverageGoalCharts(nextBlocks)
+          : nextBlocks;
       });
       window.__showEditToast && window.__showEditToast('记录已删除');
     };
@@ -1060,9 +1112,12 @@ function App(){
           });
           return { ...block, items: nextItems, entries: undefined };
           });
-          if(!editedItem || !sourceDayId || !payload.dayLabel) return updatedBlocks;
+          const refreshIfBeverage = nextBlocks=>getTimelineBeverageRecord(editedItem)
+            ? refreshDailyBeverageGoalCharts(nextBlocks)
+            : nextBlocks;
+          if(!editedItem || !sourceDayId || !payload.dayLabel) return refreshIfBeverage(updatedBlocks);
           const targetDayId = window.resolveEntryDayId(payload.dayLabel, updatedBlocks);
-          if(!targetDayId || targetDayId === sourceDayId) return updatedBlocks;
+          if(!targetDayId || targetDayId === sourceDayId) return refreshIfBeverage(updatedBlocks);
           const withoutEditedItem = updatedBlocks.map(block=>{
             if(block.type !== 'day' || block.id !== sourceDayId) return block;
             return {
@@ -1071,7 +1126,9 @@ function App(){
               entries:undefined,
             };
           });
-          return window.appendTimelineEntry(withoutEditedItem, editedItem, { dayId:targetDayId });
+          return refreshIfBeverage(
+            window.appendTimelineEntry(withoutEditedItem, editedItem, { dayId:targetDayId })
+          );
         });
         return;
       }
@@ -2244,13 +2301,21 @@ function App(){
       };
       const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
         || window.resolveEntryDayId('', timeline);
-      setTimeline(blocks=>window.appendTimelineEntry(blocks, entry, { dayId }));
+      setTimeline(blocks=>{
+        const nextBlocks = window.appendTimelineEntry(blocks, entry, { dayId });
+        return payload.mode === 'beverage'
+          ? refreshDailyBeverageGoalCharts(nextBlocks)
+          : nextBlocks;
+      });
       setTimeout(()=>scrollTimelineToBottom('smooth'), 80);
       return;
     }
 
     if(payload?.mode !== 'water') return;
-    const amount = Math.max(1, Math.round(Number(payload.capacityMl ?? payload.value) || 300));
+    const rawAmount = Number(payload.capacityMl ?? payload.value);
+    const amount = Math.max(0, Math.min(1000,
+      Number.isFinite(rawAmount) ? Math.round(rawAmount) : 300
+    ));
     const category = payload.beverageCategory || '水';
     const isWater = category === '水';
     const brand = isWater ? '' : (payload.brand || '');
@@ -2330,7 +2395,9 @@ function App(){
     };
     const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
       || window.resolveEntryDayId('', timeline);
-    setTimeline(blocks=>window.appendTimelineEntry(blocks, entry, { dayId }));
+    setTimeline(blocks=>refreshDailyBeverageGoalCharts(
+      window.appendTimelineEntry(blocks, entry, { dayId })
+    ));
     setTimeout(()=>scrollTimelineToBottom('smooth'), 80);
   };
 

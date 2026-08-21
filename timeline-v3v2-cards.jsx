@@ -1180,13 +1180,13 @@ function V3v2PrimaryBody({entry, showTags = true, tagsAnimate = false, photoAnal
       const detailRows = entry.recordType === 'beverage'
         ? entry.beverageCategory === '水'
           ? [
-              { label:'容量', value:entry.capacityMl ? `${entry.capacityMl}ml` : '' },
+              { label:'容量', value:entry.capacityMl != null ? `${entry.capacityMl}ml` : '', tone:'water' },
             ]
           : [
-            { label:'容量', value:entry.capacityMl ? `${entry.capacityMl}ml` : '' },
+            { label:'容量', value:entry.capacityMl != null ? `${entry.capacityMl}ml` : '', tone:'water' },
             { label:'总热量', value:`${entry.calories || 0} 千卡`, accent:true },
-            { label:'糖分', value:`${entry.sugarGrams || 0} 克` },
-            { label:'咖啡因', value:`${entry.caffeineMg || 0} 毫克` },
+            { label:'糖分', value:`${entry.sugarGrams || 0} 克`, tone:'sugar' },
+            { label:'咖啡因', value:`${entry.caffeineMg || 0} 毫克`, tone:'caffeine' },
           ]
         : entry.recordType === 'skin'
           ? [
@@ -1226,7 +1226,7 @@ function V3v2PrimaryBody({entry, showTags = true, tagsAnimate = false, photoAnal
             {detailRows.filter(row => row.value !== '' && row.value != null).map((row) => (
               <div className="v3-camera-insight-detail" key={row.label}>
                 <span>{row.label}</span>
-                <strong className={row.accent ? 'is-accent' : ''}>{row.value || '\u00a0'}</strong>
+                <strong className={row.accent ? 'is-accent' : row.tone ? `is-${row.tone}` : ''}>{row.value || '\u00a0'}</strong>
               </div>
             ))}
           </div>
