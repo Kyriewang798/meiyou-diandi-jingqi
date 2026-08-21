@@ -252,7 +252,7 @@ function BeverageQuickSheet({onClose, onPhoto, onWater}){
           </span>
           <span>
             <strong>拍照记录</strong>
-            <small>识别奶茶、咖啡、饮料等饮品分析热量、咖啡因、糖分</small>
+            <small>识别奶茶、咖啡等饮品的热量、咖啡因、糖分</small>
           </span>
           <I name="chevron-right" size={18} stroke={1.8}/>
         </button>
@@ -262,7 +262,7 @@ function BeverageQuickSheet({onClose, onPhoto, onWater}){
           </span>
           <span>
             <strong>输入记录</strong>
-            <small>记录饮水、饮品信息统计每日饮水量及饮品成分</small>
+            <small>记录饮水、饮品进行饮水量及饮品成分统计</small>
           </span>
           <I name="chevron-right" size={18} stroke={1.8}/>
         </button>
