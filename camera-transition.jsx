@@ -811,7 +811,7 @@ function CameraCaptureAnalyzePanel({
   errorKind = null,
   onRetry,
   onRetake,
-  onCancel,
+  onDirectRecord,
   showRetry,
   isExhausted,
 }) {
@@ -902,8 +902,8 @@ function CameraCaptureAnalyzePanel({
             <button type="button" className="camera-analyze-label-retake" onClick={onRetake}>
               重拍
             </button>
-            <button type="button" className="camera-analyze-label-cancel" onClick={onCancel}>
-              暂不记录
+            <button type="button" className="camera-analyze-label-cancel" onClick={onDirectRecord}>
+              直接记录
             </button>
           </div>
         )}
@@ -1043,7 +1043,7 @@ function useCameraPhotoAnalyze({ onSuccess, onAnalyzeStart }) {
       }, analyzeMs);
     };
 
-    if (isRetry) {
+    if (isRetry || effectiveMeta?.skipClassification) {
       startRouteAnalyze();
       return;
     }
@@ -1140,6 +1140,7 @@ function CameraView({
   analyzeMode = null,
   onAnalyzeRetry,
   onAnalyzeRetake,
+  onAnalyzeDirectRecord,
   recognitionResult,
   onRecognitionChange,
   onRecognitionSave,
@@ -1249,7 +1250,7 @@ function CameraView({
               errorKind={analyzeErrorKind}
               onRetry={onAnalyzeRetry}
               onRetake={onAnalyzeRetake}
-              onCancel={onClose}
+              onDirectRecord={onAnalyzeDirectRecord}
               showRetry={analyzeFailureCount < analyzeMaxFailures}
               isExhausted={analyzeExhausted}
             />
@@ -1476,7 +1477,12 @@ function CameraTransition({
       : getNextAutoDetectDemoPhoto();
     analyze.runAnalyze({
       url: selectedPhoto.thumb,
-      meta: { type: 'capture', photo:selectedPhoto, mode: preferredRecognitionMode || inferMultimodalRoutingMode(selectedPhoto) },
+      meta: {
+        type: 'capture',
+        photo: selectedPhoto,
+        mode: preferredRecognitionMode || inferMultimodalRoutingMode(selectedPhoto),
+        skipClassification: preferredRecognitionMode === 'beverage',
+      },
     });
   };
   
@@ -1489,6 +1495,7 @@ function CameraTransition({
         type: 'select',
         photo,
         mode: preferredRecognitionMode || inferMultimodalRoutingMode(photo),
+        skipClassification: preferredRecognitionMode === 'beverage',
       },
     });
   };
@@ -1496,6 +1503,20 @@ function CameraTransition({
   const handleAnalyzeRetake = () => {
     setRecognitionResult(null);
     analyze.handleRetake();
+  };
+
+  const handleAnalyzeDirectRecord = () => {
+    if (!analyze.photoUrl) return;
+    onCaptureSuccess?.({
+      mode: 'photo',
+      photoUrl: analyze.photoUrl,
+      summary: '',
+      summaryItems: [],
+      recognitionState: 'ready',
+    });
+    setRecognitionResult(null);
+    analyze.reset();
+    onClose?.();
   };
 
   const handleRecognitionSave = () => {
@@ -1601,6 +1622,7 @@ function CameraTransition({
             analyzeMode={analyze.analyzeMode}
             onAnalyzeRetry={analyze.handleRetry}
             onAnalyzeRetake={handleAnalyzeRetake}
+            onAnalyzeDirectRecord={handleAnalyzeDirectRecord}
             recognitionResult={recognitionResult}
             onRecognitionChange={setRecognitionResult}
             onRecognitionSave={handleRecognitionSave}
