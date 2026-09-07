@@ -23,10 +23,12 @@ meiyou-suiji/
 ├── data.jsx            # 时间轴 mock 数据、关键词识别
 ├── icons.jsx           # 图标
 ├── tweaks-panel.jsx    # 原型调试面板（场景切换）
-├── design/             # 美柚设计规范参考
-├── docs/               # 产品文档（定位、策略）
+├── docs/assets/        # 原型使用的图片素材
 └── uploads/            # 历史 HTML 备份
 ```
+
+> 美柚设计规范（`DESIGN-meiyou-510.md`、`SKILL-meiyou-510.md`、`meiyou-ui-kit-519.html`）已迁至中枢
+> [`../diandi-hub/05-设计规范/`](../diandi-hub/05-设计规范/)，做 UI 前先读那里。
 
 ## 原型调试
 
