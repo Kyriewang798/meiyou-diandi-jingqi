@@ -1,3 +1,20 @@
+# meiyou-diandi-jingqi · 点滴原型 demo
+
+> **本仓库只放代码。** 点滴项目的需求、方案、会议、决策、分析文档全部在中枢：
+> `~/Documents/Github/diandi-hub/`
+>
+> 动手前先读：
+> 1. [`../diandi-hub/AI协作规则.md`](../diandi-hub/AI协作规则.md) ← 全项目通用规则，**必读**
+> 2. [`../diandi-hub/README.md`](../diandi-hub/README.md) ← 项目是什么、四个载体的关系
+> 3. [`../diandi-hub/INDEX.md`](../diandi-hub/INDEX.md) ← 找具体文档
+>
+> 本仓库是**目标交互的原型演示**。安卓验证 app（`record_as_YOU_wish_Android-Emulator`）的交互与此不同，
+> 那是有意为之，不要为了「统一」去改动任何一边。
+>
+> 新写的项目级文档请放中枢，**不要**放进本仓库。
+
+---
+
 # 项目规范
 
 ## 锁定组件（默认不调整）

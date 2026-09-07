@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "TapdStoryServer": {
+      "type": "http",
+      "url": "http://10.120.16.167:6889/mcp"
+    }
+  }
+}
