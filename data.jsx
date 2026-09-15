@@ -478,25 +478,7 @@ const TIMELINE_BLOCKS = [
       },
     ],
   },
-  {
-    ...buildTodayDayBlock(SCENE_CONTEXT.period),
-    items:[
-      {
-        kind:'record-group', id:'e-today-ellipsis-g',
-        primary:{
-          id:'e-today-ellipsis', time:'12:08', kind:'text',
-          text:'。。',
-          tags:[],
-        },
-        ai:{
-          id:'e-today-ellipsis-ai', time:'12:08', kind:'note-feedback',
-          title:'关于这条点滴',
-          note:'看来暂时没有想记录的内容，没关系，等你有心事、想法或者想记下的小事，随时告诉我就可以✨',
-        },
-        aiDefaultOpen:true,
-      },
-    ],
-  },
+  buildTodayDayBlock(SCENE_CONTEXT.period),
 ];
 
 // 场景二：新用户空值 — 运行时生成「今天」分日（与场景一时间轴头一致）
