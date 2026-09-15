@@ -71,8 +71,15 @@ function resolveDayTitleLabel(day){
   return `${month}月${dayNum}日`;
 }
 
+const DAY_META_WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+// 今天 / 昨天：标题后补「M月D日 周X」，按真实日期推算，避免与写死的 mock 日期矛盾
 function formatDayMeta(day){
-  return day.weekday || '';
+  const isYesterday = day.relativeLabel === '昨天';
+  if(!day.isToday && !isYesterday) return day.weekday || '';
+  const d = new Date();
+  if(isYesterday) d.setDate(d.getDate() - 1);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${DAY_META_WEEKDAYS[d.getDay()]}`;
 }
 
 function CycleDayHeader({day, items, dayBlocks}){
