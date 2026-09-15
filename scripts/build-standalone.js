@@ -23,6 +23,7 @@
  *   scene3-3.html 场景三 · 方案三
  *   scene4.html   场景四
  *   scene5-1.html … scene5-4.html  场景五 · 语音转文字
+ *   v2/           v2 分支版原型（源码原样复制，访问 /v2/）
  */
 
 const fs = require('fs');
@@ -405,7 +406,10 @@ function copyDirSync(src, dest) {
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDirSync(srcPath, destPath);
+    // 软链接按其指向的真实类型处理（v2/assets、v2/image 指向根目录素材）
+    const isDir = entry.isDirectory()
+      || (entry.isSymbolicLink() && fs.statSync(srcPath).isDirectory());
+    if (isDir) copyDirSync(srcPath, destPath);
     else fs.copyFileSync(srcPath, destPath);
   }
 }
@@ -422,6 +426,15 @@ const imageDest = path.join(DOCS, 'image');
 if (fs.existsSync(imageSrc)) {
   copyDirSync(imageSrc, imageDest);
   console.log(`Copied image → ${imageDest}`);
+}
+
+// v2 分支版原型：以源码形式（浏览器内 Babel）原样发布到 docs/v2/，访问 <Pages 地址>/v2/
+// v2/assets、v2/image 是软链接，copyDirSync 会复制成真实目录
+const v2Src = path.join(ROOT, 'v2');
+const v2Dest = path.join(DOCS, 'v2');
+if (fs.existsSync(v2Src)) {
+  copyDirSync(v2Src, v2Dest);
+  console.log(`Copied v2 → ${v2Dest}`);
 }
 
 fs.writeFileSync(
