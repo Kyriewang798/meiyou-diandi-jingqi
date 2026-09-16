@@ -24,6 +24,7 @@
  *   scene4.html   场景四
  *   scene5-1.html … scene5-4.html  场景五 · 语音转文字
  *   v2/           v2 分支版原型（源码原样复制，访问 /v2/）
+ *   ai-input/     AI 输入反馈流程 Demo（独立短链接）
  */
 
 const fs = require('fs');
@@ -414,6 +415,57 @@ function copyDirSync(src, dest) {
   }
 }
 
+function publishFocusedInputDemo() {
+  const sourceDirName = 'focused-input-flow-v1';
+  const publicDirName = 'ai-input';
+  const sourceDir = path.join(ROOT, sourceDirName);
+  const publicDir = path.join(DOCS, publicDirName);
+  const sourceIndexPath = path.join(sourceDir, 'index.html');
+
+  if (!fs.existsSync(sourceIndexPath)) return;
+
+  copyDirSync(sourceDir, publicDir);
+
+  // The source demo deliberately shares the prototype's root-level components.
+  // Copy only the local files referenced by its entry page into the Pages artifact.
+  const sourceIndex = fs.readFileSync(sourceIndexPath, 'utf8');
+  const localDependencies = new Set();
+  const dependencyPattern = /(?:href|src)=["']([^"']+)["']/g;
+  let match;
+  while ((match = dependencyPattern.exec(sourceIndex))) {
+    const reference = match[1].split('?')[0].split('#')[0];
+    if (
+      !reference ||
+      reference.startsWith('http://') ||
+      reference.startsWith('https://') ||
+      reference.startsWith('//') ||
+      reference.startsWith('data:') ||
+      reference.startsWith('about:') ||
+      reference.startsWith(sourceDirName + '/')
+    ) {
+      continue;
+    }
+    localDependencies.add(reference);
+  }
+
+  for (const reference of localDependencies) {
+    const srcPath = path.join(ROOT, reference);
+    const destPath = path.join(DOCS, reference);
+    if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) continue;
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.copyFileSync(srcPath, destPath);
+  }
+
+  const publicIndex = sourceIndex.replaceAll(
+    sourceDirName + '/',
+    publicDirName + '/',
+  );
+  fs.writeFileSync(path.join(publicDir, 'index.html'), publicIndex, 'utf8');
+  console.log(
+    `Published ${sourceDirName} → docs/${publicDirName}/ (${localDependencies.size} shared files)`,
+  );
+}
+
 const assetsSrc = path.join(ROOT, 'assets');
 const assetsDest = path.join(DOCS, 'assets');
 if (fs.existsSync(assetsSrc)) {
@@ -436,6 +488,8 @@ if (fs.existsSync(v2Src)) {
   copyDirSync(v2Src, v2Dest);
   console.log(`Copied v2 → ${v2Dest}`);
 }
+
+publishFocusedInputDemo();
 
 fs.writeFileSync(
   path.join(DOCS, 'scene3.html'),
