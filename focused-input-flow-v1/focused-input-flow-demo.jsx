@@ -21,7 +21,6 @@ function FocusedTrendMiniChart({analysis}){
 
   return (
     <section className="tl-focus-trend" aria-label={analysis.summary || analysis.title || '趋势图'}>
-      <div className="tl-focus-trend-head"><b>{analysis.title || '近期趋势'}</b><span>{analysis.range || ''}</span></div>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={analysis.summary || '趋势变化'}>
         <line className="tl-focus-trend-grid" x1={padX} y1="24" x2={width-padX} y2="24"/>
         <line className="tl-focus-trend-grid" x1={padX} y1="47" x2={width-padX} y2="47"/>
@@ -34,13 +33,32 @@ function FocusedTrendMiniChart({analysis}){
           </g>
         ))}
       </svg>
-      {analysis.summary ? <p><i aria-hidden="true">✦</i>{analysis.summary}</p> : null}
     </section>
+  );
+}
+
+function AgentRecordStatus({status, savedAckVisible}){
+  const isChecking = status === 'checking';
+  const isAnalyzing = status === 'processing' || status === 'records-ready';
+  if(!savedAckVisible && !isChecking && !isAnalyzing) return null;
+  const label = savedAckVisible ? '已记录' : (isChecking ? '记录提取中' : 'AI 分析中');
+
+  return (
+    <div className={'tl-agent-status'+(savedAckVisible ? ' is-saved' : '')} role="status" aria-live="polite">
+      {savedAckVisible ? (
+        <span className="tl-agent-status-check" aria-hidden="true">✓</span>
+      ) : (
+        <span className="tl-agent-status-dots" aria-hidden="true"><i/><i/><i/></span>
+      )}
+      <b>{label}</b>
+    </div>
   );
 }
 
 function FocusedInputFlowCard({item, isNew}){
   const stagedResults = item.flowVariant === 'three-paths';
+  const feedbackMode = new URLSearchParams(window.location.search).get('feedback') || '';
+  const agentActivityMode = ['activity','activity-refresh','activity-timeline','activity-complete'].includes(feedbackMode);
   const [status, setStatus] = React.useState('idle');
   const [visibleRecords, setVisibleRecords] = React.useState(0);
   const [liveText, setLiveText] = React.useState('');
@@ -49,6 +67,8 @@ function FocusedInputFlowCard({item, isNew}){
   const [duration, setDuration] = React.useState(item.duration || '0:12');
   const [playing, setPlaying] = React.useState(false);
   const [analysisOpen, setAnalysisOpen] = React.useState(false);
+  const [streamedFeedback, setStreamedFeedback] = React.useState('');
+  const [analysisStreaming, setAnalysisStreaming] = React.useState(false);
   const [savedAckVisible, setSavedAckVisible] = React.useState(false);
   const [run, setRun] = React.useState(0);
   const timerRef = React.useRef(null);
@@ -64,7 +84,12 @@ function FocusedInputFlowCard({item, isNew}){
           {icon:'✚', subject:'我', item:'症状', value:'恶心'},
         ],
         feedback:'头痛从今天 15:00 持续至今，并同时记录到恶心；后续新增症状时，会继续帮你串联变化。',
-        analysis:null,
+        analysis:{
+          title:'近 7 天症状情况',
+          values:[0, 1, 0, 1, 1, 0, 2],
+          labels:['9/10', '9/11', '9/12', '9/13', '9/14', '昨天', '今天'],
+          summary:'今天记录了头痛和恶心，近 7 天症状次数有所增加。',
+        },
         todayEntries:[
           {
             kind:'record-group', id:'focused-text-headache-today', isNew:true,
@@ -139,6 +164,13 @@ function FocusedInputFlowCard({item, isNew}){
     if(status !== 'processing') return;
     setVisibleRecords(0);
     const records = result.records || [];
+    if(agentActivityMode){
+      const timer = setTimeout(
+        ()=>setStatus(records.length ? 'records-ready' : 'complete'),
+        120,
+      );
+      return ()=>clearTimeout(timer);
+    }
     let timer = null;
     let cancelled = false;
     let nextVisibleRecord = 0;
@@ -147,7 +179,7 @@ function FocusedInputFlowCard({item, isNew}){
       nextVisibleRecord += 1;
       setVisibleRecords(nextVisibleRecord);
       if(nextVisibleRecord >= records.length){
-        timer = setTimeout(()=>setStatus(stagedResults && result.feedback ? 'records-ready' : 'complete'), 520);
+        timer = setTimeout(()=>setStatus(stagedResults && result.feedback ? 'records-ready' : 'complete'), agentActivityMode ? 1100 : 520);
         return;
       }
       timer = setTimeout(revealNextRecord, 620);
@@ -157,33 +189,76 @@ function FocusedInputFlowCard({item, isNew}){
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [run, status, result.feedback, result.records, stagedResults]);
+  }, [agentActivityMode, run, status, result.feedback, result.records, stagedResults]);
 
   React.useEffect(()=>{
     if(status !== 'checking') return;
     const timer = setTimeout(()=>{
-      setSavedAckVisible(true);
-      clearTimeout(savedAckTimerRef.current);
-      savedAckTimerRef.current = setTimeout(()=>{
-        setSavedAckVisible(false);
-        savedAckTimerRef.current = null;
-      }, 1300);
-      setStatus((result.records || []).length ? 'processing' : 'source-only-ack');
-    }, 950);
+      const hasRecords = (result.records || []).length > 0;
+      if(!hasRecords){
+        setSavedAckVisible(true);
+        clearTimeout(savedAckTimerRef.current);
+        savedAckTimerRef.current = setTimeout(()=>{
+          setSavedAckVisible(false);
+          savedAckTimerRef.current = null;
+        }, agentActivityMode ? 900 : 1300);
+      }
+      setStatus(hasRecords ? 'processing' : 'source-only-ack');
+    }, agentActivityMode ? 1500 : 950);
     return ()=>clearTimeout(timer);
-  }, [run, status, result.records]);
+  }, [agentActivityMode, run, status, result.records]);
 
   React.useEffect(()=>{
     if(status !== 'source-only-ack') return;
-    const timer = setTimeout(()=>setStatus('source-only'), 1350);
+    const timer = setTimeout(()=>setStatus('source-only'), agentActivityMode ? 1800 : 1350);
     return ()=>clearTimeout(timer);
-  }, [status]);
+  }, [agentActivityMode, status]);
 
   React.useEffect(()=>{
     if(status !== 'records-ready') return;
-    const timer = setTimeout(()=>setStatus('complete'), 900);
+    const timer = setTimeout(()=>{
+      if(agentActivityMode) setVisibleRecords((result.records || []).length);
+      setStatus('complete');
+    }, agentActivityMode ? 2500 : 900);
     return ()=>clearTimeout(timer);
-  }, [status]);
+  }, [agentActivityMode, result.records, status]);
+
+  React.useEffect(()=>{
+    if(status !== 'complete' || !result.feedback) return;
+    setAnalysisOpen(true);
+    if(!agentActivityMode){
+      setStreamedFeedback(result.feedback);
+      setAnalysisStreaming(false);
+      return;
+    }
+
+    const text = result.feedback;
+    const chunkSizes = [2,3,2,4,3,2,5,2,3,4];
+    const pauses = [70,95,60,110,75,85,65,105];
+    let cursor = 0;
+    let step = 0;
+    let timer = null;
+    let cancelled = false;
+    setStreamedFeedback('');
+    setAnalysisStreaming(Boolean(text.length));
+
+    const revealNextChunk = ()=>{
+      if(cancelled) return;
+      cursor = Math.min(text.length, cursor + chunkSizes[step % chunkSizes.length]);
+      step += 1;
+      setStreamedFeedback(text.slice(0, cursor));
+      if(cursor >= text.length){
+        setAnalysisStreaming(false);
+        return;
+      }
+      timer = setTimeout(revealNextChunk, pauses[step % pauses.length]);
+    };
+    if(cursor < text.length) timer = setTimeout(revealNextChunk, 320);
+    return ()=>{
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [agentActivityMode, run, status, result.feedback]);
 
   React.useEffect(()=>{
     const stopTyping = ()=>{
@@ -227,6 +302,8 @@ function FocusedInputFlowCard({item, isNew}){
       window.dispatchEvent(new CustomEvent('focusedDemoRetroRecordReset'));
       setPlaying(false);
       setAnalysisOpen(false);
+      setStreamedFeedback('');
+      setAnalysisStreaming(false);
       setSourceText(text);
       setLiveText(text);
       setSourceKind(event?.detail?.sourceKind || 'voice');
@@ -254,11 +331,8 @@ function FocusedInputFlowCard({item, isNew}){
   }, [status, visibleRecords, liveText, stagedResults]);
 
   React.useEffect(()=>{
-    if(status === 'complete' && result.feedback){
-      setAnalysisOpen(true);
-    }
     const recordsAreReady = stagedResults
-      ? status === 'records-ready' || status === 'complete'
+      ? (agentActivityMode ? status === 'complete' : status === 'records-ready' || status === 'complete')
       : status === 'complete';
     if(!recordsAreReady) return;
     if(Array.isArray(result.todayEntries) && result.todayEntries.length){
@@ -318,7 +392,7 @@ function FocusedInputFlowCard({item, isNew}){
         ],
       },
     })), 0);
-  }, [status, result.feedback, stagedResults]);
+  }, [agentActivityMode, status, result.feedback, stagedResults]);
 
   if(status === 'idle') return null;
 
@@ -347,7 +421,7 @@ function FocusedInputFlowCard({item, isNew}){
         </section>
       ) : (
         <section className="tl-focus-entry-card" aria-label="本次记录">
-          {!isChecking ? (
+          {(!isChecking || agentActivityMode) ? (
             <div className="tl-focus-source-zone">
               <div className="tl-focus-source-body">
                 {sourceKind === 'voice' ? (
@@ -359,14 +433,14 @@ function FocusedInputFlowCard({item, isNew}){
             </div>
           ) : null}
 
-          {savedAckVisible ? (
+          {savedAckVisible && !agentActivityMode ? (
             <div className={'tl-focus-saved-ack'+(savedAckVisible ? ' is-visible' : '')} role="status" aria-live="polite">
               <b>已记录</b>
               <span aria-hidden="true">✓</span>
             </div>
           ) : null}
 
-          {isChecking ? (
+          {isChecking && !agentActivityMode ? (
             <div className="tl-focus-processing tl-focus-checking-processing" role="status" aria-live="polite">
               <span className="tl-focus-saving-spinner" aria-hidden="true"/>
               <span><b>记录中</b></span>
@@ -374,12 +448,16 @@ function FocusedInputFlowCard({item, isNew}){
             </div>
           ) : null}
 
-          {showAiLoading ? (
+          {showAiLoading && !agentActivityMode ? (
             <div className="tl-focus-processing" role="status" aria-live="polite">
               <span className="tl-focus-spark" aria-hidden="true">✦</span>
               <span><b>AI 分析中</b></span>
               <span className="tl-focus-dots" aria-hidden="true"><i/><i/><i/></span>
             </div>
+          ) : null}
+
+          {agentActivityMode ? (
+            <AgentRecordStatus status={status} savedAckVisible={savedAckVisible}/>
           ) : null}
 
           {visibleRecords > 0 ? (
@@ -398,13 +476,16 @@ function FocusedInputFlowCard({item, isNew}){
           {isDone && result.feedback ? (
             <div className={'tl-focus-analysis'+(analysisOpen ? ' is-open' : '')}>
               <button type="button" onClick={()=>setAnalysisOpen(value=>!value)} aria-expanded={analysisOpen}>
-                <span><i aria-hidden="true">✦</i><b>AI 分析</b></span>
+                <span><i aria-hidden="true">✦</i><b>{result.analysis?.title || 'AI 分析'}</b></span>
                 <span><i aria-hidden="true">⌄</i></span>
               </button>
               {analysisOpen ? (
                 <div className="tl-focus-analysis-body">
-                  <p>{result.feedback}</p>
                   {result.analysis ? <FocusedTrendMiniChart analysis={result.analysis}/> : null}
+                  <p>
+                    {agentActivityMode ? streamedFeedback : result.feedback}
+                    {analysisStreaming ? <span className="tl-focus-stream-caret" aria-hidden="true"/> : null}
+                  </p>
                 </div>
               ) : null}
             </div>

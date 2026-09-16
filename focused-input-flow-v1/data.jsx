@@ -619,8 +619,8 @@ function buildFocusedInputFlowTimeline(){
       ],
       feedback:'宝宝体重较上次上升 0.3 公斤；同时已将大女儿的月经记录补录到昨天 21:00，并记下血量较多和你的担心。',
       analysis:{
-        title:'宝宝体重趋势',
-        range:'近 4 次',
+        title:'近 7 天体重趋势',
+        range:'',
         values:[9.0, 9.1, 9.0, 9.3],
         labels:['8/20', '8/27', '9/3', '今天'],
         summary:'较上次 +0.3 公斤，近 4 次整体呈上升趋势。',
