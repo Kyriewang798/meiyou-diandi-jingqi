@@ -590,6 +590,8 @@ function DemoVoiceCard({entry, isNew}){
 
 const PERIOD_SUMMARY_ICON_SRC = {
   flow: 'assets/record-flow.png',
+  mood: 'assets/record-mood.png',
+  symptom: 'assets/record-symptom.png',
   color: 'assets/record-color.png',
   cramps: 'assets/record-cramps.png',
   period: 'assets/record-period-start.png',
@@ -614,7 +616,8 @@ function PeriodRecordSummary({entry}){
   const details = entry.periodDetails || [];
   const periodLabel = entry.periodSummaryLabel || '月经来了';
   const isPeriodEnd = periodLabel.indexOf('走') >= 0;
-  const rows = [
+  // hidePeriodLabel：只展示提取出的记录项（v2 场景4 对话里记录的内容）
+  const rows = entry.hidePeriodLabel ? [...details] : [
     { label: periodLabel, icon: isPeriodEnd ? 'period-end' : 'period' },
     ...details,
   ];
@@ -634,6 +637,43 @@ function PeriodRecordSummary({entry}){
   );
 }
 
+// v2 场景4：经期卡片下方的「本次月经分析」对话栏
+// 卡片首次出现时标题逐字输出；切 Tab 回来重新挂载不重播
+const scene4ChatTitleStreamed = new Set();
+
+function PeriodChatEntryRow({entry, isNew}){
+  const chat = entry.chatEntry || {};
+  const [streamTitle] = React.useState(()=>{
+    if(!isNew || !entry.id) return false;
+    if(scene4ChatTitleStreamed.has(entry.id)) return false;
+    scene4ChatTitleStreamed.add(entry.id);
+    return true;
+  });
+
+  const openChat = ()=>{
+    window.dispatchEvent(new CustomEvent('openScene1Chat', {
+      detail:{ question:chat.question, title:chat.title, entryId:entry.id, answerKey:chat.answerKey },
+    }));
+  };
+
+  return (
+    <>
+      <div className="s1-ask-chat-divider" role="separator"/>
+      <button type="button" className="s1-ask-chat-entry" onClick={openChat}>
+        <span className="s1-ask-chat-icon">
+          {window.Scene1ChatIcon ? <window.Scene1ChatIcon/> : null}
+        </span>
+        <span className="s1-ask-chat-title">
+          {streamTitle ? <TypewriterText text={chat.title} active charMs={90}/> : chat.title}
+        </span>
+        <svg className="s1-ask-chat-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </>
+  );
+}
+
 function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, typewriterBody, hideBodyUntilDrop, analysisProps}){
   // 演示专用语音卡片
   if(entry._demoTypewriter) return <DemoVoiceCard entry={entry} isNew={isNew}/>;
@@ -644,9 +684,9 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
   const hasAnalysis = !!analysisProps;
   const hasVoice = !!entry.voice;
   const isVtLive = !!entry.vtLive;
-  const isPeriodSync = entry.kind === 'sync-card' && (entry.tags || []).some((tag) => (
+  const isPeriodSync = entry.kind === 'sync-card' && (entry.recordSummary || (entry.tags || []).some((tag) => (
     resolveTag(tag).cat === 'period' || tag.cat === '月经' || tag.icon === 'period'
-  ));
+  )));
   const text = isVtLive ? (entry.liveText || '') : (entry.voiceText || entry.body || '');
   const tagLayout = entry.tagLayout || 't5';
   const aiNoteTypewriter = !!(typewriterAiNote && hasAiNote);
@@ -657,7 +697,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
   const editPayload = isPeriodSync ? {
     kind: 'quick',
     time: entry.time,
-    recordLabel: entry.periodSummaryLabel || tagLabel(tags[0]) || (entry.body || '').replace(/[。.\s]+$/g, '') || '月经来了',
+    recordLabel: entry.periodSummaryLabel || (tags[0] ? tagLabel(tags[0]) : '') || (entry.body || '').replace(/[。.\s]+$/g, '') || '月经来了',
     recordValue: '',
     detailItems: (entry.periodDetails || []).map(item => ({ ...item })),
     icon: (entry.periodSummaryLabel || '').indexOf('走') >= 0 ? 'period-end' : 'period',
@@ -729,6 +769,11 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
           onCycleComplete={analysisProps.onCycleComplete}
         />
       )}
+
+      {/* v2 场景4：把「本次月经分析」换成一条对话栏，点进二级对话页 */}
+      {!hasAnalysis && entry.chatEntry ? (
+        <PeriodChatEntryRow entry={entry} isNew={isNew}/>
+      ) : null}
     </div>
   );
 }

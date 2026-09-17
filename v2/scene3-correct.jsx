@@ -3,13 +3,16 @@
 // 初始态 = 场景1整个交互的播放完成态（见 scene1-ask.jsx 的 appendScene1CompletedState）
 // 1. 按住说话松开 → 「说错了，今天流量特别大」按时间轴样式落轴，展示提取加载态 2s
 // 2. 加载结束 → 弹出确认弹窗：以「变更前 / 变更后」两张记录卡对比流量「中等」→「大量」
-// 3. 确认 → 09:31 经期记录卡的「流量：中等」刷新为「流量：大量」；取消 → 关闭弹窗，记录不变
+// 3. 确认 → 09:31 经期记录卡的「流量：中等」刷新为「流量：大量」，同时这句话的卡片补上「流量」标签；
+//    取消 → 关闭弹窗，记录不变
 
 const SCENE3_VOICE_TEXT = '说错了，今天流量特别大';
 const SCENE3_TARGET_ENTRY_ID = 's1-period-done';
 const SCENE3_FLOW_LABEL = '流量';
 const SCENE3_FLOW_FROM = '中等';
 const SCENE3_FLOW_TO = '大量';
+// 确认后给纠正语句补上标签，表示从这句话里提取到了流量记录项
+const SCENE3_CORRECTION_TAGS = [{ cat:SCENE3_FLOW_LABEL }];
 
 // 与时间轴经期记录卡（PeriodRecordSummary）使用同一套图标
 const SCENE3_ROW_ICON_SRC = {
@@ -47,18 +50,26 @@ function correctScene3Details(details){
   ));
 }
 
-function applyScene3FlowCorrection(blocks){
+// correctionEntryId：本次纠正语句的卡片 id，确认后给它补上「流量」标签
+function applyScene3FlowCorrection(blocks, correctionEntryId){
   return blocks.map(block=>{
     if(block.type !== 'day') return block;
     const items = block.items || block.entries || [];
-    if(!items.some(it=>it.id === SCENE3_TARGET_ENTRY_ID)) return block;
+    const hasTarget = items.some(it=>it.id === SCENE3_TARGET_ENTRY_ID);
+    const hasCorrection = !!correctionEntryId && items.some(it=>it.id === correctionEntryId);
+    if(!hasTarget && !hasCorrection) return block;
     return {
       ...block,
       entries:undefined,
-      items:items.map(it=>(it.id !== SCENE3_TARGET_ENTRY_ID ? it : {
-        ...it,
-        periodDetails:correctScene3Details(it.periodDetails),
-      })),
+      items:items.map(it=>{
+        if(it.id === SCENE3_TARGET_ENTRY_ID){
+          return { ...it, periodDetails:correctScene3Details(it.periodDetails) };
+        }
+        if(correctionEntryId && it.id === correctionEntryId){
+          return { ...it, tags:SCENE3_CORRECTION_TAGS };
+        }
+        return it;
+      }),
     };
   });
 }
@@ -76,7 +87,7 @@ function Scene3RecordPreview({entry, variant}){
   const before = entry.periodDetails || [];
   const details = isAfter ? correctScene3Details(before) : before;
   const rows = [
-    { label:'月经来了', icon:'period' },
+    ...(entry.hidePeriodLabel ? [] : [{ label:'月经来了', icon:'period' }]),
     ...details.map((detail, i)=>({
       ...detail,
       changed:isAfter && detail.value !== before[i]?.value,

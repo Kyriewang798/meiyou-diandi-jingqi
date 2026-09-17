@@ -33,7 +33,8 @@ const SCENE1_ANSWER = [
   { type:'li', text:'如果周期连续短于 21 天或长于 35 天，或经期超过 7 天，建议及时就医' },
 ];
 
-// 场景2：纯提问，没有可提取的记录；对话页首条分析去掉「已帮你记下」
+// 场景2：纯提问，没有可提取的记录；对话页首条分析去掉「已帮你记下」，
+// 并在结尾追问今天的流量与痛经，引导用户继续说（接着按住说话发出的正是这两项）
 const SCENE2_QUESTION = '我的月经规律么？';
 const SCENE2_ANSWER = [
   { type:'p', text:'结合你最近 6 个周期的记录，一起来看看你的月经规律性：' },
@@ -47,6 +48,7 @@ const SCENE2_ANSWER = [
   { type:'li', text:'注意腹部保暖、少吃生冷，痛经时可以热敷小腹' },
   { type:'li', text:'顺手记下流量和痛经程度，下次分析会更准' },
   { type:'li', text:'如果周期连续短于 21 天或长于 35 天，或经期超过 7 天，建议及时就医' },
+  { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
 ];
 
 // 二级页追问：按住说话松开后的固定语音内容；AI 先展示与时间轴一致的提取加载态，再流式回复
@@ -56,6 +58,181 @@ const SCENE1_FOLLOWUP_ANSWER = [
 ];
 
 // options.completed：直接生成播放完成态（无加载态、无入场动画，对话页展示完整历史），供场景3初始态使用
+// 场景2 追问回复：对号确认已记录 → 记录卡片 → 针对流量/痛经的分析 → 结尾再抛一个问题引导继续说
+// 记录卡片带当前日期时间，所以用函数在发送时生成
+const SCENE2_RECORD_ROWS = [
+  { label:'流量', value:'中等', icon:'assets/record-flow.png' },
+  { label:'痛经', value:'轻微', icon:'assets/record-cramps.png' },
+];
+
+function formatScene2RecordTime(d = new Date()){
+  const pad = n=>String(n).padStart(2, '0');
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function buildScene2FollowupAnswer(){
+  return [
+    { type:'done', text:'已记录' },
+    { type:'record', text:'', record:{ time:formatScene2RecordTime(), rows:SCENE2_RECORD_ROWS } },
+    { type:'h', text:'今天这两项的情况' },
+    { type:'li', text:'流量中等，处于经期前两天的常见范围' },
+    { type:'li', text:'轻微痛经多与前列腺素引起的子宫收缩有关，通常 1–2 天会缓解' },
+    { type:'p', text:'和上个周期的同一天相比，流量和痛感都差不多，没有明显变化。' },
+    { type:'h', text:'可以试试' },
+    { type:'li', text:'热敷小腹 15–20 分钟，避免久坐和生冷' },
+    { type:'li', text:'疼痛影响睡眠或工作时，可在医生或药师指导下使用止痛药' },
+    { type:'p', text:'对了，今天有没有觉得腰酸、犯困或者情绪低落？一并说给我，我帮你记下来。' },
+  ];
+}
+
+// 场景2 第二轮追问：心情、疲惫、腰酸
+const SCENE2_ROUND2_TEXT = '今天心情一般，有点腰酸，而且感觉特别疲惫。';
+const SCENE2_ROUND2_ROWS = [
+  { label:'心情', value:'一般', icon:'assets/record-mood.png' },
+  { label:'症状', value:'腰酸、疲惫', icon:'assets/record-symptom.png' },
+];
+
+function buildScene2Round2Answer(){
+  return [
+    { type:'done', text:'已记录' },
+    { type:'record', text:'', record:{ time:formatScene2RecordTime(), rows:SCENE2_ROUND2_ROWS } },
+    { type:'h', text:'这几项一起看' },
+    { type:'li', text:'经期前两天雌激素处于低位，容易犯困、乏力，心情也会比平时平淡' },
+    { type:'li', text:'腰酸多和经期盆腔充血、前列腺素升高有关，一般经期结束前后会缓解' },
+    { type:'p', text:'你上个周期的这两天也记过「疲惫」，看起来是你经期比较固定的表现，不用太担心。' },
+    { type:'h', text:'今天可以这样安排' },
+    { type:'li', text:'别硬扛，午后小睡 20 分钟比一直撑着更能缓解疲惫' },
+    { type:'li', text:'腰酸时热敷腰骶部，少久坐，别弯腰搬重物' },
+    { type:'li', text:'多喝温水，晚餐加点含铁的食物，比如菠菜、瘦肉' },
+    { type:'p', text:'今晚早点休息。明天起来记一笔睡得怎么样，我帮你看看疲惫和睡眠有没有关系。' },
+  ];
+}
+
+// 第四轮：语音纠正之前记录的流量（中等 → 大量），加载态结束后弹确认弹窗（同场景3）
+const SCENE2_ROUND4_TEXT = '刚才说错了，今天流量应该是大量';
+const SCENE2_ROUND4_CANCEL_ANSWER = [
+  { type:'p', text:'好的，那就保持原来的记录。想改的时候随时跟我说。' },
+];
+
+function buildScene2Round4ConfirmAnswer(){
+  return [
+    { type:'done', text:'已修改' },
+    { type:'record', text:'', record:{ time:formatScene2RecordTime(), rows:[
+      { label:'流量', value:'大量', icon:'assets/record-flow.png' },
+    ] } },
+    { type:'p', text:'流量已从中等改成大量，点滴时间轴上的记录也同步更新了。' },
+  ];
+}
+
+// 找到时间轴上最近一条带「流量」的记录，并把它改成大量
+function findLatestFlowEntry(blocks){
+  let hit = null;
+  (blocks || []).forEach(block=>{
+    if(block.type !== 'day') return;
+    (block.items || block.entries || []).forEach(it=>{
+      if((it.periodDetails || []).some(d=>d.label === '流量')) hit = it;
+    });
+  });
+  return hit;
+}
+
+function applyChatFlowCorrection(blocks){
+  const target = findLatestFlowEntry(blocks);
+  if(!target) return blocks;
+  return blocks.map(block=>{
+    if(block.type !== 'day') return block;
+    const items = block.items || block.entries || [];
+    if(!items.some(it=>it.id === target.id)) return block;
+    return {
+      ...block,
+      entries:undefined,
+      items:items.map(it=>(it.id !== target.id ? it : {
+        ...it,
+        periodDetails:(it.periodDetails || []).map(d=>(d.label === '流量' ? { ...d, value:'大量' } : d)),
+      })),
+    };
+  });
+}
+
+// 场景2 对话的追问轮次：按住说话依次发出，最后一轮之后重复最后一轮
+const SCENE2_ROUNDS = [
+  { text:SCENE1_FOLLOWUP_TEXT, buildAnswer:buildScene2FollowupAnswer, record:'period' },
+  { text:SCENE2_ROUND2_TEXT, buildAnswer:buildScene2Round2Answer, record:'mood' },
+  { text:SCENE2_ROUND4_TEXT, correction:true },
+];
+
+// 场景4「本次月经分析」对话的追问轮次：内容同场景2，但落轴改为文字记录卡
+const SCENE4_ROUNDS = [
+  { text:SCENE1_FOLLOWUP_TEXT, buildAnswer:buildScene2FollowupAnswer, record:'flow-card' },
+  { text:SCENE2_ROUND2_TEXT, buildAnswer:buildScene2Round2Answer, record:'mood-card' },
+  { text:SCENE2_ROUND4_TEXT, correction:true },
+];
+
+// 追问落轴的文字记录卡：原话 + 标签，沿用时间轴文字记录卡样式
+function createScene2TextRecordEntry(idPrefix, text, tags){
+  const id = idPrefix + '-' + Date.now();
+  return {
+    kind:'record-group',
+    id:id + '-g',
+    isNew:true,
+    primary:{ id, time:window.formatNowTime(), kind:'text', text, tags },
+  };
+}
+
+function createScene2MoodEntry(){
+  return createScene2TextRecordEntry('s2-mood', SCENE2_ROUND2_TEXT, [
+    { cat:'心情', icon:'mood', val:'' },
+    { cat:'症状', icon:'sym', val:'' },
+  ]);
+}
+
+// 场景4：对话里记录的内容，时间轴上只展示记录卡片（不保留用户原话），
+// 沿用时间轴经期记录卡的行样式，但不带「月经来了」那一行
+function createScene4RecordEntry(idPrefix, details){
+  return {
+    kind:'sync-card',
+    id:idPrefix + '-' + Date.now(),
+    isNew:true,
+    time:window.formatNowTime(),
+    recordSummary:true,
+    hidePeriodLabel:true,
+    periodDetails:details,
+  };
+}
+
+function createScene4FlowRecordEntry(){
+  return createScene4RecordEntry('s4-flow', [
+    { label:'流量', value:'中等', icon:'flow' },
+    { label:'痛经', value:'轻微', icon:'cramps' },
+  ]);
+}
+
+function createScene4MoodRecordEntry(){
+  return createScene4RecordEntry('s4-mood', [
+    { label:'心情', value:'一般', icon:'mood' },
+    { label:'症状', value:'腰酸、疲惫', icon:'symptom' },
+  ]);
+}
+
+// 场景4：原本在点滴 tab 内联展开的「本次月经分析」，改到二级对话页流式输出
+// 文案沿用 timeline-sister-cards.jsx 的 SISTER_LEAD / SISTER_PARA1 / SISTER_CLOSING；
+// 原卡片里的三周期柱状图在对话页里改为三行文字
+const SCENE4_PERIOD_ANALYSIS = [
+  { type:'p', text:'以下是本次月经情况的分析。先看一下你最近 3 个周期的情况：' },
+  { type:'li', text:'上上次 30 天，准时' },
+  { type:'li', text:'上次 31 天，准时' },
+  { type:'li', text:'本次 29 天，推迟 2 天' },
+  { type:'p', text:'你最近三次周期分别是 30天、31天、29天，整体波动幅度很小，属于非常规律的状态。' },
+  { type:'p', text:'这次周期天数落在 21–35天的理想范围内。很棒哦，继续保持现在的健康生活节奏就可以。' },
+  { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
+];
+
+function resolveScene1Answer(answerKey){
+  if(answerKey === 'scene2') return SCENE2_ANSWER;
+  if(answerKey === 'period-analysis') return SCENE4_PERIOD_ANALYSIS;
+  return SCENE1_ANSWER;
+}
+
 function createScene1AskEntry(options = {}){
   const now = Date.now();
   const completed = !!options.completed;
@@ -125,6 +302,33 @@ function appendScene1CompletedState(blocks){
   return next;
 }
 
+// 对话内的记录卡片：日期时间 + 提取到的记录项
+function Scene1ChatRecordCard({record}){
+  const rows = record?.rows || [];
+  return (
+    <div className="s1-chat-record">
+      {record?.time ? <div className="s1-chat-record-time">{record.time}</div> : null}
+      {rows.map((row, i)=>(
+        <div key={row.label + i} className="s1-chat-record-row">
+          <img className="s1-chat-record-icon" src={row.icon} alt="" width="18" height="18" draggable={false}/>
+          <span className="s1-chat-record-label">{row.label}</span>
+          <span className="s1-chat-record-value">{row.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 「已记录」前的对号图标：语义色用成功绿，不用品牌红
+function Scene1CheckIcon({size = 18}){
+  return (
+    <svg className="s1-chat-done-icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="var(--my-success)"/>
+      <path d="M7.5 12.4l3 3 6-6.4" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function Scene1LoadingDots(){
   return (
     <span className="s1-dots" aria-hidden="true"><i/><i/><i/></span>
@@ -172,6 +376,9 @@ function Scene1ChatIcon({size = 22}){
   );
 }
 
+// 对话栏标题逐字输出（与场景4 一致）：仅卡片新落轴时播放，重新挂载不重播
+const scene1ChatTitleStreamed = new Set();
+
 function Scene1AskRecordCard({entry, isNew}){
   const [extracting, setExtracting] = React.useState(()=>Date.now() < (entry.extractDoneAt || 0));
 
@@ -191,6 +398,12 @@ function Scene1AskRecordCard({entry, isNew}){
   const TLTag = window.TLTag;
   // 完成态（场景3初始态）标签与入口直接展示，只有新落轴的卡片才做淡入
   const revealCls = isNew ? ' s1-reveal' : '';
+  const [streamChatTitle] = React.useState(()=>{
+    if(!isNew || !entry.id) return false;
+    if(scene1ChatTitleStreamed.has(entry.id)) return false;
+    scene1ChatTitleStreamed.add(entry.id);
+    return true;
+  });
   const hasTags = (entry.tags || []).length > 0;
   // 无标签、无对话入口（如场景3的纠正语句）：加载结束后只保留原话
   const textOnly = !extracting && !hasTags && !entry.chatTitle;
@@ -214,7 +427,11 @@ function Scene1AskRecordCard({entry, isNew}){
               <div className="s1-ask-divider" role="separator"/>
               <button type="button" className={'s1-ask-chat-entry' + revealCls} onClick={openChat}>
                 <span className="s1-ask-chat-icon"><Scene1ChatIcon/></span>
-                <span className="s1-ask-chat-title">{entry.chatTitle}</span>
+                <span className="s1-ask-chat-title">
+                  {streamChatTitle && window.TypewriterText
+                    ? <window.TypewriterText text={entry.chatTitle} active charMs={90}/>
+                    : entry.chatTitle}
+                </span>
                 <svg className="s1-ask-chat-arrow" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M9 6l6 6-6 6"/>
                 </svg>
@@ -241,7 +458,16 @@ function renderScene1AnswerBlocks(blocks, shownChars, streaming){
     remaining -= block.text.length;
     const isTail = streaming && remaining <= 0;
     const caret = isTail ? <span className="ai-caret"/> : null;
-    if(block.type === 'h'){
+    if(block.type === 'record'){
+      out.push(<Scene1ChatRecordCard key={i} record={block.record}/>);
+    } else if(block.type === 'done'){
+      out.push(
+        <div key={i} className="s1-chat-done">
+          <Scene1CheckIcon/>
+          <span>{visible}{caret}</span>
+        </div>
+      );
+    } else if(block.type === 'h'){
       out.push(<div key={i} className="s1-chat-h">{visible}{caret}</div>);
     } else if(block.type === 'li'){
       out.push(<div key={i} className="s1-chat-li">{visible}{caret}</div>);
@@ -259,7 +485,9 @@ function Scene1AiMessage({blocks, loadingUntil = 0, instant = false, initialShow
   const total = React.useMemo(()=>countScene1Chars(blocks), [blocks]);
   const [loading, setLoading] = React.useState(()=>!instant && Date.now() < loadingUntil);
   const [shown, setShown] = React.useState(()=>(instant ? total : Math.min(initialShown, total)));
-  const done = !loading && shown >= total;
+  // blocks 为空：等待确认弹窗结果，继续显示加载态
+  const waiting = !blocks.length;
+  const done = !loading && !waiting && shown >= total;
   const onProgressRef = React.useRef(onProgress);
   const onDoneRef = React.useRef(onDone);
   const onShownRef = React.useRef(onShown);
@@ -274,7 +502,7 @@ function Scene1AiMessage({blocks, loadingUntil = 0, instant = false, initialShow
   }, [loading, loadingUntil]);
 
   React.useEffect(()=>{
-    if(loading) return;
+    if(loading || waiting) return;
     if(done){
       onDoneRef.current?.();
       return;
@@ -283,7 +511,7 @@ function Scene1AiMessage({blocks, loadingUntil = 0, instant = false, initialShow
       setShown(n=>Math.min(total, n + 1 + Math.floor(Math.random() * 3)));
     }, SCENE1_STREAM_TICK_MS);
     return ()=>clearTimeout(timer);
-  }, [loading, shown, total, done]);
+  }, [loading, waiting, shown, total, done]);
 
   React.useEffect(()=>{
     onShownRef.current?.(shown);
@@ -296,7 +524,7 @@ function Scene1AiMessage({blocks, loadingUntil = 0, instant = false, initialShow
   return (
     <div className="s1-chat-msg is-ai">
       <div className="s1-chat-ai">
-        {loading ? (
+        {(loading || waiting) ? (
           <Scene1ExtractLoading/>
         ) : (
           <div className="s1-chat-answer" aria-live="polite" aria-busy={!done}>
@@ -433,7 +661,7 @@ function getScene1ChatSession(key, completed, question, answerKey){
       { id:'a-1', role:'ai', blocks:SCENE1_FOLLOWUP_ANSWER, instant:true },
     ] : [
       { id:'u-0', role:'user', text:question },
-      { id:'a-0', role:'ai', blocks:answerKey === 'scene2' ? SCENE2_ANSWER : SCENE1_ANSWER },
+      { id:'a-0', role:'ai', blocks:resolveScene1Answer(answerKey) },
     ];
     scene1ChatStore.set(key, { messages, shown:{} });
   }
@@ -446,13 +674,17 @@ function isScene1MessageDone(msg, session){
     && (session.shown[msg.id] || 0) >= countScene1Chars(msg.blocks);
 }
 
-function Scene1ChatPage({question, title, completed = false, entryId, answerKey, onBack, onRecord}){
+function Scene1ChatPage({question, title, completed = false, entryId, answerKey, onBack, onRecord, onCorrection}){
   const [session] = React.useState(()=>getScene1ChatSession(entryId || question, completed, question, answerKey));
   const [messages, setMessages] = React.useState(session.messages);
   const [replying, setReplying] = React.useState(()=>session.messages.some(msg=>!isScene1MessageDone(msg, session)));
   const scrollRef = React.useRef(null);
   const onRecordRef = React.useRef(onRecord);
   onRecordRef.current = onRecord;
+  const onCorrectionRef = React.useRef(onCorrection);
+  onCorrectionRef.current = onCorrection;
+  // 第四轮纠正：等确认弹窗结果回来后，再把回复内容填进这条 AI 消息
+  const pendingCorrectionIdRef = React.useRef(null);
 
   const scrollToBottom = React.useCallback(()=>{
     const el = scrollRef.current;
@@ -463,17 +695,51 @@ function Scene1ChatPage({question, title, completed = false, entryId, answerKey,
   const handleVoiceDone = ()=>{
     if(replying) return;
     const now = Date.now();
+    // 按轮次发送：流量/痛经 → 心情/症状 → 纠正流量（弹确认弹窗）；之后重复最后一轮
+    // 场景1、场景2 用同一套；场景4 只有落轴的记录形式不同
+    const askedCount = session.messages.filter(m=>m.role === 'user').length - 1;
+    const rounds = answerKey === 'period-analysis' ? SCENE4_ROUNDS : SCENE2_ROUNDS;
+    const round = rounds[Math.min(askedCount, rounds.length - 1)];
+    const aiId = 'a-' + now;
     const next = [
       ...session.messages,
-      { id:'u-' + now, role:'user', text:SCENE1_FOLLOWUP_TEXT },
-      { id:'a-' + now, role:'ai', blocks:SCENE1_FOLLOWUP_ANSWER, loadingUntil:now + SCENE1_EXTRACT_MS },
+      { id:'u-' + now, role:'user', text:round.text },
+      {
+        id:aiId,
+        role:'ai',
+        blocks:round.correction ? [] : round.buildAnswer(),
+        loadingUntil:now + SCENE1_EXTRACT_MS,
+      },
     ];
     session.messages = next;
     setMessages(next);
     setReplying(true);
-    // 经期记录的落轴时机由 App 层计时（与加载态同步），返回点滴页也不会取消
-    onRecordRef.current?.();
+    if(round.correction){
+      pendingCorrectionIdRef.current = aiId;
+      onCorrectionRef.current?.();
+      return;
+    }
+    // 记录的落轴时机由 App 层计时（与加载态同步），返回点滴页也不会取消
+    onRecordRef.current?.(round.record);
   };
+
+  React.useEffect(()=>{
+    const onResult = (e)=>{
+      const id = pendingCorrectionIdRef.current;
+      if(!id) return;
+      pendingCorrectionIdRef.current = null;
+      const blocks = e.detail && e.detail.confirmed
+        ? buildScene2Round4ConfirmAnswer()
+        : SCENE2_ROUND4_CANCEL_ANSWER;
+      setMessages(list=>{
+        const next = list.map(m=>(m.id === id ? { ...m, blocks } : m));
+        session.messages = next;
+        return next;
+      });
+    };
+    window.addEventListener('scene1FlowCorrectionResult', onResult);
+    return ()=>window.removeEventListener('scene1FlowCorrectionResult', onResult);
+  }, [session]);
 
   React.useLayoutEffect(scrollToBottom, [messages.length, scrollToBottom]);
 
@@ -517,9 +783,15 @@ Object.assign(window, {
   SCENE1_EXTRACT_MS,
   createScene1AskEntry,
   createScene2AskEntry,
+  createScene2MoodEntry,
+  createScene4FlowRecordEntry,
+  createScene4MoodRecordEntry,
+  findLatestFlowEntry,
+  applyChatFlowCorrection,
   createScene1PeriodEntry,
   appendScene1CompletedState,
   resetScene1ChatStore,
   Scene1AskRecordCard,
+  Scene1ChatIcon,
   Scene1ChatPage,
 });

@@ -1,7 +1,8 @@
 // Demo 场景配置（v2）— 控制默认 Tab、页面展示与交互流程
 //
 // v2 在页面顶部中央提供「场景1 / 场景2 / 场景3」切换。
-// 三个场景都基于 v1 的「记录心情反馈」配置；场景3 的初始时间轴额外叠加场景1整个交互的播放完成态。
+// 四个场景都基于 v1 的「记录心情反馈」配置；场景3 的初始时间轴额外叠加场景1整个交互的播放完成态；
+// 场景4 是场景2 的副本。
 
 function buildBaseScene(id, label, options = {}){
   return {
@@ -48,6 +49,8 @@ const DEMO_SCENES = {
   'scene-3': buildBaseScene('scene-3', '场景3', {
     extendTimeline:(blocks)=>window.appendScene1CompletedState ? window.appendScene1CompletedState(blocks) : blocks,
   }),
+  // 场景4：场景2 的副本，交互与文案与场景2 完全一致
+  'scene-4': buildBaseScene('scene-4', '场景4'),
 };
 
 const DEMO_SCENE_OPTIONS = Object.values(DEMO_SCENES).map((s) => ({

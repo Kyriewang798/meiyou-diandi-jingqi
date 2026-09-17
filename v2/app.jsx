@@ -599,6 +599,7 @@ function App(){
     window.resetScene1ChatStore?.();
     clearTimeout(scene3ConfirmTimerRef.current);
     setScene3ConfirmOpen(false);
+    scene3CorrectEntryIdRef.current = null;
   };
 
   useEffect(()=>{
@@ -635,6 +636,8 @@ function App(){
       periodRecord.color ? { label:'颜色', value: periodRecord.color, icon:'color' } : null,
       periodRecord.cramps ? { label:'痛经', value: periodRecord.cramps, icon:'cramps' } : null,
     ].filter(Boolean);
+    // v2 场景4：月经来了卡片下方不展开「本次月经分析」，改为一条对话栏，点进二级对话页
+    const isScene4 = scene.id === 'scene-4';
     const syncEntry = {
       kind:'sync-card', id:'e-period-'+Date.now(), time: window.formatNowTime(),
       cardLabel:'自动同步', cardLabelKind:'sync',
@@ -644,6 +647,9 @@ function App(){
       periodDetails,
       periodSummaryLabel: isPeriodEndAnalysis ? '月经走喽' : '月经来了',
       analysisKind: isPeriodEndAnalysis ? 'period-end' : 'period-start',
+      chatEntry: (isScene4 && !isPeriodEndAnalysis)
+        ? { title:'本次月经分析', question:'月经来了', answerKey:'period-analysis' }
+        : undefined,
     };
     const sisterEntry = {
       kind:'sister-card', id:'e-sister-'+Date.now(), time: window.formatNowTime(), railDot:'ai',
@@ -654,7 +660,7 @@ function App(){
     const todayId = timeline.find(b=>b.type==='day' && b.isToday)?.id;
     setTimeline(blocks => {
       let result = window.appendTimelineEntry(blocks, syncEntry, { dayId: todayId });
-      result = window.appendTimelineEntry(result, sisterEntry, { dayId: todayId });
+      if(!isScene4) result = window.appendTimelineEntry(result, sisterEntry, { dayId: todayId });
       return result;
     });
 
@@ -663,7 +669,8 @@ function App(){
     setPeriodFeelVisible(true);
     setPeriodFeelReady(false);
     setActiveTab('note');
-    scrollToSisterAnalysis();
+    if(isScene4) scrollTimelineToLastItem('smooth');
+    else scrollToSisterAnalysis();
   };
 
   const handleSisterCycleComplete = React.useCallback(()=>{
@@ -699,12 +706,30 @@ function App(){
       setTimeout(()=>{
         const el = streamRef.current;
         if(!el) return;
-        const reserve = el.classList.contains('has-baby-discover')
+        // 预留到输入栏顶部：按 dock 实际位置计算（写死的数值会让最底部卡片被快捷输入栏压住）
+        const fallbackReserve = el.classList.contains('has-baby-discover')
           ? 220
           : el.classList.contains('has-dock-quick-strip')
             ? 176
             : 28;
-        const anchor = el.querySelector('.tl-rail-node.is-feed-last') || timelineEndRef.current;
+        const dockEl = document.querySelector('.dock-wrap');
+        const dockTop = dockEl ? dockEl.getBoundingClientRect().top : null;
+        const measuredReserve = dockTop != null
+          ? Math.round(el.getBoundingClientRect().bottom - dockTop) + 12
+          : null;
+        const reserve = (measuredReserve && measuredReserve > 0)
+          ? Math.max(measuredReserve, fallbackReserve)
+          : fallbackReserve;
+        // 今天还没有记录时，「今天」标题排在最后一条记录之后；
+        // 只用最后一条记录当锚点会把它顶到快捷输入栏底下，所以取两者中更靠下的那个
+        const feedLast = el.querySelector('.tl-rail-node.is-feed-last');
+        const todayHead = el.querySelector('.tl-day-section-head.is-today');
+        const lowerOf = (a, b)=>{
+          if(!a) return b;
+          if(!b) return a;
+          return b.getBoundingClientRect().bottom > a.getBoundingClientRect().bottom ? b : a;
+        };
+        const anchor = lowerOf(feedLast, todayHead) || timelineEndRef.current;
         if(anchor){
           const top = anchor.getBoundingClientRect().bottom - el.getBoundingClientRect().top + el.scrollTop - (el.clientHeight - reserve);
           if(behavior === 'auto') el.scrollTop = Math.max(0, top);
@@ -1826,21 +1851,26 @@ function App(){
     if(scene.id === 'scene-3' && window.createScene3CorrectionEntry){
       markUserRecorded();
       const entry = window.createScene3CorrectionEntry();
+      scene3CorrectEntryIdRef.current = entry.id;
       setTimeline(blocks=>{
         const todayId = blocks.find(b=>b.type==='day' && b.isToday)?.id;
         return window.appendTimelineEntry(blocks, entry, { dayId: todayId });
       });
       scrollTimelineToLastItem('smooth');
       clearTimeout(scene3ConfirmTimerRef.current);
-      scene3ConfirmTimerRef.current = setTimeout(()=>setScene3ConfirmOpen(true), window.SCENE1_EXTRACT_MS);
+      scene3ConfirmTimerRef.current = setTimeout(()=>{
+        setScene3ConfirmSource('scene3');
+        setScene3ConfirmOpen(true);
+      }, window.SCENE1_EXTRACT_MS);
       return;
     }
 
     // v2 场景1：固定演示语句落轴 → 2s 提取/分析加载态 → 标签 + 对话入口
-    // v2 场景2：纯提问「我的月经规律么？」落轴 → 2s 加载态 → 只展示对话入口
-    if((scene.id === 'scene-1' || scene.id === 'scene-2') && window.createScene1AskEntry){
+    // v2 场景2 / 场景4（场景2 的副本）：纯提问「我的月经规律么？」落轴 → 2s 加载态 → 只展示对话入口
+    const isScene2Like = scene.id === 'scene-2' || scene.id === 'scene-4';
+    if((scene.id === 'scene-1' || isScene2Like) && window.createScene1AskEntry){
       markUserRecorded();
-      const entry = scene.id === 'scene-2' && window.createScene2AskEntry
+      const entry = isScene2Like && window.createScene2AskEntry
         ? window.createScene2AskEntry()
         : window.createScene1AskEntry();
       setTimeline(blocks=>{
@@ -2591,6 +2621,10 @@ function App(){
   // v2 场景3：纠正确认弹窗（加载态结束后由 submitVoice 的计时器打开）
   const [scene3ConfirmOpen, setScene3ConfirmOpen] = React.useState(false);
   const scene3ConfirmTimerRef = React.useRef(null);
+  // 本次纠正语句的卡片 id：确认后给它补上「流量」标签
+  const scene3CorrectEntryIdRef = React.useRef(null);
+  // 弹窗来源：'scene3'（时间轴语音纠正）或 'chat'（对话第四轮纠正）
+  const [scene3ConfirmSource, setScene3ConfirmSource] = React.useState('scene3');
   useEffect(()=>{
     const handleOpenScene1Chat = (e)=>setScene1Chat(e.detail || null);
     window.addEventListener('openScene1Chat', handleOpenScene1Chat);
@@ -3024,11 +3058,22 @@ function App(){
             setScene1Chat(null);
             scrollTimelineToLastItem('smooth');
           }}
-          onRecord={()=>{
-            if(!window.createScene1PeriodEntry) return;
+          onCorrection={()=>{
+            clearTimeout(scene3ConfirmTimerRef.current);
+            scene3ConfirmTimerRef.current = setTimeout(()=>{
+              setScene3ConfirmSource('chat');
+              setScene3ConfirmOpen(true);
+            }, window.SCENE1_EXTRACT_MS);
+          }}
+          onRecord={(recordKind)=>{
+            const makeEntry = recordKind === 'mood' ? window.createScene2MoodEntry
+              : recordKind === 'flow-card' ? window.createScene4FlowRecordEntry
+              : recordKind === 'mood-card' ? window.createScene4MoodRecordEntry
+              : window.createScene1PeriodEntry;
+            if(!makeEntry) return;
             // 与对话页的提取加载态同步：加载结束时落轴
             scene1RecordTimerRef.current = setTimeout(()=>{
-              const entry = window.createScene1PeriodEntry();
+              const entry = makeEntry();
               setTimeline(blocks=>{
                 const todayId = blocks.find(b=>b.type==='day' && b.isToday)?.id;
                 return window.appendTimelineEntry(blocks, entry, { dayId: todayId });
@@ -3040,11 +3085,23 @@ function App(){
 
       {scene3ConfirmOpen && window.Scene3FlowConfirmDialog ? (
         <window.Scene3FlowConfirmDialog
-          entry={window.findScene3TargetEntry?.(timeline)}
-          onCancel={()=>setScene3ConfirmOpen(false)}
+          entry={scene3ConfirmSource === 'chat'
+            ? window.findLatestFlowEntry?.(timeline)
+            : window.findScene3TargetEntry?.(timeline)}
+          onCancel={()=>{
+            setScene3ConfirmOpen(false);
+            if(scene3ConfirmSource === 'chat'){
+              window.dispatchEvent(new CustomEvent('scene1FlowCorrectionResult', { detail:{ confirmed:false } }));
+            }
+          }}
           onConfirm={()=>{
             setScene3ConfirmOpen(false);
-            setTimeline(blocks=>window.applyScene3FlowCorrection(blocks));
+            if(scene3ConfirmSource === 'chat'){
+              setTimeline(blocks=>window.applyChatFlowCorrection(blocks));
+              window.dispatchEvent(new CustomEvent('scene1FlowCorrectionResult', { detail:{ confirmed:true } }));
+              return;
+            }
+            setTimeline(blocks=>window.applyScene3FlowCorrection(blocks, scene3CorrectEntryIdRef.current));
             window.scrollScene3TargetIntoView?.();
           }}
         />

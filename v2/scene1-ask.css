@@ -212,6 +212,64 @@
   border-radius:12px;
   background:var(--my-surface);
 }
+/* 时间轴经期卡片内的对话入口分隔线（卡片自带 16px 内边距，不做负边距） */
+.s1-ask-chat-divider{
+  margin-top:2px;
+  border-top:0.5px dashed rgba(0,0,0,0.08);
+}
+
+/* 对话内记录卡片：浅灰底，和白色回复气泡区分 */
+.s1-chat-record{
+  margin:2px 0 10px;
+  padding:12px;
+  border-radius:12px;
+  background:var(--my-bg);
+}
+.s1-chat-record-time{
+  margin-bottom:6px;
+  font-size:12px;
+  line-height:16px;
+  color:var(--my-text-tertiary);
+  font-variant-numeric:tabular-nums;
+}
+.s1-chat-record-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:26px;
+  font-size:15px;
+  line-height:1.5;
+}
+.s1-chat-record-icon{
+  width:18px;
+  height:18px;
+  flex-shrink:0;
+}
+.s1-chat-record-label{
+  color:var(--my-text-secondary);
+}
+.s1-chat-record-label::after{
+  content:'：';
+}
+.s1-chat-record-value{
+  color:var(--my-text-primary);
+  font-weight:500;
+}
+
+/* 「已记录…」确认行：对号图标 + 文案 */
+.s1-chat-done{
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+  margin:0 0 8px;
+  font-size:15px;
+  line-height:1.65;
+  color:var(--my-text-primary);
+}
+.s1-chat-done-icon{
+  flex-shrink:0;
+  margin-top:3px;
+}
 .s1-chat-p{
   margin:0 0 8px;
   font-size:15px;
