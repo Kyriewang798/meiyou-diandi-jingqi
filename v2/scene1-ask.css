@@ -88,6 +88,40 @@
   stroke-linejoin:round;
 }
 
+/* v2 场景4：反馈内容下方的追问栏。
+   文字样式沿用 .tl-period-review-entry（查看月经周期变化趋势那一栏），
+   这里只补图标与文字的排布。 */
+.tl-period-followup-main{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.tl-period-followup-icon{
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 18px;
+}
+.tl-period-followup-icon svg{
+  width:100%;
+  height:100%;
+}
+
+/* 记录卡下方（无反馈内容时）的追问栏，保持原来的对话栏样式 */
+.s1-ask-chat-entry.is-follow-up{
+  padding:12px 0;
+}
+.s1-ask-chat-entry.is-follow-up .s1-ask-chat-title{
+  font-size:15px;
+}
+.s1-ask-chat-label{
+  color:#ff4d88;
+  font-weight:600;
+}
+
 /* ---- 加载点 ---- */
 .s1-dots{
   display:inline-flex;

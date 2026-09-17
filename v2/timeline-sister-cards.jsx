@@ -637,34 +637,103 @@ function PeriodRecordSummary({entry}){
   );
 }
 
-// v2 场景4：经期卡片下方的「本次月经分析」对话栏
-// 卡片首次出现时标题逐字输出；切 Tab 回来重新挂载不重播
-const scene4ChatTitleStreamed = new Set();
+// 追问栏专用图标：描边气泡 + 问号。
+// 通用的 Scene1ChatIcon 是实心渐变气泡加三个白点，放在 18px 的紧凑行里过重，
+// 白点也糊成一团；这里改成细描边 + 品牌浅底，笔画粗细与同行的右箭头对齐。
+function PeriodFollowUpIcon({size = 18}){
+  const uid = React.useId().replace(/:/g, '');
+  const gradId = 'tl-followup-grad-' + uid;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ff6aa0"/>
+          <stop offset="60%" stopColor="#ff4d88"/>
+          <stop offset="100%" stopColor="#b85cff"/>
+        </linearGradient>
+      </defs>
+      <path
+        d="M12 3.9c4.7 0 8.5 3.18 8.5 7.1s-3.8 7.1-8.5 7.1c-.85 0-1.68-.1-2.46-.3l-3.9 2.08a.6.6 0 01-.86-.66l.7-3.2C3.6 14.8 3.5 12.98 3.5 11c0-3.92 3.8-7.1 8.5-7.1z"
+        fill="rgba(255,77,136,0.10)"
+        stroke={'url(#' + gradId + ')'}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.5 8.9a2.6 2.6 0 1 1 3.7 2.36c-.72.36-1.2.9-1.2 1.64"
+        stroke={'url(#' + gradId + ')'}
+        strokeWidth="1.85"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 15.1v.01"
+        stroke={'url(#' + gradId + ')'}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
-function PeriodChatEntryRow({entry, isNew}){
-  const chat = entry.chatEntry || {};
+// v2 场景4：反馈内容（本次月经分析）下方的追问栏
+// 反馈流式输出结束后才出现，标题逐字输出；切 Tab 回来重新挂载不重播
+const periodFollowUpStreamed = new Set();
+
+function PeriodFollowUpRow({entry, isNew, variant}){
+  const followUp = entry.followUpEntry || {};
   const [streamTitle] = React.useState(()=>{
     if(!isNew || !entry.id) return false;
-    if(scene4ChatTitleStreamed.has(entry.id)) return false;
-    scene4ChatTitleStreamed.add(entry.id);
+    if(periodFollowUpStreamed.has(entry.id)) return false;
+    periodFollowUpStreamed.add(entry.id);
     return true;
   });
 
   const openChat = ()=>{
     window.dispatchEvent(new CustomEvent('openScene1Chat', {
-      detail:{ question:chat.question, title:chat.title, entryId:entry.id, answerKey:chat.answerKey },
+      detail:{
+        question: followUp.question,
+        title: followUp.title,
+        entryId: entry.id,
+        answerKey: followUp.answerKey,
+      },
     }));
   };
+
+  const titleNode = streamTitle
+    ? <TypewriterText text={followUp.title} active charMs={90}/>
+    : followUp.title;
+
+  // 反馈内容下方：沿用「查看月经周期变化趋势」那一栏的样式（占同一个位置）
+  if(variant === 'review'){
+    return (
+      <button
+        type="button"
+        className="tl-period-review-entry tl-period-followup-entry"
+        onClick={openChat}
+      >
+        <span className="tl-period-followup-main">
+          <span className="tl-period-followup-icon">
+            <PeriodFollowUpIcon/>
+          </span>
+          <span>追问：{titleNode}</span>
+        </span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6"/>
+        </svg>
+      </button>
+    );
+  }
 
   return (
     <>
       <div className="s1-ask-chat-divider" role="separator"/>
-      <button type="button" className="s1-ask-chat-entry" onClick={openChat}>
+      <button type="button" className="s1-ask-chat-entry is-follow-up" onClick={openChat}>
         <span className="s1-ask-chat-icon">
           {window.Scene1ChatIcon ? <window.Scene1ChatIcon/> : null}
         </span>
         <span className="s1-ask-chat-title">
-          {streamTitle ? <TypewriterText text={chat.title} active charMs={90}/> : chat.title}
+          <span className="s1-ask-chat-label">追问：</span>
+          {titleNode}
         </span>
         <svg className="s1-ask-chat-arrow" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 6l6 6-6 6"/>
@@ -770,9 +839,9 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
         />
       )}
 
-      {/* v2 场景4：把「本次月经分析」换成一条对话栏，点进二级对话页 */}
-      {!hasAnalysis && entry.chatEntry ? (
-        <PeriodChatEntryRow entry={entry} isNew={isNew}/>
+      {/* v2 场景4：没有反馈内容时（如经期结束），追问栏直接挂在记录卡下方 */}
+      {!hasAnalysis && entry.followUpEntry ? (
+        <PeriodFollowUpRow entry={entry} isNew={isNew}/>
       ) : null}
     </div>
   );
@@ -1101,7 +1170,7 @@ function TlAiChartIcon({size = 10, color = '#FF4D88'}){
   );
 }
 
-function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText, periodStyle = false, analysisKind = 'period-start', showPeriodFeelPrompt = true, periodFeelGuideCopy = PERIOD_FEEL_GUIDE_COPY}){
+function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText, periodStyle = false, analysisKind = 'period-start', showPeriodFeelPrompt = true, periodFeelGuideCopy = PERIOD_FEEL_GUIDE_COPY, followUpEntry, followUpHostId, followUpIsNew}){
   const [open, setOpen] = React.useState(true);
   const [canCollapse, setCanCollapse] = React.useState(!animateText);
   const [hasSeenAnimation, setHasSeenAnimation] = React.useState(!animateText);
@@ -1170,7 +1239,8 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             />
           </div>
         )}
-        {periodStyle && analysisKind === 'period-start' ? (
+        {/* 有追问栏时（v2 场景4），这一栏让位给追问栏，两者共用同一个位置 */}
+        {periodStyle && analysisKind === 'period-start' && !followUpEntry ? (
           <button
             type="button"
             className="tl-period-review-entry"
@@ -1182,6 +1252,14 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
               <path d="M9 6l6 6-6 6"/>
             </svg>
           </button>
+        ) : null}
+        {/* v2 场景4：反馈内容下方的追问栏，等流式输出结束再出现 */}
+        {followUpEntry && open && hasSeenAnimation ? (
+          <PeriodFollowUpRow
+            entry={{ id: followUpHostId, followUpEntry }}
+            isNew={!!followUpIsNew}
+            variant="review"
+          />
         ) : null}
       </section>
     </>

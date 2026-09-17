@@ -1045,6 +1045,10 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
           onCycleComplete: onSisterCycleComplete,
           analysisKind: sisterItem.analysisKind || item.analysisKind,
           showPeriodFeelPrompt: sisterItem.periodFeelPrompt !== false,
+          // v2 场景4：反馈流式输出结束后，在反馈内容下方挂一条追问栏
+          followUpEntry: item.followUpEntry,
+          followUpHostId: item.id,
+          followUpIsNew: isNew,
         } : null}
       />
     );

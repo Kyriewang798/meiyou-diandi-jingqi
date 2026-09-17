@@ -32,6 +32,8 @@ function createScene3CorrectionEntry(){
     text:SCENE3_VOICE_TEXT,
     tags:[],
     extractDoneAt:now + window.SCENE1_EXTRACT_MS,
+    // 提取结束后，确认改在这张卡的反馈模块里进行（不再弹窗）
+    flowConfirm:'pending',
   };
 }
 
@@ -141,10 +143,62 @@ function Scene3FlowConfirmDialog({entry, onConfirm, onCancel}){
   );
 }
 
+// v2 场景3：把确认弹窗搬进记录卡的反馈模块。
+// 结构对应点滴的信息结构：反馈（文案 + 前后对比）+ 操作区（取消 / 确认）。
+// state：pending 待确认 / confirmed 已修改 / cancelled 已取消
+// target：被修改的那条经期记录（09:31 的卡）；entryId：本次纠正语句卡片的 id
+function Scene3FlowConfirmInline({target, entryId, state = 'pending'}){
+  const record = target || {
+    time:'',
+    periodDetails:[{ label:SCENE3_FLOW_LABEL, value:SCENE3_FLOW_FROM, icon:'flow' }],
+  };
+
+  if(state === 'confirmed' || state === 'cancelled'){
+    const done = state === 'confirmed';
+    return (
+      <div className={'s3-inline-result is-' + state} role="status">
+        <span className="s3-inline-result-icon" aria-hidden="true">{done ? '✓' : '×'}</span>
+        <span className="s3-inline-result-text">
+          {done
+            ? <>已把{SCENE3_FLOW_LABEL}改为 <b>{SCENE3_FLOW_TO}</b></>
+            : <>已取消操作</>}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <section className="s3-inline-confirm" aria-label="修改流量记录">
+      <p className="s3-inline-desc">好的，请确认是否执行以下修改：</p>
+
+      <div className="s3-inline-diff">
+        <div className="s3-diff-label">变更前</div>
+        <Scene3RecordPreview entry={record} variant="before"/>
+        <div className="s3-diff-label">变更后</div>
+        <Scene3RecordPreview entry={record} variant="after"/>
+      </div>
+
+      <div className="s3-inline-actions">
+        <button
+          type="button"
+          className="s3-inline-btn is-cancel"
+          onClick={()=>window.dispatchEvent(new CustomEvent('scene3FlowResolve', { detail:{ entryId, action:'cancel' } }))}
+        >取消</button>
+        <button
+          type="button"
+          className="s3-inline-btn is-confirm"
+          onClick={()=>window.dispatchEvent(new CustomEvent('scene3FlowResolve', { detail:{ entryId, action:'confirm' } }))}
+        >确认</button>
+      </div>
+    </section>
+  );
+}
+
 Object.assign(window, {
   createScene3CorrectionEntry,
   findScene3TargetEntry,
   applyScene3FlowCorrection,
   scrollScene3TargetIntoView,
   Scene3FlowConfirmDialog,
+  Scene3FlowConfirmInline,
 });

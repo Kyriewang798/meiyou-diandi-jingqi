@@ -139,3 +139,85 @@
   from{opacity:0;transform:scale(0.94)}
   to{opacity:1;transform:none}
 }
+
+/* ===== v2 场景3：确认区内联在记录卡的反馈模块里（替代弹窗） ===== */
+.s1-ask-feedback{
+  margin-top:2px;
+}
+.s3-inline-confirm{
+  padding-top:10px;
+}
+.s3-inline-desc{
+  margin:0;
+  font-size:14px;
+  line-height:1.55;
+  color:var(--my-text-secondary);
+}
+.s3-inline-diff{
+  margin-top:10px;
+  padding:2px 12px 12px;
+  border-radius:12px;
+  background:var(--my-bg);
+}
+/* 操作区：与弹窗按钮同一套视觉，靠右排布，尺寸收小一档 */
+.s3-inline-actions{
+  margin-top:14px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+.s3-inline-btn{
+  min-width:84px;
+  height:34px;
+  padding:0 18px;
+  border:0;
+  border-radius:999px;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:opacity 150ms;
+}
+.s3-inline-btn:active{
+  opacity:0.75;
+}
+.s3-inline-btn.is-cancel{
+  background:var(--my-bg);
+  color:var(--my-text-secondary);
+}
+.s3-inline-btn.is-confirm{
+  background:var(--my-brand-red);
+  color:#fff;
+}
+/* 确认 / 取消之后的结果行 */
+.s3-inline-result{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:11px 0 2px;
+  font-size:14px;
+  line-height:20px;
+  color:var(--my-text-secondary);
+}
+.s3-inline-result b{
+  font-weight:600;
+  color:var(--my-text-primary);
+}
+.s3-inline-result-icon{
+  width:18px;
+  height:18px;
+  flex:0 0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  font-size:12px;
+  line-height:1;
+  color:#fff;
+}
+.s3-inline-result.is-confirmed .s3-inline-result-icon{
+  background:var(--my-success, #00cc99);
+}
+.s3-inline-result.is-cancelled .s3-inline-result-icon{
+  background:var(--my-text-tertiary, #999);
+}

@@ -227,9 +227,23 @@ const SCENE4_PERIOD_ANALYSIS = [
   { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
 ];
 
+// 场景4：反馈内容下方追问栏「为什么这次推迟了 2 天？」的回答。
+// 反馈已经在点滴 tab 里给过规律性结论，这里只解释推迟这一件事，不重复分析。
+const SCENE4_PERIOD_DELAY = [
+  { type:'p', text:'推迟 2 天在你的周期里属于正常波动，不用担心。' },
+  { type:'p', text:'月经推迟最常见的原因有这几个：' },
+  { type:'li', text:'作息变化 —— 熬夜、睡眠不足会影响激素节律' },
+  { type:'li', text:'压力和情绪 —— 近期紧张、焦虑都可能让排卵推后' },
+  { type:'li', text:'体重和运动量的短期变化' },
+  { type:'p', text:'你最近三次周期是 30天、31天、29天，波动都在 2 天以内，属于很稳的状态。医学上只要周期在 21–35 天之间、前后波动不超过 7 天，都算规律。' },
+  { type:'p', text:'如果接下来连续 2 次都推迟超过 7 天，再来找我看看，我会帮你对比这几个周期的记录。' },
+  { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
+];
+
 function resolveScene1Answer(answerKey){
   if(answerKey === 'scene2') return SCENE2_ANSWER;
   if(answerKey === 'period-analysis') return SCENE4_PERIOD_ANALYSIS;
+  if(answerKey === 'period-delay') return SCENE4_PERIOD_DELAY;
   return SCENE1_ANSWER;
 }
 
@@ -405,8 +419,10 @@ function Scene1AskRecordCard({entry, isNew}){
     return true;
   });
   const hasTags = (entry.tags || []).length > 0;
-  // 无标签、无对话入口（如场景3的纠正语句）：加载结束后只保留原话
-  const textOnly = !extracting && !hasTags && !entry.chatTitle;
+  // v2 场景3：修改流量的确认改在这张卡的反馈模块里做，不再弹窗
+  const flowConfirm = entry.flowConfirm;
+  // 无标签、无对话入口、也没有待确认的修改：加载结束后只保留原话
+  const textOnly = !extracting && !hasTags && !entry.chatTitle && !flowConfirm;
 
   return (
     <div className={'s1-ask-card' + (isNew ? ' fade-in' : '') + (textOnly ? ' is-text-only' : '')} data-entry-id={entry.id}>
@@ -420,6 +436,16 @@ function Scene1AskRecordCard({entry, isNew}){
           {hasTags ? (
             <div className={'s1-ask-tags' + revealCls}>
               {TLTag ? entry.tags.map((tag, i)=><TLTag key={i} tag={tag}/>) : null}
+            </div>
+          ) : null}
+          {flowConfirm && window.Scene3FlowConfirmInline ? (
+            <div className={'s1-ask-feedback' + revealCls}>
+              <div className="s1-ask-divider" role="separator"/>
+              <window.Scene3FlowConfirmInline
+                target={entry.flowConfirmTarget}
+                entryId={entry.id}
+                state={flowConfirm}
+              />
             </div>
           ) : null}
           {entry.chatTitle ? (
@@ -698,7 +724,8 @@ function Scene1ChatPage({question, title, completed = false, entryId, answerKey,
     // 按轮次发送：流量/痛经 → 心情/症状 → 纠正流量（弹确认弹窗）；之后重复最后一轮
     // 场景1、场景2 用同一套；场景4 只有落轴的记录形式不同
     const askedCount = session.messages.filter(m=>m.role === 'user').length - 1;
-    const rounds = answerKey === 'period-analysis' ? SCENE4_ROUNDS : SCENE2_ROUNDS;
+    const isScene4Key = answerKey === 'period-analysis' || answerKey === 'period-delay';
+    const rounds = isScene4Key ? SCENE4_ROUNDS : SCENE2_ROUNDS;
     const round = rounds[Math.min(askedCount, rounds.length - 1)];
     const aiId = 'a-' + now;
     const next = [

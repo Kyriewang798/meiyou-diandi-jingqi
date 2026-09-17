@@ -9,6 +9,11 @@ const DEFAULT_REVIEW_SHARE_STATE = {
   modules:{cycle:true, period:true, care:true, mood:false, symptom:false, weight:false, intimate:false},
 };
 
+// 「经期感受」功能下线开关：四个场景统一隐藏快捷栏入口图标、入场/脉冲动效与引导气泡。
+// 图标不渲染，依附其上的 is-period-feel-enter / drop / pulse 动效也就不会触发；
+// 入口没了，PeriodFeelOverlay 录制弹层同样进不去。改回 true 即可整体恢复。
+const PERIOD_FEEL_ENABLED = false;
+
 function PeriodFeelOverlay({open, onClose, onComplete, label='经期感受'}){
   const [state, setState] = React.useState('ready');
   const [text, setText] = React.useState('');
@@ -636,7 +641,8 @@ function App(){
       periodRecord.color ? { label:'颜色', value: periodRecord.color, icon:'color' } : null,
       periodRecord.cramps ? { label:'痛经', value: periodRecord.cramps, icon:'cramps' } : null,
     ].filter(Boolean);
-    // v2 场景4：月经来了卡片下方不展开「本次月经分析」，改为一条对话栏，点进二级对话页
+    // v2 场景4：点滴 tab 内联流式输出「本次月经分析」（与其他场景一致），
+    // 反馈内容下方再挂一条追问栏，点进二级对话页继续问
     const isScene4 = scene.id === 'scene-4';
     const syncEntry = {
       kind:'sync-card', id:'e-period-'+Date.now(), time: window.formatNowTime(),
@@ -647,8 +653,12 @@ function App(){
       periodDetails,
       periodSummaryLabel: isPeriodEndAnalysis ? '月经走喽' : '月经来了',
       analysisKind: isPeriodEndAnalysis ? 'period-end' : 'period-start',
-      chatEntry: (isScene4 && !isPeriodEndAnalysis)
-        ? { title:'本次月经分析', question:'月经来了', answerKey:'period-analysis' }
+      followUpEntry: (isScene4 && !isPeriodEndAnalysis)
+        ? {
+            title:'推迟2天正常吗？',
+            question:'推迟2天正常吗？',
+            answerKey:'period-delay',
+          }
         : undefined,
     };
     const sisterEntry = {
@@ -660,7 +670,7 @@ function App(){
     const todayId = timeline.find(b=>b.type==='day' && b.isToday)?.id;
     setTimeline(blocks => {
       let result = window.appendTimelineEntry(blocks, syncEntry, { dayId: todayId });
-      if(!isScene4) result = window.appendTimelineEntry(result, sisterEntry, { dayId: todayId });
+      result = window.appendTimelineEntry(result, sisterEntry, { dayId: todayId });
       return result;
     });
 
@@ -669,8 +679,7 @@ function App(){
     setPeriodFeelVisible(true);
     setPeriodFeelReady(false);
     setActiveTab('note');
-    if(isScene4) scrollTimelineToLastItem('smooth');
-    else scrollToSisterAnalysis();
+    scrollToSisterAnalysis();
   };
 
   const handleSisterCycleComplete = React.useCallback(()=>{
@@ -1854,14 +1863,16 @@ function App(){
       scene3CorrectEntryIdRef.current = entry.id;
       setTimeline(blocks=>{
         const todayId = blocks.find(b=>b.type==='day' && b.isToday)?.id;
-        return window.appendTimelineEntry(blocks, entry, { dayId: todayId });
+        // 把被改的那条经期记录快照进来，反馈模块里要用它做「变更前 / 变更后」对比
+        const withTarget = { ...entry, flowConfirmTarget: window.findScene3TargetEntry?.(blocks) };
+        return window.appendTimelineEntry(blocks, withTarget, { dayId: todayId });
       });
+      // 提取加载态结束后，确认区自己就出现在这张卡的反馈模块里，不再弹窗
       scrollTimelineToLastItem('smooth');
       clearTimeout(scene3ConfirmTimerRef.current);
       scene3ConfirmTimerRef.current = setTimeout(()=>{
-        setScene3ConfirmSource('scene3');
-        setScene3ConfirmOpen(true);
-      }, window.SCENE1_EXTRACT_MS);
+        scrollTimelineToLastItem('smooth');
+      }, window.SCENE1_EXTRACT_MS + 80);
       return;
     }
 
@@ -2625,6 +2636,38 @@ function App(){
   const scene3CorrectEntryIdRef = React.useRef(null);
   // 弹窗来源：'scene3'（时间轴语音纠正）或 'chat'（对话第四轮纠正）
   const [scene3ConfirmSource, setScene3ConfirmSource] = React.useState('scene3');
+
+  // v2 场景3：反馈模块里的操作区点了确认 / 取消
+  useEffect(()=>{
+    const onResolve = (e)=>{
+      const { entryId, action } = e.detail || {};
+      if(!entryId) return;
+      const confirmed = action === 'confirm';
+      setTimeline(blocks=>{
+        const next = confirmed
+          ? window.applyScene3FlowCorrection(blocks, entryId)
+          : blocks;
+        return next.map(block=>{
+          if(block.type !== 'day') return block;
+          const items = block.items || block.entries || [];
+          if(!items.some(it=>it.id === entryId)) return block;
+          return {
+            ...block,
+            entries:undefined,
+            items:items.map(it=>(
+              it.id === entryId
+                ? { ...it, flowConfirm: confirmed ? 'confirmed' : 'cancelled' }
+                : it
+            )),
+          };
+        });
+      });
+      if(confirmed) window.scrollScene3TargetIntoView?.();
+    };
+    window.addEventListener('scene3FlowResolve', onResolve);
+    return ()=>window.removeEventListener('scene3FlowResolve', onResolve);
+  }, []);
+
   useEffect(()=>{
     const handleOpenScene1Chat = (e)=>setScene1Chat(e.detail || null);
     window.addEventListener('openScene1Chat', handleOpenScene1Chat);
@@ -2665,7 +2708,7 @@ function App(){
     : null;
   const periodDockQuickItems = showPeriodQuickStrip
     ? [
-        ...(periodFeelVisible ? [{id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false}] : []),
+        ...(PERIOD_FEEL_ENABLED && periodFeelVisible ? [{id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false}] : []),
         ...PERIOD_DOCK_QUICK_ITEMS,
       ].map(item=>({
         ...item,
@@ -2979,7 +3022,7 @@ function App(){
             setPeriodFeelModalOpen(true);
           }}
           periodFeelLabel="经期感受"
-          periodFeelGuide={periodFeelGuideVisible}
+          periodFeelGuide={PERIOD_FEEL_ENABLED && periodFeelGuideVisible}
           periodFeelGuideText="血量变化、经期症状，都能帮你快速记下来，立刻试试吧"
           demoPhase={demoPhase}
           isDemoRunning={isDemoRunning}
