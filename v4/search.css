@@ -1,0 +1,773 @@
+.suiji-shell.is-search-open .stream-header .stream-action[aria-label="搜索"]{
+  opacity:0;
+  pointer-events:none;
+}
+.suiji-shell.is-xhs-search-open .suiji-stream{
+  filter:brightness(0.72);
+  pointer-events:none;
+}
+.suiji-shell.is-xhs-search-open .dock-wrap{
+  opacity:0;
+  pointer-events:none;
+}
+.suiji-shell.is-filter-panel-open .suiji-stream{
+  filter:brightness(0.72);
+}
+.suiji-shell.is-filter-panel-open .dock-wrap,
+.suiji-shell.is-filter-panel-open .baby-feeding-quick-strip{
+  opacity:0.35;
+  pointer-events:none;
+}
+.suiji-shell.is-filter-panel-open .stream-header{
+  z-index:27;
+  position:relative;
+}
+
+/* ============ 小红书风格搜索页 ============ */
+.xhs-search-page{
+  position:absolute;
+  inset:0;
+  z-index:26;
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+  overflow:hidden;
+}
+.xhs-search-page.is-filter-only{
+  top:50px;
+  bottom:auto;
+  max-height:calc(100% - 50px);
+  border-radius:0 0 16px 16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+}
+.xhs-search-page.is-filter-only .xhs-search-body{
+  padding-top:16px;
+  max-height:calc(100vh - 50px - 52px);
+}
+.xhs-search-top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px 10px;
+  flex-shrink:0;
+}
+.xhs-search-back{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:transparent;
+  color:rgba(0,0,0,0.72);
+  flex-shrink:0;
+  padding:0;
+  cursor:pointer;
+}
+.xhs-search-field{
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-height:36px;
+  padding:0 10px;
+  background:#f5f5f7;
+  border-radius:80px;
+}
+.xhs-search-input{
+  flex:1;
+  min-width:0;
+  border:none;
+  background:transparent;
+  font:inherit;
+  font-size:15px;
+  line-height:1.47;
+  color:rgba(0,0,0,0.8);
+  outline:none;
+}
+.xhs-search-clear{
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:rgba(0,0,0,0.18);
+  border-radius:50%;
+  color:#fff;
+  flex-shrink:0;
+  padding:0;
+  cursor:pointer;
+}
+.xhs-search-submit{
+  border:none;
+  background:transparent;
+  font:inherit;
+  font-size:15px;
+  line-height:1.47;
+  color:rgba(0,0,0,0.8);
+  flex-shrink:0;
+  padding:0 2px;
+  cursor:pointer;
+}
+.xhs-search-tabs{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:0 16px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  border-bottom:0.5px solid rgba(0,0,0,0.06);
+  flex-shrink:0;
+}
+.xhs-search-tabs::-webkit-scrollbar{display:none}
+.xhs-search-tab{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  border:none;
+  background:transparent;
+  padding:10px 0 12px;
+  font:inherit;
+  font-size:15px;
+  line-height:1.47;
+  color:rgba(0,0,0,0.45);
+  white-space:nowrap;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.xhs-search-tab.is-active{
+  color:rgba(0,0,0,0.85);
+  font-weight:500;
+}
+.xhs-search-tab.is-active::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:24px;
+  height:2px;
+  margin-left:-12px;
+  border-radius:2px;
+  background:#ff4d88;
+}
+.xhs-search-tab-filter{
+  display:flex;
+  color:rgba(0,0,0,0.45);
+}
+.xhs-search-body{
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:12px 16px 8px;
+}
+.xhs-filter-section{
+  margin-bottom:16px;
+}
+.xhs-filter-title{
+  margin:0 0 10px;
+  font-size:14px;
+  line-height:1.29;
+  font-weight:400;
+  color:rgba(0,0,0,0.45);
+}
+.xhs-filter-title.is-person{
+  font-size:15px;
+  line-height:1.47;
+  font-weight:500;
+  color:rgba(0,0,0,0.8);
+  margin-bottom:12px;
+}
+.xhs-filter-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.xhs-filter-chip{
+  min-width:calc(25% - 6px);
+  height:32px;
+  padding:0 10px;
+  border:none;
+  border-radius:8px;
+  background:#f5f5f7;
+  font:inherit;
+  font-size:13px;
+  line-height:1;
+  color:rgba(0,0,0,0.65);
+  cursor:pointer;
+}
+.xhs-filter-chip.is-active{
+  background:rgba(255,77,136,0.1);
+  color:#ff4d88;
+}
+.xhs-filter-options.is-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.xhs-filter-options.is-grid .xhs-filter-chip{
+  min-width:0;
+  width:100%;
+  height:36px;
+}
+.xhs-search-foot{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 24px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top:0.5px solid rgba(0,0,0,0.06);
+  background:#fff;
+  flex-shrink:0;
+}
+.xhs-search-foot-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:none;
+  background:transparent;
+  font:inherit;
+  font-size:14px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.55);
+  cursor:pointer;
+  padding:4px 0;
+}
+.xhs-search-foot-ico{
+  font-size:16px;
+  line-height:1;
+}
+
+.ios-search-push{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  z-index:25;
+  pointer-events:none;
+}
+.ios-search-push.is-active,
+.ios-search-push.is-closing{
+  pointer-events:auto;
+}
+.ios-search-push-inner{
+  overflow:hidden;
+  transform:translate3d(0,-100%,0);
+  transition:transform 0.3s cubic-bezier(0.2,0,0,1);
+  backface-visibility:hidden;
+  border-radius:0 0 16px 16px;
+}
+.ios-search-push.is-active .ios-search-push-inner{
+  transform:translate3d(0,0,0);
+}
+.ios-search-push.is-closing .ios-search-push-inner{
+  transform:translate3d(0,-100%,0);
+  transition-duration:0.26s;
+  transition-timing-function:cubic-bezier(0.4,0,1,1);
+}
+
+.ios-search-sheet{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  padding:10px 12px 12px;
+  background:var(--my-bg);
+  border-radius:0 0 16px 16px;
+  border:0.5px solid rgba(0,0,0,0.06);
+  border-top:none;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.10),
+    0 2px 6px rgba(0,0,0,0.04);
+}
+.ios-search-push.is-date-picker-open .ios-search-sheet{
+  padding:8px 18px 10px;
+}
+
+.ios-search-bar-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.ios-search-bar-row .ios-search-date-title{
+  flex:1;
+  min-width:0;
+  text-align:center;
+  font-size:15px;
+  line-height:1.3;
+  font-weight:500;
+  color:rgba(0,0,0,0.72);
+}
+
+.ios-search-panel{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:0.5px solid rgba(0,0,0,0.08);
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+  padding-left:0;
+  padding-right:0;
+  padding-bottom:0;
+}
+.ios-search-push.is-date-picker-open .ios-search-panel{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:none;
+}
+
+.ios-search-field-wrap{
+  flex:1;
+  min-width:0;
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-height:40px;
+  padding:0 10px 0 12px;
+  background:#ffffff;
+  border-radius:10px;
+  box-shadow:none;
+}
+.ios-search-field-wrap.is-voice-active .ios-search-field{
+  caret-color:#ff4d88;
+}
+
+.ios-search-clear{
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:rgba(0,0,0,0.18);
+  border-radius:50%;
+  color:#ffffff;
+  cursor:pointer;
+  flex-shrink:0;
+  padding:0;
+}
+
+.ios-search-dismiss{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:transparent;
+  box-shadow:none;
+  color:rgba(0,0,0,0.6);
+  cursor:pointer;
+  flex-shrink:0;
+  padding:0;
+  border-radius:50%;
+}
+.ios-search-dismiss:active{
+  background:rgba(0,0,0,0.06);
+}
+
+.ios-search-field-ico{
+  color:rgba(0,0,0,0.55);
+  display:flex;
+  flex-shrink:0;
+}
+
+.ios-search-field{
+  flex:1;
+  border:none;
+  background:transparent;
+  font-size:17px;
+  line-height:1.47;
+  font-weight:400;
+  color:rgba(0,0,0,0.8);
+  outline:none;
+  min-width:0;
+  caret-color:#ff4d88;
+}
+.ios-search-field::placeholder{
+  color:rgba(0,0,0,0.35);
+}
+
+.ios-search-mic.is-active{
+  color:#ff4d88;
+}
+
+.ios-search-voice-pill{
+  position:absolute;
+  top:calc(100% + 4px);
+  right:38px;
+  z-index:2;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  height:22px;
+  padding:0 8px 0 6px;
+  border-radius:80px;
+  background:#ff4d88;
+  color:#ffffff;
+  font-size:11px;
+  line-height:1;
+  font-weight:400;
+  box-shadow:0 4px 12px rgba(255,77,136,0.28);
+  pointer-events:none;
+  animation:iosSearchVoicePillIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ios-search-voice-pill svg{
+  flex-shrink:0;
+}
+
+.ios-search-mic{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:transparent;
+  color:rgba(0,0,0,0.45);
+  cursor:pointer;
+  flex-shrink:0;
+  padding:0;
+  border-radius:50%;
+}
+
+.ios-search-filters{
+  margin-top:0;
+}
+
+.ios-search-filter-label{
+  margin:0 0 8px;
+  font-size:12px;
+  line-height:1.29;
+  font-weight:400;
+  color:rgba(0,0,0,0.35);
+}
+
+.ios-search-filter-tags{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:8px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:2px;
+}
+.ios-search-filter-tags::-webkit-scrollbar{
+  display:none;
+}
+
+.ios-search-filter-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  height:32px;
+  padding:0 12px;
+  border:none;
+  border-radius:80px;
+  background:#ffffff;
+  font-size:13px;
+  line-height:1;
+  font-weight:400;
+  color:rgba(0,0,0,0.65);
+  cursor:pointer;
+  flex-shrink:0;
+  font-family:inherit;
+  transition:background 0.18s ease,color 0.18s ease;
+}
+.ios-search-filter-tag.is-active{
+  background:#ff4d88;
+  color:#ffffff;
+}
+.ios-search-filter-tag svg{
+  flex-shrink:0;
+}
+.ios-search-filter-emoji{
+  font-size:14px;
+  line-height:1;
+}
+
+.ios-search-date-picker{
+  padding:6px 0 2px;
+  color:rgba(0,0,0,0.78);
+}
+
+.ios-search-date-head{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  height:24px;
+  margin-bottom:10px;
+}
+
+.ios-search-date-title{
+  min-width:96px;
+  text-align:center;
+  font-size:15px;
+  line-height:1.3;
+  font-weight:500;
+  color:rgba(0,0,0,0.72);
+}
+
+.ios-search-date-nav{
+  width:24px;
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:50%;
+  background:transparent;
+  color:rgba(0,0,0,0.55);
+  padding:0;
+  cursor:pointer;
+}
+.ios-search-date-nav:active{
+  background:rgba(0,0,0,0.05);
+}
+
+.ios-search-date-weekdays,
+.ios-search-date-grid{
+  display:grid;
+  grid-template-columns:repeat(7, 1fr);
+}
+
+.ios-search-date-weekdays{
+  margin-bottom:4px;
+}
+.ios-search-date-weekdays span{
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  line-height:1;
+  font-weight:400;
+  color:rgba(0,0,0,0.72);
+}
+
+.ios-search-date-grid{
+  row-gap:0;
+}
+
+.ios-search-date-cell{
+  position:relative;
+  min-width:0;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:transparent;
+  color:rgba(0,0,0,0.30);
+  font:inherit;
+  font-size:14px;
+  line-height:1;
+  font-weight:400;
+  cursor:pointer;
+  padding:0;
+}
+.ios-search-date-cell:disabled{
+  cursor:default;
+}
+.ios-search-date-cell span{
+  width:24px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+}
+.ios-search-date-cell.has-record{
+  color:rgba(0,0,0,0.58);
+}
+.ios-search-date-cell.has-record:active span{
+  background:rgba(255,77,136,0.08);
+}
+.ios-search-date-cell.is-today span{
+  border:1px solid #ff7faf;
+  color:#d55f8f;
+}
+.ios-search-date-cell i{
+  position:absolute;
+  left:50%;
+  bottom:1px;
+  width:3px;
+  height:3px;
+  margin-left:-1.5px;
+  border-radius:50%;
+  background:#ff4d88;
+}
+.ios-search-date-cell.is-empty{
+  pointer-events:none;
+}
+
+.ios-kb-suggestions{
+  display:flex;
+  gap:0;
+  overflow-x:auto;
+  padding:0 4px 8px;
+  scrollbar-width:none;
+  border-bottom:0.5px solid rgba(0,0,0,0.08);
+  margin-bottom:8px;
+}
+.ios-kb-suggestions::-webkit-scrollbar{
+  display:none;
+}
+
+.ios-kb-suggestion{
+  flex-shrink:0;
+  border:none;
+  background:transparent;
+  padding:6px 12px;
+  font-size:15px;
+  line-height:1.47;
+  font-weight:400;
+  color:rgba(0,0,0,0.8);
+  font-family:inherit;
+  cursor:pointer;
+}
+
+.suiji-shell.is-search-open .ios-search-keyboard{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;
+  max-width:390px;
+  right:auto;
+  bottom:var(--my-tabbar-h);
+  z-index:95;
+  pointer-events:auto;
+  padding:8px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  background:#d1d5db;
+  border-top:0.5px solid rgba(0,0,0,0.08);
+  animation:iosSearchKeyboardUp 0.3s cubic-bezier(0.2,0,0,1) both;
+}
+
+.ios-kb-rows{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.ios-kb-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  padding:0 2px;
+}
+
+.ios-kb-row--bottom{
+  gap:6px;
+  padding:0 4px;
+}
+
+.ios-kb-key{
+  min-width:31px;
+  height:42px;
+  padding:0 8px;
+  border:none;
+  border-radius:6px;
+  background:#ffffff;
+  box-shadow:0 1px 0 rgba(0,0,0,0.28);
+  font-size:22px;
+  line-height:1;
+  color:#000000;
+  font-family:'SF Pro Text','PingFang SC',-apple-system,sans-serif;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.ios-kb-key:active{
+  background:#bcc0c8;
+}
+
+.ios-kb-key--wide{
+  min-width:42px;
+  font-size:16px;
+}
+
+.ios-kb-key--ghost{
+  background:#abb0ba;
+  box-shadow:0 1px 0 rgba(0,0,0,0.22);
+  color:#000000;
+}
+
+.ios-kb-key--fn{
+  min-width:42px;
+  font-size:14px;
+  background:#abb0ba;
+  box-shadow:0 1px 0 rgba(0,0,0,0.22);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.ios-kb-key--space{
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  color:rgba(0,0,0,0.45);
+}
+
+.ios-kb-key--search{
+  min-width:44px;
+  color:rgba(0,0,0,0.45);
+}
+.ios-kb-key--search.is-ready{
+  background:#007aff;
+  box-shadow:0 1px 0 rgba(0,0,0,0.18);
+  color:#ffffff;
+}
+.ios-kb-key--search:disabled{
+  opacity:1;
+  cursor:default;
+}
+
+.ios-kb-accessory{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 18px 2px;
+  color:rgba(0,0,0,0.45);
+}
+
+.ios-kb-globe{
+  font-size:20px;
+  line-height:1;
+}
+
+.ios-kb-mic{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  background:transparent;
+  padding:0;
+  color:rgba(0,0,0,0.45);
+  cursor:pointer;
+  border-radius:50%;
+  width:32px;
+  height:32px;
+}
+.ios-kb-mic.is-active{
+  color:#ff4d88;
+}
+
+@keyframes iosSearchKeyboardUp{
+  from{transform:translate3d(-50%,100%,0)}
+  to{transform:translate3d(-50%,0,0)}
+}
+
+@keyframes iosSearchVoicePillIn{
+  from{opacity:0;transform:translateY(-4px) scale(0.92)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .ios-search-push-inner,
+  .suiji-shell.is-search-open .ios-search-keyboard{
+    animation:none !important;
+  }
+}
