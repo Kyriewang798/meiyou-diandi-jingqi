@@ -1,0 +1,223 @@
+/* ============ v2 场景3：语音纠正 · 确认弹窗 ============
+   规范：一个主题 + 一个主行动；取消在左（弱化），确认在右（品牌红主按钮）；弹出 240ms
+   内容参考「变更前 / 变更后」对比：浅灰底面板内放两张记录卡，变更后描边并高亮变更值 */
+
+.s3-dialog-mask{
+  position:fixed;
+  inset:0;
+  z-index:300;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 24px;
+  background:rgba(0,0,0,0.45);
+  animation:s3MaskIn 200ms ease-out both;
+}
+.s3-dialog{
+  width:100%;
+  max-width:320px;
+  padding:20px 16px 16px;
+  border-radius:12px;
+  background:var(--my-surface);
+  animation:s3DialogIn 240ms cubic-bezier(0.2,0,0,1) both;
+}
+.s3-dialog-title{
+  font-size:17px;
+  font-weight:500;
+  line-height:1.4;
+  text-align:center;
+  color:var(--my-text-primary);
+}
+.s3-dialog-desc{
+  margin:4px 0 0;
+  font-size:14px;
+  line-height:1.5;
+  text-align:center;
+  color:var(--my-text-secondary);
+}
+
+/* ---- 变更前 / 变更后 对比面板 ---- */
+.s3-diff-panel{
+  margin-top:14px;
+  padding:2px 12px 12px;
+  border-radius:12px;
+  background:var(--my-bg);
+}
+.s3-diff-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:10px 0 8px;
+  font-size:13px;
+  line-height:18px;
+  color:var(--my-text-secondary);
+}
+.s3-diff-label::before{
+  content:'';
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:currentColor;
+}
+.s3-preview-card{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--my-line);
+  background:var(--my-surface);
+}
+.s3-preview-card.is-after{
+  border-color:var(--my-brand-red);
+}
+.s3-preview-time{
+  margin-bottom:2px;
+  font-size:12px;
+  line-height:16px;
+  color:var(--my-text-tertiary);
+  font-variant-numeric:tabular-nums;
+}
+.s3-preview-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:28px;
+  font-size:14px;
+  color:var(--my-text-primary);
+}
+.s3-preview-card.is-before .s3-preview-row{
+  color:var(--my-text-tertiary);
+}
+.s3-preview-card.is-before .s3-preview-icon{
+  opacity:0.5;
+}
+.s3-preview-icon{
+  width:18px;
+  height:18px;
+  flex-shrink:0;
+}
+.s3-preview-label{
+  white-space:nowrap;
+}
+.s3-preview-row.is-changed .s3-preview-value{
+  color:var(--my-brand-red);
+  font-weight:500;
+}
+
+/* ---- 操作按钮 ---- */
+.s3-dialog-actions{
+  margin-top:16px;
+  display:flex;
+  gap:12px;
+}
+.s3-dialog-btn{
+  flex:1;
+  height:40px;
+  border:0;
+  border-radius:999px;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+  transition:opacity 150ms;
+}
+.s3-dialog-btn:active{
+  opacity:0.75;
+}
+.s3-dialog-btn.is-cancel{
+  background:var(--my-bg);
+  color:var(--my-text-secondary);
+}
+.s3-dialog-btn.is-confirm{
+  background:var(--my-brand-red);
+  color:#fff;
+}
+
+@keyframes s3MaskIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+@keyframes s3DialogIn{
+  from{opacity:0;transform:scale(0.94)}
+  to{opacity:1;transform:none}
+}
+
+/* ===== v2 场景3：确认区内联在记录卡的反馈模块里（替代弹窗） ===== */
+.s1-ask-feedback{
+  margin-top:2px;
+}
+.s3-inline-confirm{
+  padding-top:10px;
+}
+.s3-inline-desc{
+  margin:0;
+  font-size:14px;
+  line-height:1.55;
+  color:var(--my-text-secondary);
+}
+.s3-inline-diff{
+  margin-top:10px;
+  padding:2px 12px 12px;
+  border-radius:12px;
+  background:var(--my-bg);
+}
+/* 操作区：与弹窗按钮同一套视觉，靠右排布，尺寸收小一档 */
+.s3-inline-actions{
+  margin-top:14px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+.s3-inline-btn{
+  min-width:84px;
+  height:34px;
+  padding:0 18px;
+  border:0;
+  border-radius:999px;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:opacity 150ms;
+}
+.s3-inline-btn:active{
+  opacity:0.75;
+}
+.s3-inline-btn.is-cancel{
+  background:var(--my-bg);
+  color:var(--my-text-secondary);
+}
+.s3-inline-btn.is-confirm{
+  background:var(--my-brand-red);
+  color:#fff;
+}
+/* 确认 / 取消之后的结果行 */
+.s3-inline-result{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:11px 0 2px;
+  font-size:14px;
+  line-height:20px;
+  color:var(--my-text-secondary);
+}
+.s3-inline-result b{
+  font-weight:600;
+  color:var(--my-text-primary);
+}
+.s3-inline-result-icon{
+  width:18px;
+  height:18px;
+  flex:0 0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  font-size:12px;
+  line-height:1;
+  color:#fff;
+}
+.s3-inline-result.is-confirmed .s3-inline-result-icon{
+  background:var(--my-success, #00cc99);
+}
+.s3-inline-result.is-cancelled .s3-inline-result-icon{
+  background:var(--my-text-tertiary, #999);
+}

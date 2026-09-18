@@ -1,0 +1,4015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>点滴 · 编辑记录</title>
+<style>
+  :root {
+    --my-brand-red: #ff4d88;
+    --my-brand-soft: rgba(255, 77, 136, 0.08);
+    --my-brand-soft-2: rgba(255, 77, 136, 0.14);
+    --my-bg: #f2f2f5;
+    --my-surface: #ffffff;
+    --my-text-primary: #323232;
+    --my-text-secondary: #666666;
+    --my-text-tertiary: #999999;
+    --my-text-quaternary: #c4c4c8;
+    --my-line: rgba(0, 0, 0, 0.06);
+    --my-line-strong: rgba(0, 0, 0, 0.08);
+    --my-success: #00cc99;
+    --my-warning: #ff9500;
+    --my-danger: #ff4d4d;
+    --my-link: #4f7cae;
+    --my-radius-xs: 4px;
+    --my-radius-sm: 8px;
+    --my-radius-md: 12px;
+    --my-radius-lg: 16px;
+    --my-space-1: 4px;
+    --my-space-2: 8px;
+    --my-space-3: 12px;
+    --my-space-4: 16px;
+    --my-space-6: 24px;
+    --my-shadow-1: 0 2px 10px rgba(50, 50, 50, 0.08);
+    --my-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.14);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "PingFang SC", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    color: var(--my-text-primary);
+    background: #d8d8de;
+    overflow: hidden;
+    height: 100vh;
+    letter-spacing: 0;
+  }
+
+  /* ==== 演示场景切换器 ==== */
+  .demo-controls {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 6px;
+    border-radius: 999px;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .demo-controls button {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .demo-controls button.active {
+    background: #ff4d88;
+    color: #fff;
+  }
+
+  /* ==== 手机外壳 ==== */
+  .phone {
+    position: relative;
+    width: 430px;
+    height: 100vh;
+    margin: 0 auto;
+    background: var(--my-bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 状态栏 */
+  .status-bar {
+    height: 44px;
+    background: var(--my-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--my-text-primary);
+    flex-shrink: 0;
+  }
+  .status-bar .right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  /* 顶部导航 */
+  .nav-bar {
+    height: 44px;
+    background: var(--my-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    border-bottom: 0.5px solid var(--my-line-strong);
+    flex-shrink: 0;
+  }
+  .nav-bar .nav-title {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--my-text-primary);
+  }
+  .nav-btn {
+    height: 44px;
+    min-width: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--my-text-primary);
+  }
+  .nav-btn.close-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .nav-btn.save-btn {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--my-text-quaternary);
+    transition: color 0.2s;
+  }
+  .nav-btn.save-btn.active {
+    color: var(--my-brand-red);
+  }
+
+  /* 主内容滚动区 */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 0 24px;
+  }
+
+  /* 通用 section */
+  .section {
+    background: var(--my-surface);
+    margin: 0 12px 12px;
+    border-radius: var(--my-radius-md);
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 14px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .section-title {
+    font-size: 13px;
+    color: var(--my-text-tertiary);
+    font-weight: 400;
+  }
+  .section-meta {
+    font-size: 12px;
+    color: var(--my-text-tertiary);
+  }
+
+  /* 记录时间行 */
+  .time-row {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .time-row:active {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  .time-row .time-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--my-text-primary);
+  }
+  .time-row .time-value {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 15px;
+    color: var(--my-text-secondary);
+  }
+  .time-row .chevron {
+    color: var(--my-text-quaternary);
+    font-size: 14px;
+  }
+  .icon-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--my-brand-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--my-brand-red);
+    font-size: 14px;
+  }
+
+  /* 输入源 - 文字/语音 */
+  .source-block {
+    padding: 14px 16px 16px;
+  }
+  .source-quote {
+    background: rgba(0, 0, 0, 0.03);
+    border-left: 3px solid var(--my-brand-soft-2);
+    padding: 12px 14px;
+    border-radius: var(--my-radius-sm);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--my-text-primary);
+    word-break: break-word;
+    outline: none;
+    min-height: 24px;
+    position: relative;
+  }
+  .source-quote[contenteditable="true"] {
+    background: var(--my-brand-soft);
+    border-left-color: var(--my-brand-red);
+    box-shadow: 0 0 0 2px var(--my-brand-soft-2);
+  }
+  .source-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .source-tip {
+    font-size: 12px;
+    color: var(--my-text-tertiary);
+    line-height: 1.5;
+    flex: 1;
+    padding-right: 8px;
+  }
+  .source-edit-btn {
+    background: transparent;
+    border: none;
+    color: var(--my-brand-red);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--my-radius-xs);
+    flex-shrink: 0;
+  }
+  .source-edit-btn:active {
+    background: var(--my-brand-soft);
+  }
+  .source-type-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--my-text-tertiary);
+    margin-bottom: 8px;
+  }
+
+  /* 输入源 - 图片 */
+  .source-image-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: var(--my-radius-sm);
+    overflow: hidden;
+    background: #f0f0f0;
+  }
+  .source-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .source-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ffd4a3 0%, #ffb380 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+  .image-delete-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  /* 删除整条按钮（语音/图片右上角） */
+  .source-header-with-delete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px 8px;
+  }
+  .source-delete-link {
+    background: transparent;
+    border: none;
+    color: var(--my-danger);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+
+  /* 记录项列表 */
+  .records-list {
+    padding: 0;
+  }
+  .record-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 14px 16px;
+    border-top: 0.5px solid var(--my-line);
+    position: relative;
+  }
+  .record-item:first-child {
+    border-top: none;
+  }
+  .record-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--my-radius-sm);
+    background: var(--my-brand-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+  .record-icon.symptom { background: rgba(255, 149, 0, 0.1); }
+  .record-icon.emotion { background: rgba(0, 204, 153, 0.1); }
+  .record-icon.diet { background: rgba(79, 124, 174, 0.1); }
+  .record-icon.menstruation { background: var(--my-brand-soft); }
+  .record-icon.intimacy { background: rgba(141, 84, 255, 0.1); }
+  .record-icon.weight { background: rgba(79, 124, 174, 0.1); }
+  .record-icon img {
+    width: 22px;
+    height: 22px;
+    display: block;
+    object-fit: contain;
+  }
+
+  .record-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .record-type {
+    font-size: 15px;
+    color: var(--my-text-primary);
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .record-value {
+    font-size: 13px;
+    color: var(--my-text-secondary);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .record-time {
+    font-size: 12px;
+    color: var(--my-text-tertiary);
+    margin-top: 4px;
+  }
+  .record-delete {
+    background: transparent;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 50%;
+    color: var(--my-text-quaternary);
+    transition: background 0.15s, color 0.15s;
+  }
+  .record-delete:active {
+    background: rgba(255, 77, 77, 0.08);
+    color: var(--my-danger);
+  }
+  .record-delete svg {
+    width: 18px;
+    height: 18px;
+  }
+  .record-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .record-edit {
+    background: transparent;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 50%;
+    color: var(--my-brand-red);
+    transition: background 0.15s;
+  }
+  .record-edit:active {
+    background: var(--my-brand-soft);
+  }
+  .record-edit svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* MVP 不可编辑提示 */
+  .records-mvp-tip {
+    padding: 8px 16px 14px;
+    font-size: 12px;
+    color: var(--my-text-tertiary);
+    line-height: 1.5;
+    border-top: 0.5px solid var(--my-line);
+    background: rgba(0, 0, 0, 0.015);
+  }
+
+  /* 底部删除整条 */
+  .danger-zone {
+    margin: 16px 12px 24px;
+    background: var(--my-surface);
+    border-radius: var(--my-radius-md);
+    overflow: hidden;
+  }
+  .danger-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: none;
+    color: var(--my-danger);
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+  }
+  .danger-btn:active {
+    background: rgba(255, 77, 77, 0.04);
+  }
+
+  /* ==== 底部时间选择器弹窗 ==== */
+  .sheet-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s;
+  }
+  .sheet-mask.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--my-surface);
+    border-radius: 16px 16px 0 0;
+    z-index: 101;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .sheet.show {
+    transform: translateY(0);
+  }
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 0.5px solid var(--my-line-strong);
+  }
+  .sheet-header button {
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 6px 8px;
+  }
+  .sheet-header .cancel { color: var(--my-text-secondary); }
+  .sheet-header .confirm { color: var(--my-brand-red); font-weight: 500; }
+  .sheet-header .sheet-title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .sheet-body {
+    padding: 16px;
+    padding-bottom: 32px;
+  }
+
+  /* 时间选择器（简化版） */
+  .picker-wrap {
+    display: flex;
+    height: 200px;
+    position: relative;
+  }
+  .picker-col {
+    flex: 1;
+    overflow-y: scroll;
+    text-align: center;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 80px 0;
+  }
+  .picker-col::-webkit-scrollbar {
+    display: none;
+  }
+  .picker-item {
+    height: 40px;
+    line-height: 40px;
+    font-size: 17px;
+    color: var(--my-text-secondary);
+    scroll-snap-align: center;
+    transition: color 0.15s, font-weight 0.15s;
+  }
+  .picker-item.selected {
+    color: var(--my-text-primary);
+    font-weight: 500;
+  }
+  .picker-indicator {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 80px;
+    height: 40px;
+    border-top: 0.5px solid var(--my-line-strong);
+    border-bottom: 0.5px solid var(--my-line-strong);
+    pointer-events: none;
+    background: rgba(255, 77, 136, 0.03);
+  }
+  .option-sheet .sheet-body {
+    padding: 4px 12px 0;
+    background: #f2f2f5;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .option-btn {
+    height: 48px;
+    border: 0;
+    border-radius: var(--my-radius-sm);
+    background: #f7f7f9;
+    color: var(--my-text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    text-align: left;
+    padding: 0 14px;
+    cursor: pointer;
+  }
+  .option-btn.active {
+    background: var(--my-brand-soft);
+    color: var(--my-brand-red);
+    font-weight: 500;
+  }
+  .option-sheet.is-period-picker {
+    max-height: 90%;
+    background: #f2f2f5;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  }
+  .option-sheet.is-period-picker .sheet-header {
+    height: 54px;
+    display: grid;
+    grid-template-columns: 72px 1fr 72px;
+    padding: 0 18px;
+    background: #f2f2f5;
+    border-bottom: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .option-sheet.is-period-picker .sheet-header button {
+    padding: 6px 0;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .option-sheet.is-period-picker .sheet-header .cancel {
+    justify-self: start;
+    color: #323232;
+  }
+  .option-sheet.is-period-picker .sheet-header .confirm {
+    justify-self: end;
+    color: #ff4d88;
+    font-weight: 500;
+  }
+  .option-sheet.is-period-picker .sheet-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 600;
+    text-align: center;
+    color: #323232;
+  }
+  .option-sheet.is-health-picker {
+    max-height: 90%;
+    background: #f2f2f5;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  }
+  .option-sheet.is-health-picker .sheet-header {
+    height: 54px;
+    display: grid;
+    grid-template-columns: 72px 1fr 72px;
+    padding: 0 18px;
+    background: #f2f2f5;
+    border-bottom: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .option-sheet.is-health-picker .sheet-header button {
+    padding: 6px 0;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .option-sheet.is-health-picker .sheet-header .cancel {
+    justify-self: start;
+    color: #323232;
+  }
+  .option-sheet.is-health-picker .sheet-header .confirm {
+    justify-self: end;
+    color: #ff4d88;
+    font-weight: 500;
+  }
+  .option-sheet.is-health-picker .sheet-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 600;
+    text-align: center;
+    color: #323232;
+  }
+  .option-sheet.is-health-picker .sheet-body {
+    padding: 14px 12px 0;
+    background: #f2f2f5;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .edit-hrp-card {
+    margin-bottom: 12px;
+    padding: 18px 16px 18px;
+    background: #ffffff;
+    border-radius: 12px;
+  }
+  .edit-hrp-title {
+    margin: 0 0 16px;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: #323232;
+  }
+  .edit-hrp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 16px;
+    row-gap: 20px;
+  }
+  .option-sheet.is-health-picker.is-love-picker .edit-hrp-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 12px;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-card {
+    padding: 12px 14px 16px;
+    border-radius: 10px;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-title {
+    display: none;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 18px;
+  }
+  .edit-hrp-option {
+    min-width: 0;
+    min-height: 96px;
+    border: 0;
+    background: transparent;
+    color: #323232;
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 500;
+    font-family: inherit;
+    display: grid;
+    grid-template-rows: 58px auto;
+    justify-items: center;
+    align-content: start;
+    gap: 8px;
+    padding: 0 2px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.16s ease, color 0.16s ease;
+  }
+  .edit-hrp-option:active {
+    transform: scale(0.96);
+  }
+  .edit-hrp-option.active {
+    color: #323232;
+  }
+  .edit-hrp-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: #ff4d88;
+    font-size: 28px;
+    line-height: 1;
+    background: radial-gradient(72% 72% at 40% 34%, #fff3f7 0%, #ffd8e6 60%, #ffc1d7 100%);
+  }
+  .edit-hrp-icon.is-yellow {
+    color: #f2a900;
+    background: radial-gradient(72% 72% at 40% 34%, #fff8e9 0%, #fff0ce 60%, #ffe2a4 100%);
+  }
+  .edit-hrp-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .edit-hrp-option > span:not(.edit-hrp-icon):not(.edit-hrp-mark) {
+    width: 100%;
+    min-height: 36px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: center;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .edit-hrp-mark {
+    position: absolute;
+    right: calc(50% - 36px);
+    top: 38px;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  .edit-hrp-option.active .edit-hrp-mark {
+    background: #27c46b;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+  .edit-hrp-option.active .edit-hrp-mark::after {
+    content: "";
+    width: 8px;
+    height: 5px;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg) translateY(-1px);
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option {
+    min-height: 82px;
+    grid-template-rows: 52px auto;
+    gap: 7px;
+    font-size: 13px;
+    line-height: 16px;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #ffe875;
+    font-size: 27px;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(3) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(12) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(20) .edit-hrp-icon {
+    background: #65d9e8;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(4) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(5) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(13) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(14) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(17) .edit-hrp-icon,
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(19) .edit-hrp-icon {
+    background: #ff9fc0;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(15) .edit-hrp-icon {
+    background: #f45a5a;
+  }
+  .option-sheet.is-health-picker.is-mood-picker .edit-hrp-option:nth-child(16) .edit-hrp-icon {
+    background: #31cdb8;
+  }
+  .edit-hrp-list {
+    display: grid;
+    gap: 12px;
+  }
+  .edit-hrp-list-option {
+    width: 100%;
+    min-height: 88px;
+    border: 0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #323232;
+    font-family: inherit;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) 32px;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .edit-hrp-list-copy {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .edit-hrp-list-copy strong {
+    font-size: 21px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #323232;
+  }
+  .edit-hrp-list-copy em {
+    font-style: normal;
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 400;
+    color: #999999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .edit-hrp-radio {
+    width: 31px;
+    height: 31px;
+    border: 2px solid #d5d5d8;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+  .edit-hrp-list-option.active .edit-hrp-radio {
+    border: 0;
+    background: #27c46b;
+  }
+  .edit-hrp-list-option.active .edit-hrp-radio::after {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg) translateY(-1px);
+  }
+  .edit-hrp-time-card {
+    min-height: 176px;
+    overflow: hidden;
+  }
+  .edit-hrp-time-wheel {
+    position: relative;
+    min-height: 110px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    color: #323232;
+    font-size: 21px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+  .edit-hrp-time-wheel::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 58px;
+    height: 42px;
+    border-radius: 8px;
+    background: #f1f1f5;
+  }
+  .edit-hrp-time-wheel > span {
+    align-self: start;
+    color: #323232;
+    opacity: 0.88;
+  }
+  .edit-hrp-time-wheel strong {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 58px;
+    z-index: 1;
+    height: 42px;
+    display: grid;
+    grid-template-columns: 1fr 32px 1fr;
+    align-items: center;
+    font-size: 27px;
+    font-weight: 500;
+  }
+  .edit-hrp-time-wheel em {
+    font-style: normal;
+  }
+  .edit-hrp-temp-card {
+    min-height: 132px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .edit-hrp-temp-value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 56px;
+    line-height: 1;
+    color: #b7b7bb;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-hrp-temp-value em {
+    color: #b7b7bb;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 500;
+  }
+  .edit-hrp-temp-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px 0 28px;
+  }
+  .edit-hrp-temp-key {
+    height: 64px;
+    border: 0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #323232;
+    font-family: inherit;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 400;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-hrp-temp-key:active {
+    background: #f7f7f9;
+  }
+  .edit-hrp-temp-delete {
+    height: 64px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #323232;
+    font-family: inherit;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .edit-hrp-temp-delete span {
+    min-width: 34px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #323232;
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .option-sheet.is-health-picker.is-weight-picker .sheet-body {
+    padding-top: 12px;
+  }
+  .edit-weight-card {
+    min-height: 128px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    display: grid;
+    place-items: center;
+  }
+  .edit-weight-value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    color: #323232;
+    font-size: 54px;
+    line-height: 1;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-weight-value em {
+    color: #8e8e93;
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 500;
+  }
+  .option-sheet.is-health-picker.is-diet-picker,
+  .option-sheet.is-health-picker.is-beverage-picker,
+  .option-sheet.is-health-picker.is-skin-picker,
+  .option-sheet.is-health-picker.is-cosmetic-picker {
+    height: 86%;
+    max-height: 86%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .option-sheet.is-health-picker.is-diet-picker .sheet-header,
+  .option-sheet.is-health-picker.is-beverage-picker .sheet-header,
+  .option-sheet.is-health-picker.is-skin-picker .sheet-header,
+  .option-sheet.is-health-picker.is-cosmetic-picker .sheet-header {
+    flex: 0 0 auto;
+  }
+  .option-sheet.is-health-picker.is-diet-picker .sheet-body,
+  .option-sheet.is-health-picker.is-beverage-picker .sheet-body,
+  .option-sheet.is-health-picker.is-skin-picker .sheet-body,
+  .option-sheet.is-health-picker.is-cosmetic-picker .sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 12px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .edit-diet-card {
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .edit-diet-title {
+    margin: 0 0 12px;
+    color: #323232;
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  .edit-diet-meals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .edit-diet-meal {
+    height: 36px;
+    border: 0;
+    border-radius: 18px;
+    background: #f7f7f9;
+    color: #666666;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .edit-diet-meal.active {
+    background: rgba(255, 77, 136, 0.1);
+    color: #ff4d88;
+    font-weight: 500;
+  }
+  .edit-diet-row {
+    display: grid;
+    grid-template-columns: 1fr 68px 76px 32px;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .edit-diet-input {
+    min-width: 0;
+    height: 40px;
+    border: 0;
+    border-radius: 8px;
+    background: #f7f7f9;
+    color: #323232;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0 10px;
+  }
+  .edit-diet-input::placeholder {
+    color: #b7b7bb;
+  }
+  .edit-diet-remove {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 16px;
+    background: #f7f7f9;
+    color: #8e8e93;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .edit-diet-add {
+    width: 100%;
+    height: 40px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 20px;
+    background: rgba(255, 77, 136, 0.08);
+    color: #ff4d88;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .edit-diet-total {
+    margin-top: 12px;
+    color: #8e8e93;
+    font-size: 13px;
+    text-align: right;
+  }
+  .edit-camera-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .edit-camera-field {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .edit-camera-field.is-wide {
+    grid-column: 1 / -1;
+  }
+  .edit-camera-field label {
+    font-size: 13px;
+    color: var(--my-text-tertiary);
+  }
+  .edit-camera-input-wrap {
+    min-width: 0;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border: 0.5px solid var(--my-line-strong);
+    border-radius: 8px;
+    background: #f8f8fa;
+  }
+  .edit-camera-input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--my-text-primary);
+    font: inherit;
+    font-size: 15px;
+  }
+  .edit-camera-unit {
+    flex-shrink: 0;
+    color: var(--my-text-tertiary);
+    font-size: 13px;
+  }
+  .edit-beverage-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .edit-beverage-card [data-beverage-extra][hidden] {
+    display: none !important;
+  }
+  .edit-beverage-card [data-beverage-identity][hidden] {
+    display: none !important;
+  }
+  .edit-beverage-capacity {
+    padding: 14px 14px 10px;
+    border-radius: 10px;
+    background: #f8f8fa;
+  }
+  .edit-beverage-row-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: #8e8e93;
+    font-size: 13px;
+  }
+  .edit-beverage-row-title strong {
+    color: #323232;
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-beverage-range {
+    width: 100%;
+    margin: 4px 0 8px;
+    accent-color: #323232;
+  }
+  .edit-beverage-range-labels {
+    display: flex;
+    justify-content: space-between;
+    color: #b0b0b5;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-beverage-segment-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .edit-beverage-segment-label {
+    color: #8e8e93;
+    font-size: 13px;
+  }
+  .edit-beverage-category-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 1px 2px 6px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .edit-beverage-category-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .edit-beverage-category-scroll .edit-beverage-segment {
+    min-width: 76px;
+    flex: 0 0 auto;
+    padding: 0 14px;
+    border-radius: 18px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+  .edit-beverage-segments {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .edit-beverage-segment {
+    min-width: 0;
+    height: 36px;
+    padding: 0 3px;
+    border: 0;
+    border-radius: 7px;
+    background: #f7f7f9;
+    color: #77777d;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .edit-beverage-segment.active {
+    background: rgba(255, 77, 136, 0.1);
+    color: #ff4d88;
+    font-weight: 600;
+  }
+  .edit-beverage-nutrition {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .edit-beverage-nutrition-item {
+    padding: 13px 14px;
+    border-radius: 8px;
+    background: #f8f8fa;
+  }
+  .edit-beverage-nutrition-item span {
+    display: block;
+    margin-bottom: 8px;
+    color: #8e8e93;
+    font-size: 13px;
+  }
+  .edit-beverage-nutrition-item strong {
+    color: #323232;
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .edit-beverage-nutrition-item i {
+    margin-left: 4px;
+    color: #a0a0a5;
+    font-size: 12px;
+    font-style: normal;
+  }
+  .edit-beverage-nutrition-note {
+    grid-column: 1 / -1;
+    margin: -2px 0 0;
+    color: #a0a0a5;
+    font-size: 11px;
+  }
+  .edit-photo-record {
+    padding: 0 16px 16px;
+  }
+  .edit-photo-preview {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f1f1f4;
+  }
+  .edit-photo-preview img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  .edit-photo-note-label {
+    display: block;
+    margin: 16px 0 8px;
+    color: var(--my-text-tertiary);
+    font-size: 13px;
+  }
+  .edit-photo-note {
+    width: 100%;
+    min-height: 120px;
+    resize: none;
+    border: 0.5px solid var(--my-line-strong);
+    border-radius: 10px;
+    outline: none;
+    padding: 12px;
+    background: #f8f8fa;
+    color: var(--my-text-primary);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .edit-photo-note:focus {
+    border-color: rgba(255, 77, 136, 0.45);
+    background: #ffffff;
+  }
+  .edit-photo-note-count {
+    margin-top: 6px;
+    color: var(--my-text-quaternary);
+    font-size: 11px;
+    text-align: right;
+  }
+  .symptom-picker-mask {
+    position: absolute;
+    inset: 0;
+    z-index: 150;
+    background: rgba(0, 0, 0, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+  .symptom-picker-mask.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .symptom-picker-sheet {
+    --sym-picker-coral: #ff6b9b;
+    --sym-picker-coral-deep: #ff4d88;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 151;
+    max-height: 88%;
+    display: flex;
+    flex-direction: column;
+    background: #f2f2f5;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .symptom-picker-sheet.show {
+    transform: translateY(0);
+  }
+  .symptom-picker-nav {
+    height: 52px;
+    flex: 0 0 52px;
+    display: grid;
+    grid-template-columns: 64px 1fr 64px;
+    align-items: center;
+    padding: 0 16px;
+    background: #f2f2f5;
+  }
+  .symptom-picker-nav-btn {
+    border: 0;
+    background: transparent;
+    padding: 6px 0;
+    color: #323232;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+  }
+  .symptom-picker-nav-btn.is-primary {
+    color: #ff4d88;
+    text-align: right;
+    font-weight: 500;
+  }
+  .symptom-picker-title {
+    margin: 0;
+    color: #323232;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 500;
+    text-align: center;
+  }
+  .symptom-picker-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 12px 28px;
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .symptom-picker-card {
+    margin-bottom: 12px;
+    padding: 18px 16px 16px;
+    background: #ffffff;
+    border-radius: 12px;
+  }
+  .symptom-picker-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .symptom-picker-card-title {
+    margin: 0;
+    color: #323232;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  .symptom-picker-edit {
+    border: 0;
+    background: transparent;
+    color: #8e8e93;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+  .symptom-picker-edit.is-active {
+    color: #ff4d88;
+    font-weight: 500;
+  }
+  .symptom-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: 18px;
+    column-gap: 8px;
+  }
+  .symptom-picker-cell {
+    position: relative;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .symptom-picker-icon {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: #fff1f5;
+    overflow: hidden;
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .symptom-picker-icon img,
+  .symptom-picker-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .symptom-picker-cell:active .symptom-picker-icon {
+    transform: scale(0.92);
+  }
+  .symptom-picker-label {
+    max-width: 100%;
+    color: #666666;
+    font-size: 13px;
+    line-height: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .symptom-picker-cell.is-selected .symptom-picker-icon {
+    background: #ffe8f0;
+  }
+  .symptom-picker-cell.is-selected .symptom-picker-label {
+    color: #ff4d88;
+    font-weight: 600;
+  }
+  .symptom-picker-check,
+  .symptom-picker-del {
+    position: absolute;
+    right: 4px;
+    top: 30px;
+    z-index: 2;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #27c46b;
+    border: 1.5px solid #ffffff;
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .symptom-picker-check svg,
+  .symptom-picker-del svg {
+    width: 12px;
+    height: 12px;
+  }
+  .symptom-picker-cell.is-selected .symptom-picker-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .symptom-picker-del {
+    background: #ff4d4d;
+  }
+  .symptom-picker-card.editing .symptom-picker-cell.removable .symptom-picker-del {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .symptom-picker-cell.add .symptom-picker-icon {
+    background: #f5f5f7;
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+  }
+  .symptom-picker-cell.add .symptom-picker-label {
+    color: #999999;
+  }
+  .symptom-picker-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 28px;
+    z-index: 3;
+    max-width: 76%;
+    transform: translateX(-50%) translateY(10px);
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.76);
+    color: #ffffff;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .symptom-picker-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .edit-prp-card {
+    margin-bottom: 12px;
+    padding: 18px 16px 16px;
+    background: #ffffff;
+    border-radius: 12px;
+  }
+  .edit-prp-title {
+    margin: 0 0 16px;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: #323232;
+  }
+  .edit-prp-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .edit-prp-opt {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .edit-prp-ic {
+    position: relative;
+    width: 64px;
+    height: 64px;
+  }
+  .edit-prp-ic-inner {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(72% 72% at 42% 36%, #ffe9f1 0%, #fcd1e0 60%, #f6b9d0 100%);
+    transform-origin: 50% 50%;
+    transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .edit-prp-ic-inner svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .edit-prp-opt:active .edit-prp-ic-inner {
+    transform: scale(0.9);
+  }
+  .edit-prp-opt.active .edit-prp-ic-inner {
+    animation: editPrpBounce 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .edit-prp-lb {
+    font-size: 13px;
+    line-height: 18px;
+    color: #666666;
+    white-space: nowrap;
+    transition: color 0.15s, font-weight 0.15s;
+  }
+  .edit-prp-opt.active .edit-prp-lb {
+    color: #ff4d88;
+    font-weight: 600;
+  }
+  .edit-prp-ck {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 21px;
+    height: 21px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #27c46b;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .edit-prp-ck svg {
+    width: 13px;
+    height: 13px;
+  }
+  .edit-prp-opt.active .edit-prp-ck {
+    opacity: 1;
+    transform: scale(1);
+    animation: editPrpPop 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes editPrpBounce {
+    0% { transform: scale(0.92); }
+    55% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes editPrpPop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  /* ==== 二次确认对话框 ==== */
+  .dialog-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dialog-mask.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .dialog {
+    width: 280px;
+    background: var(--my-surface);
+    border-radius: 14px;
+    overflow: hidden;
+    transform: scale(0.92);
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .dialog-mask.show .dialog {
+    transform: scale(1);
+  }
+  .dialog-content {
+    padding: 22px 20px 16px;
+    text-align: center;
+  }
+  .dialog-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--my-text-primary);
+    margin-bottom: 10px;
+  }
+  .dialog-desc {
+    font-size: 13px;
+    color: var(--my-text-secondary);
+    line-height: 1.55;
+    text-align: left;
+  }
+  .dialog-desc .item-list {
+    margin: 10px 0 4px;
+    padding-left: 4px;
+  }
+  .dialog-desc .item-list li {
+    list-style: none;
+    padding: 3px 0;
+    font-size: 13px;
+    color: var(--my-text-primary);
+  }
+  .dialog-desc .item-list li::before {
+    content: "•";
+    color: var(--my-brand-red);
+    margin-right: 8px;
+  }
+  .dialog-actions {
+    display: flex;
+    border-top: 0.5px solid var(--my-line-strong);
+  }
+  .dialog-actions button {
+    flex: 1;
+    padding: 14px 0;
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .dialog-actions button + button {
+    border-left: 0.5px solid var(--my-line-strong);
+  }
+  .dialog-actions .cancel { color: var(--my-text-secondary); }
+  .dialog-actions .confirm-danger { color: var(--my-danger); font-weight: 500; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--my-radius-sm);
+    font-size: 14px;
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .toast.show {
+    opacity: 1;
+  }
+
+  /* 场景隐藏 */
+  .scene { display: none; }
+  .scene.active { display: block; }
+
+  /* 改动指示器（小红点表示有未保存） */
+  .unsaved-indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--my-brand-red);
+    margin-left: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    vertical-align: middle;
+  }
+  .unsaved-indicator.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-controls">
+  <button data-scene="mixed">语音混合</button>
+  <button data-scene="text">文字记录</button>
+  <button data-scene="image">饮食图片</button>
+  <button data-scene="quick">快捷记录</button>
+</div>
+
+<div class="phone">
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span class="right">●●● 5G ▮</span>
+  </div>
+
+  <!-- 顶部导航 -->
+  <div class="nav-bar">
+    <button class="nav-btn close-btn" onclick="handleClose()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="nav-title">编辑记录<span class="unsaved-indicator" id="unsavedDot"></span></div>
+    <button class="nav-btn save-btn" id="saveBtn" onclick="handleSave()">保存</button>
+  </div>
+
+  <!-- 主内容滚动区 -->
+  <div class="scroll-area">
+
+    <!-- ============ 场景1：语音混合 ============ -->
+    <div class="scene active" id="scene-mixed">
+      <!-- 记录时间 -->
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-mixed">今天 12:00</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 语音输入源 -->
+      <div class="section">
+        <div class="source-header-with-delete">
+          <span class="section-title">📣 语音转写</span>
+          <button class="source-delete-link" onclick="confirmDeleteVoice()">删除语音</button>
+        </div>
+        <div class="source-block" style="padding-top: 0;">
+          <div class="source-quote" id="voiceQuote">昨天下午来了姨妈，来之前，上午就开始头痛。</div>
+          <div class="source-meta-row">
+            <div class="source-tip">修改转写文字不会重新识别下方记录项</div>
+            <button class="source-edit-btn" onclick="enableEdit('voiceQuote', this)">修改</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 记录项列表 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">识别到 2 条记录</span>
+          <span class="section-meta"></span>
+        </div>
+        <div class="records-list">
+          <div class="record-item" data-record-id="r1">
+            <div class="record-icon menstruation">🩸</div>
+            <div class="record-main">
+              <div class="record-type">月经开始</div>
+              <div class="record-time">昨天 下午</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '月经开始')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+              </svg>
+            </button>
+          </div>
+          <div class="record-item" data-record-id="r2">
+            <div class="record-icon symptom">🤕</div>
+            <div class="record-main">
+              <div class="record-type">症状 · 头痛</div>
+              <div class="record-time">昨天 上午</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '症状 · 头痛')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="records-mvp-tip">如需修改记录项内容（值、时间等），请先删除再重新记录</div>
+      </div>
+
+      <!-- 删除整条 -->
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('mixed')">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 场景2：文字记录 ============ -->
+    <div class="scene" id="scene-text">
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-text">今天 14:30</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="source-header-with-delete">
+          <span class="section-title">✏️ 文字记录</span>
+        </div>
+        <div class="source-block" style="padding-top: 0;">
+          <div class="source-quote" id="textQuote">今天心情有点烦躁，吃了一碗番茄牛腩面，体重 52kg。</div>
+          <div class="source-meta-row">
+            <div class="source-tip">修改文字不会重新识别下方记录项</div>
+            <button class="source-edit-btn" onclick="enableEdit('textQuote', this)">修改</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">识别到 3 条记录</span>
+          <span class="section-meta"></span>
+        </div>
+        <div class="records-list">
+          <div class="record-item">
+            <div class="record-icon emotion">😣</div>
+            <div class="record-main">
+              <div class="record-type">情绪 · 烦躁</div>
+              <div class="record-time">今天 14:30</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '情绪 · 烦躁')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+          <div class="record-item">
+            <div class="record-icon diet">🍜</div>
+            <div class="record-main">
+              <div class="record-type">饮食 · 番茄牛腩面</div>
+              <div class="record-time">今天 14:30</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '饮食 · 番茄牛腩面')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+          <div class="record-item">
+            <div class="record-icon weight">⚖️</div>
+            <div class="record-main">
+              <div class="record-type">体重 · 52kg</div>
+              <div class="record-time">今天 14:30</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '体重 · 52kg')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="records-mvp-tip">如需修改记录项内容（值、时间等），请先删除再重新记录</div>
+      </div>
+
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('text')">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 场景3：饮食图片 ============ -->
+    <div class="scene" id="scene-image">
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-image">今天 12:30</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="source-header-with-delete">
+          <span class="section-title">📷 饮食照片</span>
+          <button class="source-delete-link" onclick="confirmDeleteImage()">删除照片</button>
+        </div>
+        <div class="source-block" style="padding-top: 0;">
+          <div class="source-image-wrap" id="foodImage">
+            <div class="source-image-placeholder">🍱</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">识别到 1 条记录</span>
+          <span class="section-meta"></span>
+        </div>
+        <div class="records-list">
+          <div class="record-item">
+            <div class="record-icon diet">🍱</div>
+            <div class="record-main">
+              <div class="record-type">饮食 · 日式便当</div>
+              <div class="record-value">饭团、玉子烧、炸鸡、西兰花</div>
+              <div class="record-time">今天 12:30</div>
+            </div>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '饮食 · 日式便当')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="records-mvp-tip">如需修改记录项内容，请先删除再重新记录</div>
+      </div>
+
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('image')">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 场景4：快捷记录（无输入源）============ -->
+    <div class="scene" id="scene-quick">
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-quick">今天 09:15</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="records-list" id="quickRecordList"></div>
+        <div class="records-mvp-tip">如需修改记录项内容，请先删除再重新记录</div>
+      </div>
+
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('quick')">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 场景5：经期细项记录 ============ -->
+    <div class="scene" id="scene-period-detail">
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-period-detail">今天 09:15</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title" id="periodDetailCount">经期记录项</span>
+        </div>
+        <div class="records-list" id="periodDetailList"></div>
+      </div>
+
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('period-detail')">删除这条记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 场景6：日常单项记录 ============ -->
+    <div class="scene" id="scene-daily-record">
+      <div class="section">
+        <div class="time-row" onclick="openTimePicker()">
+          <div class="time-label">
+            <span class="icon-circle">🕐</span>
+            <span>记录时间</span>
+          </div>
+          <div class="time-value">
+            <span id="recordTime-daily-record">今天 09:15</span>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title" id="dailyRecordTitle">记录项</span>
+        </div>
+        <div class="records-list" id="dailyRecordList"></div>
+      </div>
+
+      <div class="danger-zone">
+        <button class="danger-btn" onclick="confirmDeleteEntry('daily-record')">删除这条记录</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==== 底部时间选择器 ==== -->
+  <div class="sheet-mask" id="timeSheetMask" onclick="closeTimePicker()"></div>
+  <div class="sheet" id="timeSheet">
+    <div class="sheet-header">
+      <button class="cancel" onclick="closeTimePicker()">取消</button>
+      <span class="sheet-title">修改记录时间</span>
+      <button class="confirm" onclick="confirmTimePicker()">完成</button>
+    </div>
+    <div class="sheet-body">
+      <div class="picker-wrap">
+        <div class="picker-indicator"></div>
+        <div class="picker-col" id="dayCol"></div>
+        <div class="picker-col" id="hourCol"></div>
+        <div class="picker-col" id="minCol"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==== 记录项单选 picker ==== -->
+  <div class="sheet-mask" id="optionSheetMask" onclick="closeOptionPicker()"></div>
+  <div class="sheet option-sheet" id="optionSheet">
+    <div class="sheet-header">
+      <button class="cancel" onclick="closeOptionPicker()">取消</button>
+      <span class="sheet-title" id="optionSheetTitle">修改记录项</span>
+      <button class="confirm" id="optionSheetConfirm" onclick="confirmOptionPicker()">完成</button>
+    </div>
+    <div class="sheet-body">
+      <div class="option-list" id="optionList"></div>
+    </div>
+  </div>
+
+  <!-- ==== 症状选择 picker ==== -->
+  <div class="symptom-picker-mask" id="symptomPickerMask" onclick="closeSymptomPicker()"></div>
+  <div class="symptom-picker-sheet" id="symptomPickerSheet" role="dialog" aria-modal="true" aria-label="症状">
+    <header class="symptom-picker-nav">
+      <button type="button" class="symptom-picker-nav-btn" onclick="closeSymptomPicker()">取消</button>
+      <h2 class="symptom-picker-title">症状</h2>
+      <button type="button" class="symptom-picker-nav-btn is-primary" onclick="confirmSymptomPicker()">确定</button>
+    </header>
+    <div class="symptom-picker-scroll" id="symptomPickerList"></div>
+    <div class="symptom-picker-toast" id="symptomPickerToast"></div>
+  </div>
+
+  <!-- ==== 二次确认对话框 ==== -->
+  <div class="dialog-mask" id="dialogMask">
+    <div class="dialog">
+      <div class="dialog-content">
+        <div class="dialog-title" id="dialogTitle">确认删除？</div>
+        <div class="dialog-desc" id="dialogDesc"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="cancel" onclick="closeDialog()">取消</button>
+        <button class="confirm-danger" id="dialogConfirmBtn">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  // ========== URL 参数读取 & 场景初始化 ==========
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const valid = ['mixed','text','image','quick','period-detail','daily-record'];
+    let scene = params.get('scene') || 'mixed';
+    if(valid.indexOf(scene) < 0) scene = 'mixed';
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('scene-' + scene);
+    if(target) target.classList.add('active');
+    if(scene === 'period-detail') setTimeout(() => {
+      if(typeof renderPeriodDetailEditor === 'function') renderPeriodDetailEditor();
+    }, 0);
+    if(scene === 'daily-record') setTimeout(() => {
+      if(typeof renderDailyRecordEditor === 'function') renderDailyRecordEditor();
+    }, 0);
+    if(scene === 'quick') setTimeout(() => {
+      if(typeof renderQuickRecordEditor === 'function') renderQuickRecordEditor();
+    }, 0);
+    // 同步切换器按钮 active 态
+    const activeControlScene = (scene === 'period-detail' || scene === 'daily-record') ? 'quick' : scene;
+    document.querySelectorAll('.demo-controls button').forEach(b => {
+      b.classList.toggle('active', b.dataset.scene === activeControlScene);
+    });
+  })();
+
+  // ========== 演示场景切换器 ==========
+  const sceneButtons = document.querySelectorAll('.demo-controls button');
+  sceneButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      sceneButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const scene = btn.dataset.scene;
+      document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+      document.getElementById('scene-' + scene).classList.add('active');
+      resetDirty();
+    });
+  });
+
+  const isEmbedded = window.parent !== window;
+  const PERIOD_DETAIL_OPTIONS = {
+    flow: { label: '流量', icon: 'flow', className: 'menstruation', emoji: '💧', options: ['非常少量', '少量', '中量', '大量', '非常大量'] },
+    color: { label: '颜色', icon: 'color', className: 'menstruation', emoji: '🎨', options: ['浅红色', '鲜红色', '深红色', '褐色', '黑色'] },
+    cramps: { label: '痛经', icon: 'cramps', className: 'symptom', emoji: '⚡', options: ['完全不痛', '轻微痛', '比较痛', '非常痛', '痛到极致'] },
+  };
+  const DAILY_RECORD_OPTIONS = {
+    love: { label: '爱爱', className: 'intimacy', emoji: '💕', options: ['无措施', '避孕套', '体外排精', '未射精', '紧急避孕药', '短效避孕药', '长效避孕药', '节育环', '其他措施', '自慰'] },
+    mood: { label: '心情', className: 'emotion', emoji: '', options: ['超开心', '挺开心', '一般', '不开心', '好伤心', '兴奋', '惊喜', '满足', '心动', '自信', '放松', '平静', '烦躁', '易怒', '生气', '焦虑', '内耗', '压力', '害怕', '冷漠'] },
+    discharge: { label: '白带', className: 'emotion', emoji: '💧', options: ['干燥', '粘稠', '稀糊状', '水状', '蛋清状'] },
+    temp: { label: '体温', className: 'symptom', emoji: '🌡️', options: Array.from({length: 70}, (_, i) => `${(35 + i / 10).toFixed(1)}°C`) },
+    habit: { label: '好习惯', className: 'diet', emoji: '👍', options: ['早餐', '水果', '喝水', '运动'] },
+    stool: { label: '便便', className: 'diet', emoji: '💩', options: ['舒畅', '有残便感', '排便困难', '硬球状', '凹凸香肠状', '裂纹香肠状', '平滑香蕉状', '软块状', '糊状', '水液状', '较少', '适中', '较多'] },
+    weight: { label: '体重', className: 'weight', emoji: '', options: [] },
+    diet: { label: '饮食', className: 'diet', emoji: '', options: [] },
+    beverage: { label: '喝水', className: 'diet', emoji: '', options: [] },
+    skin: { label: '皮肤状态', className: 'emotion', emoji: '', options: [] },
+    cosmetic: { label: '化妆品', className: 'diet', emoji: '', options: [] },
+  };
+  const DAILY_RECORD_SHEET_SECTIONS = {
+    love: [
+      { key: 'measure', title: '爱爱', options: DAILY_RECORD_OPTIONS.love.options },
+    ],
+    mood: [
+      { key: 'mood', title: '心情', options: DAILY_RECORD_OPTIONS.mood.options },
+    ],
+    discharge: [
+      { key: 'texture', title: '白带', options: DAILY_RECORD_OPTIONS.discharge.options },
+    ],
+    habit: [
+      { key: 'habit', title: '好习惯', options: DAILY_RECORD_OPTIONS.habit.options },
+    ],
+    stool: [
+      { key: 'feeling', title: '排便感受', options: ['舒畅', '有残便感', '排便困难'] },
+      { key: 'shape', title: '形状', options: ['硬球状', '凹凸香肠状', '裂纹香肠状', '平滑香蕉状', '软块状', '糊状', '水液状'] },
+      { key: 'amount', title: '便便量', options: ['较少', '适中', '较多'] },
+    ],
+  };
+  const DAILY_RECORD_OPTION_META = {
+    love: {
+      layout: 'iconGrid',
+      tone: 'pink',
+      options: {
+        '无措施': { icon: 'assets/health-picker-icons/love-none.png' },
+        '避孕套': { icon: 'assets/health-picker-icons/love-condom.png' },
+        '体外排精': { icon: 'assets/health-picker-icons/love-withdrawal.png' },
+        '未射精': { icon: 'assets/health-picker-icons/love-no-ejaculation.png' },
+        '紧急避孕药': { icon: 'assets/health-picker-icons/love-emergency-pill.png' },
+        '短效避孕药': { icon: 'assets/health-picker-icons/love-short-pill.png' },
+        '长效避孕药': { icon: 'assets/health-picker-icons/love-long-pill.png' },
+        '节育环': { icon: 'assets/health-picker-icons/love-iud.png' },
+        '其他措施': { icon: 'assets/health-picker-icons/love-other.png' },
+        '自慰': { icon: 'assets/health-picker-icons/love-self.png' },
+      },
+    },
+    mood: {
+      layout: 'moodGrid',
+      tone: 'pink',
+      options: {
+        '超开心': { face: 'super-happy', bg: '#FFE875' },
+        '挺开心': { face: 'happy', bg: '#FFE875' },
+        '一般': { face: 'normal', bg: '#65E5DF' },
+        '不开心': { face: 'unhappy', bg: '#FF9FC0' },
+        '好伤心': { face: 'very-sad', bg: '#FF9FC0' },
+        '兴奋': { face: 'excited', bg: '#FFE875' },
+        '惊喜': { face: 'surprised', bg: '#FFE875' },
+        '满足': { face: 'satisfied', bg: '#FFE875' },
+        '心动': { face: 'heart-flutter', bg: '#FFE875' },
+        '自信': { face: 'confident', bg: '#FFE875' },
+        '放松': { face: 'relaxed', bg: '#FFE875' },
+        '平静': { face: 'calm', bg: '#65D9E8' },
+        '烦躁': { face: 'irritable', bg: '#FF8FB1' },
+        '易怒': { face: 'temper', bg: '#FF8FB1' },
+        '生气': { face: 'angry', bg: '#F45A5A' },
+        '焦虑': { face: 'anxious', bg: '#31CDB8' },
+        '内耗': { face: 'overthink', bg: '#FF8FB1' },
+        '压力': { face: 'stressed', bg: '#FFD551' },
+        '害怕': { face: 'scared', bg: '#FF9FC0' },
+        '冷漠': { face: 'indifferent', bg: '#65D9E8' },
+      },
+    },
+    discharge: {
+      layout: 'list',
+      tone: 'pink',
+      options: {
+        '干燥': { icon: 'assets/health-picker-icons/discharge-dry.png', desc: '内裤干爽、分泌物量少、无水分' },
+        '粘稠': { icon: 'assets/health-picker-icons/discharge-sticky.png', desc: '分泌物稠厚，触感似胶状物' },
+        '稀糊状': { icon: 'assets/health-picker-icons/discharge-paste.png', desc: '含水量偏多偏黄色，触感似乳液' },
+        '水状': { icon: 'assets/health-picker-icons/discharge-watery.png', desc: '呈白色或透明，触摸似水滴' },
+        '蛋清状': { icon: 'assets/health-picker-icons/discharge-eggwhite.png', desc: '呈透明状，两指间可拉丝' },
+      },
+    },
+    stool: {
+      layout: 'iconGrid',
+      tone: 'yellow',
+      options: {
+        '舒畅': { icon: 'assets/health-picker-icons/stool-comfort.png' },
+        '有残便感': { icon: 'assets/health-picker-icons/stool-residual.png' },
+        '排便困难': { icon: 'assets/health-picker-icons/stool-difficult.png' },
+        '硬球状': { icon: 'assets/health-picker-icons/stool-hard-balls.png' },
+        '凹凸香肠状': { icon: 'assets/health-picker-icons/stool-lumpy-sausage.png' },
+        '裂纹香肠状': { icon: 'assets/health-picker-icons/stool-cracked-sausage.png' },
+        '平滑香蕉状': { icon: 'assets/health-picker-icons/stool-smooth-banana.png' },
+        '软块状': { icon: 'assets/health-picker-icons/stool-soft-blobs.png' },
+        '糊状': { icon: 'assets/health-picker-icons/stool-mushy.png' },
+        '水液状': { icon: 'assets/health-picker-icons/stool-watery.png' },
+        '较少': { icon: 'assets/health-picker-icons/stool-less.png' },
+        '适中': { icon: 'assets/health-picker-icons/stool-normal.png' },
+        '较多': { icon: 'assets/health-picker-icons/stool-more.png' },
+      },
+    },
+  };
+  const QUICK_SYMPTOM_OPTIONS = [
+    '没有症状', '腰酸', '腹痛', '小腹坠胀', '乳房胀痛', '身体酸痛',
+    '头痛', '眩晕', '失眠', '粉刺', '皮肤干燥', '食欲不振',
+    '贪冷饮', '腹泻', '便秘', '疲惫', '褐色分泌物', '出血',
+    '有血块', '白带增多',
+  ];
+  const SYMPTOM_PICKER_GROUPS = [
+    {
+      id: 'body',
+      title: '身体症状',
+      items: [
+        { id: 'no_symptom', name: '没有症状', imgSrc: 'assets/symptom-picker-none.png', exclusive: true },
+        { id: 'back_ache', name: '腰酸', imgSrc: 'assets/symptom-back.png' },
+        { id: 'cramps', name: '腹痛', imgSrc: 'assets/symptom-cramp.png' },
+        { id: 'bloat_low', name: '小腹坠胀', imgSrc: 'assets/symptom-bloat.png' },
+        { id: 'breast_pain', name: '乳房胀痛', imgSrc: 'assets/symptom-breast.png' },
+        { id: 'body_ache', name: '身体酸痛', imgSrc: 'assets/symptom-sore.png' },
+        { id: 'headache', name: '头痛', imgSrc: 'assets/symptom-picker-headache.png' },
+        { id: 'dizzy', name: '眩晕', imgSrc: 'assets/symptom-picker-dizzy.png' },
+        { id: 'insomnia', name: '失眠', imgSrc: 'assets/symptom-insomnia.png' },
+        { id: 'acne', name: '粉刺', imgSrc: 'assets/symptom-acne.png' },
+        { id: 'dry_skin', name: '皮肤干燥', imgSrc: 'assets/symptom-picker-dry-skin.png' },
+        { id: 'no_appetite', name: '食欲不振', imgSrc: 'assets/symptom-picker-no-appetite.png' },
+        { id: 'cold_crave', name: '贪冷饮', imgSrc: 'assets/symptom-picker-cold-crave.png' },
+        { id: 'diarrhea', name: '腹泻', imgSrc: 'assets/symptom-diarrhea.png' },
+        { id: 'constipation', name: '便秘', imgSrc: 'assets/symptom-picker-constipation.png' },
+        { id: 'fatigue', name: '疲惫', imgSrc: 'assets/symptom-tired.png' },
+      ],
+    },
+    {
+      id: 'discharge',
+      title: '阴道分泌物',
+      items: [
+        { id: 'discharge_brown', name: '褐色分泌物', imgSrc: 'assets/symptom-discharge.png' },
+        { id: 'discharge_blood', name: '出血', imgSrc: 'assets/symptom-picker-bleeding.png' },
+        { id: 'discharge_clot', name: '有血块', imgSrc: 'assets/symptom-picker-blood-clot.png' },
+        { id: 'discharge_more', name: '白带增多', imgSrc: 'assets/symptom-picker-discharge-more.png' },
+      ],
+    },
+    {
+      id: 'more',
+      title: '更多症状',
+      editable: true,
+      items: [
+        { id: 'gas', name: '胃肠胀气', imgSrc: 'assets/symptom-picker-gas.png', removable: true },
+      ],
+    },
+  ];
+  const SYMPTOM_PICKER_ITEMS = SYMPTOM_PICKER_GROUPS.flatMap(group => group.items);
+  const SYMPTOM_PICKER_ITEM_MAP = SYMPTOM_PICKER_ITEMS.reduce((map, item) => {
+    map[item.id] = item;
+    return map;
+  }, {});
+  const DAILY_HABIT_ICONS = { 早餐: '🍞', 水果: '🍎', 喝水: '🥤', 运动: '⚾' };
+  let periodDetailState = {
+    time: '今天 09:15',
+    periodDetailItems: [
+      { label: '流量', value: '中量', icon: 'flow' },
+      { label: '颜色', value: '鲜红色', icon: 'color' },
+      { label: '痛经', value: '轻微痛', icon: 'cramps' },
+    ],
+  };
+  let dailyRecordState = {
+    time: '今天 09:15',
+    dayLabel: '今天',
+    recordType: 'love',
+    recordLabel: '爱爱',
+    recordValue: '无措施',
+    recordDetail: '无措施',
+    icon: 'love',
+    iconText: '',
+  };
+  let quickRecordState = {
+    time: '09:15',
+    recordLabel: '情绪 · 开心',
+    recordValue: '',
+    icon: 'emotion',
+    detailItems: [],
+  };
+  let symptomPickerTarget = null;
+  let symptomPickerSelectedIds = new Set();
+  let symptomPickerEditing = false;
+  let symptomPickerRemovedIds = new Set();
+  let symptomPickerToastTimer = null;
+
+  const QUICK_RECORD_ICON_SRC = {
+    period: 'assets/record-period-start.png',
+    'period-end': 'assets/record-period-end.png',
+    flow: 'assets/record-flow.png',
+    color: 'assets/record-color.png',
+    cramps: 'assets/record-cramps.png',
+  };
+
+  function formatQuickTime(time){
+    const raw = time || '09:15';
+    return /^今天\s/.test(raw) ? raw : '今天 ' + raw;
+  }
+
+  function quickIconText(icon, label){
+    if(icon === 'period' || icon === 'period-end' || /月经/.test(label || '')) return '🩸';
+    if(icon === 'diet') return '🍱';
+    if(icon === 'weight') return '⚖️';
+    if(icon === 'symptom') return '🤕';
+    return '😊';
+  }
+
+  function escapeHtml(value){
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[char]));
+  }
+
+  function symptomIdsFromValue(value){
+    const labels = String(value || '')
+      .split(/[、,，]/)
+      .map(item => item.trim())
+      .filter(Boolean);
+    const ids = labels.map(label => SYMPTOM_PICKER_ITEMS.find(item => item.name === label)?.id).filter(Boolean);
+    return ids.length ? ids : [];
+  }
+
+  function showSymptomPickerToast(text){
+    const toast = document.getElementById('symptomPickerToast');
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(symptomPickerToastTimer);
+    symptomPickerToastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  function toggleSymptomPickerItem(id){
+    const item = SYMPTOM_PICKER_ITEM_MAP[id];
+    if(!item) return;
+    if(symptomPickerEditing && item.removable){
+      symptomPickerRemovedIds.add(id);
+      symptomPickerSelectedIds.delete(id);
+      renderSymptomPicker();
+      showSymptomPickerToast('已移除「' + item.name + '」');
+      return;
+    }
+    const next = new Set(symptomPickerSelectedIds);
+    const isOn = next.has(id);
+    if(item.exclusive){
+      next.clear();
+      if(!isOn) next.add(id);
+    } else {
+      SYMPTOM_PICKER_ITEMS.filter(candidate => candidate.exclusive).forEach(candidate => next.delete(candidate.id));
+      if(isOn) next.delete(id);
+      else next.add(id);
+    }
+    symptomPickerSelectedIds = next;
+    renderSymptomPicker();
+  }
+
+  function renderSymptomPicker(){
+    const list = document.getElementById('symptomPickerList');
+    list.innerHTML = SYMPTOM_PICKER_GROUPS.map(group => {
+      const items = group.items.filter(item => !symptomPickerRemovedIds.has(item.id));
+      const editButton = group.editable ? `
+        <button type="button" class="symptom-picker-edit${symptomPickerEditing ? ' is-active' : ''}" onclick="toggleSymptomPickerEdit()">
+          ${symptomPickerEditing ? '完成' : '编辑'}
+        </button>
+      ` : '';
+      return `
+        <section class="symptom-picker-card${symptomPickerEditing && group.editable ? ' editing' : ''}">
+          <div class="symptom-picker-card-head">
+            <h3 class="symptom-picker-card-title">${escapeHtml(group.title)}</h3>
+            ${editButton}
+          </div>
+          <div class="symptom-picker-grid">
+            ${items.map(item => {
+              const selected = symptomPickerSelectedIds.has(item.id);
+              return `
+                <button
+                  type="button"
+                  class="symptom-picker-cell${selected ? ' is-selected' : ''}${item.removable ? ' removable' : ''}"
+                  aria-pressed="${selected ? 'true' : 'false'}"
+                  onclick="toggleSymptomPickerItem('${escapeHtml(item.id)}')"
+                >
+                  <span class="symptom-picker-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4 10-10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="symptom-picker-del" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M6 12h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+                  </span>
+                  <span class="symptom-picker-icon" aria-hidden="true">
+                    <img src="${escapeHtml(item.imgSrc)}" alt="" draggable="false">
+                  </span>
+                  <span class="symptom-picker-label">${escapeHtml(item.name)}</span>
+                </button>
+              `;
+            }).join('')}
+            ${group.editable ? `
+              <button type="button" class="symptom-picker-cell add" onclick="showSymptomPickerToast('打开「添加自定义症状」')">
+                <span class="symptom-picker-icon" aria-hidden="true">
+                  <svg viewBox="0 0 48 48"><path d="M24 17v14M17 24h14" stroke="#bdbdc2" stroke-width="2.4" stroke-linecap="round"/></svg>
+                </span>
+                <span class="symptom-picker-label">添加症状</span>
+              </button>
+            ` : ''}
+          </div>
+        </section>
+      `;
+    }).join('');
+  }
+
+  function toggleSymptomPickerEdit(){
+    symptomPickerEditing = !symptomPickerEditing;
+    renderSymptomPicker();
+  }
+
+  function openSymptomOptionPicker(item, index){
+    symptomPickerTarget = { kind: 'quick-record', index };
+    symptomPickerSelectedIds = new Set(symptomIdsFromValue(item.value));
+    symptomPickerEditing = false;
+    symptomPickerRemovedIds = new Set();
+    renderSymptomPicker();
+    document.getElementById('symptomPickerMask').classList.add('show');
+    document.getElementById('symptomPickerSheet').classList.add('show');
+  }
+
+  function closeSymptomPicker(){
+    symptomPickerTarget = null;
+    document.getElementById('symptomPickerMask').classList.remove('show');
+    document.getElementById('symptomPickerSheet').classList.remove('show');
+    document.getElementById('symptomPickerToast').classList.remove('show');
+    clearTimeout(symptomPickerToastTimer);
+  }
+
+  function confirmSymptomPicker(){
+    if(!symptomPickerSelectedIds.size){
+      showSymptomPickerToast('未选择任何症状');
+      return;
+    }
+    const nextValue = [...symptomPickerSelectedIds]
+      .map(id => SYMPTOM_PICKER_ITEM_MAP[id]?.name)
+      .filter(Boolean)
+      .join('、');
+    if(symptomPickerTarget?.kind === 'quick-record'){
+      if(symptomPickerTarget.index === -1){
+        quickRecordState.recordValue = nextValue;
+      } else if(quickRecordState.detailItems?.[symptomPickerTarget.index]){
+        quickRecordState.detailItems[symptomPickerTarget.index].value = nextValue;
+      }
+      renderQuickRecordEditor();
+      markDirty();
+    }
+    closeSymptomPicker();
+  }
+
+  function renderQuickIcon(icon, label){
+    const src = QUICK_RECORD_ICON_SRC[icon];
+    if(src) return `<img src="${src}" alt="" draggable="false">`;
+    return escapeHtml(quickIconText(icon, label));
+  }
+
+  function quickIconClass(icon){
+    if(icon === 'period' || icon === 'period-end' || icon === 'flow' || icon === 'color' || icon === 'cramps') return 'menstruation';
+    if(icon === 'diet') return 'diet';
+    if(icon === 'weight') return 'weight';
+    if(icon === 'symptom') return 'symptom';
+    return 'emotion';
+  }
+
+  function quickEditableKey(item){
+    const icon = item?.icon || '';
+    const label = item?.label || '';
+    if(icon === 'flow' || label === '流量') return 'flow';
+    if(icon === 'color' || label === '颜色') return 'color';
+    if(icon === 'cramps' || label === '痛经') return 'cramps';
+    if(icon === 'love' || label === '爱爱') return 'love';
+    if(icon === 'discharge' || label === '白带') return 'discharge';
+    if(icon === 'temp' || label === '体温') return 'temp';
+    if(icon === 'stool' || label === '便便') return 'stool';
+    if(icon === 'symptom' || label === '症状') return 'symptom';
+    return null;
+  }
+
+  function quickPickerConfig(key){
+    if(key === 'symptom') return { label: '症状', options: QUICK_SYMPTOM_OPTIONS };
+    if(PERIOD_DETAIL_OPTIONS[key]) return PERIOD_DETAIL_OPTIONS[key];
+    if(DAILY_RECORD_OPTIONS[key]) return DAILY_RECORD_OPTIONS[key];
+    return null;
+  }
+
+  function flowPickerIconSvg(index){
+    const reds = ['#f4a9bb', '#ef85a0', '#ea5e82', '#e63d6b', '#e01f5b'];
+    const marks = [
+      { rx: 3.4, ry: 5.5, cy: 28 },
+      { rx: 4.6, ry: 8.5, cy: 30 },
+      { rx: 6.2, ry: 11, cy: 31 },
+      { rx: 7.8, ry: 13.5, cy: 32 },
+      { rx: 9.2, ry: 16, cy: 32 },
+    ];
+    const mark = marks[index] || marks[2];
+    const color = reds[index] || reds[2];
+    return `
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="20" y="14" width="24" height="38" rx="12" fill="#fff" stroke="rgba(255,77,136,.16)" stroke-width="1"/>
+        <path
+          d="M32 ${mark.cy - mark.ry} C ${32 + mark.rx * 1.1} ${mark.cy - mark.ry * 0.4}, ${32 + mark.rx * 1.05} ${mark.cy + mark.ry * 0.7}, 32 ${mark.cy + mark.ry} C ${32 - mark.rx * 1.05} ${mark.cy + mark.ry * 0.7}, ${32 - mark.rx * 1.1} ${mark.cy - mark.ry * 0.4}, 32 ${mark.cy - mark.ry} Z"
+          fill="${color}"
+        />
+      </svg>
+    `;
+  }
+
+  function resetOptionSheetMode(){
+    const sheet = document.getElementById('optionSheet');
+    const confirm = document.getElementById('optionSheetConfirm');
+    sheet.classList.remove('is-flow-picker');
+    sheet.classList.remove('is-health-picker');
+    sheet.classList.remove('is-love-picker');
+    sheet.classList.remove('is-mood-picker');
+    sheet.classList.remove('is-discharge-picker');
+    sheet.classList.remove('is-stool-picker');
+    sheet.classList.remove('is-temp-picker');
+    sheet.classList.remove('is-weight-picker');
+    sheet.classList.remove('is-diet-picker');
+    sheet.classList.remove('is-beverage-picker');
+    sheet.classList.remove('is-skin-picker');
+    sheet.classList.remove('is-cosmetic-picker');
+    confirm.textContent = '完成';
+    confirm.disabled = false;
+  }
+
+  function openFlowOptionPicker(item, index, config){
+    const sheet = document.getElementById('optionSheet');
+    const confirm = document.getElementById('optionSheetConfirm');
+    sheet.classList.add('is-flow-picker');
+    confirm.textContent = '确定';
+    confirm.disabled = true;
+    currentOptionTarget = { kind: 'quick-record', index };
+    document.getElementById('optionSheetTitle').textContent = config.label;
+    document.getElementById('optionList').innerHTML = `
+      <section class="flow-picker-card">
+        <h3 class="flow-picker-title">${config.label}</h3>
+        <div class="flow-picker-row">
+          ${config.options.map((option, optionIndex) => `
+            <button
+              type="button"
+              class="flow-picker-option${option === item.value ? ' active' : ''}"
+              data-value="${option}"
+              aria-label="${option}"
+              aria-pressed="${option === item.value ? 'true' : 'false'}"
+            >
+              <span class="flow-picker-icon">${flowPickerIconSvg(optionIndex)}</span>
+              <span class="flow-picker-label">${option}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+    document.querySelectorAll('#optionList .flow-picker-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#optionList .flow-picker-option').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        confirm.disabled = false;
+      });
+    });
+    document.getElementById('optionSheetMask').classList.add('show');
+    sheet.classList.add('show');
+  }
+
+  function buildQuickRecordItems(){
+    const baseLabel = quickRecordState.recordLabel || '快捷记录';
+    const items = [{
+      label: baseLabel,
+      value: quickRecordState.recordValue || '',
+      icon: quickRecordState.icon || 'quick',
+      targetIndex: -1,
+    }];
+    (quickRecordState.detailItems || []).forEach((item, index) => {
+      if(!item || !item.label) return;
+      items.push({
+        label: item.label,
+        value: item.value || '',
+        icon: item.icon || 'quick',
+        targetIndex: index,
+      });
+    });
+    return items;
+  }
+
+  function renderQuickRecordEditor(){
+    const timeText = formatQuickTime(quickRecordState.time);
+    const listEl = document.getElementById('quickRecordList');
+    document.getElementById('recordTime-quick').textContent = timeText;
+    if(!listEl) return;
+    listEl.innerHTML = buildQuickRecordItems().map((item) => {
+      const label = item.value ? `${item.label}： ${item.value}` : item.label;
+      const editKey = quickEditableKey(item);
+      const editButton = editKey ? `
+            <button class="record-edit" onclick="openQuickOptionPicker(${item.targetIndex})" aria-label="编辑${escapeHtml(item.label)}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+              </svg>
+            </button>
+      ` : '';
+      return `
+        <div class="record-item">
+          <div class="record-icon ${quickIconClass(item.icon)}">${renderQuickIcon(item.icon, item.label)}</div>
+          <div class="record-main">
+            <div class="record-type">${escapeHtml(label)}</div>
+          </div>
+          <div class="record-actions">
+            ${editButton}
+            <button class="record-delete" aria-label="删除${escapeHtml(label)}" onclick="confirmDeleteRecord(this, '${escapeHtml(label)}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  let currentOptionTarget = null;
+
+  function periodPickerIconSvg(type, index) {
+    if(type === 'flow'){
+      const reds = ['#f4a9bb', '#ef85a0', '#ea5e82', '#e63d6b', '#e01f5b'];
+      const marks = [
+        { rx: 3.4, ry: 5.5, cy: 28 },
+        { rx: 4.6, ry: 8.5, cy: 30 },
+        { rx: 6.2, ry: 11, cy: 31 },
+        { rx: 7.8, ry: 13.5, cy: 32 },
+        { rx: 9.2, ry: 16, cy: 32 },
+      ];
+      const mark = marks[index] || marks[0];
+      const d = `M32 ${mark.cy - mark.ry} C ${32 + mark.rx * 1.1} ${mark.cy - mark.ry * 0.4}, ${32 + mark.rx * 1.05} ${mark.cy + mark.ry * 0.7}, 32 ${mark.cy + mark.ry} C ${32 - mark.rx * 1.05} ${mark.cy + mark.ry * 0.7}, ${32 - mark.rx * 1.1} ${mark.cy - mark.ry * 0.4}, 32 ${mark.cy - mark.ry} Z`;
+      return `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="14" width="24" height="38" rx="12" fill="#fff" stroke="rgba(255,77,136,.16)" stroke-width="1"/><path d="${d}" fill="${reds[index] || reds[0]}"/></svg>`;
+    }
+    if(type === 'color'){
+      const drop = ['#f08a86', '#e94b3f', '#c0202b', '#7d3a1e', '#2c1a16'][index] || '#e94b3f';
+      return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 17 C32 25 44 33 44 41 C44 48 38.6 53 32 53 C25.4 53 20 48 20 41 C20 33 32 25 32 17 Z" fill="${drop}"/><ellipse cx="27" cy="40" rx="2.8" ry="4.4" fill="rgba(255,255,255,.34)"/></svg>`;
+    }
+    const symbols = [
+      '<g><path d="M32 45 C32 39 32 36 32 32" stroke="#ec3f80" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M32 38 C28.2 38 25.2 36 24 31.6 C28.2 31.6 31 33.8 32 38 Z" fill="#ec3f80"/><path d="M32 35 C35.8 35 38.8 33 40 28.6 C35.8 28.6 33 30.8 32 35 Z" fill="#ec3f80"/></g>',
+      '<g fill="#ec3f80"><path d="M32 36 L21.5 30 L21.5 42 Z"/><path d="M32 36 L42.5 30 L42.5 42 Z"/><circle cx="32" cy="36" r="3.2"/></g>',
+      '<path d="M35.5 28 L26 40.5 L31.2 40.5 L29 48 L39 34 L33.4 34 Z" fill="#ec3f80"/>',
+      '<g fill="#ec3f80"><path d="M32 28 C33 34 34 35 40 37 C34 39 33 40 32 46 C31 40 30 39 24 37 C30 35 31 34 32 28 Z"/><circle cx="42.6" cy="29.6" r="1.8"/><circle cx="22.4" cy="44" r="1.5"/></g>',
+      '<g stroke="#ec3f80" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M27.6 34 C24 34 22.8 37.6 25.2 39.8 C27.4 41.8 30.9 40.2 30.4 36.9 C30.1 34.6 28.2 33.7 26.4 35"/><path d="M36.4 34 C40 34 41.2 37.6 38.8 39.8 C36.6 41.8 33.1 40.2 33.6 36.9 C33.9 34.6 35.8 33.7 37.6 35"/></g>',
+    ];
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 22 L46 22 Q49.5 22 49.5 25.5 L49.5 31 C49.5 39.5 43.5 45 38.5 44.4 C35.4 44 33.4 42 32 40.6 C30.6 42 28.6 44 25.5 44.4 C20.5 45 14.5 39.5 14.5 31 L14.5 25.5 Q14.5 22 18 22 Z" fill="#fcdccf"/>${symbols[index] || symbols[0]}</svg>`;
+  }
+
+  function pickerCheckMarkup() {
+    return '<span class="edit-prp-ck" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17 L19 7.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  }
+
+  // ========== 改动状态 ==========
+  let dirty = false;
+  function markDirty() {
+    dirty = true;
+    document.getElementById('saveBtn').classList.add('active');
+    document.getElementById('unsavedDot').classList.add('show');
+  }
+  function resetDirty() {
+    dirty = false;
+    document.getElementById('saveBtn').classList.remove('active');
+    document.getElementById('unsavedDot').classList.remove('show');
+  }
+
+  // ========== 关闭与保存 ==========
+  function notifyParent(action, payload) {
+    if(isEmbedded) window.parent.postMessage({type:'edit-close', action: action, payload: payload}, '*');
+  }
+  function handleClose() {
+    if (dirty) {
+      showDialog({
+        title: '放弃修改？',
+        desc: '<div style="text-align:center;color:var(--my-text-secondary)">当前修改尚未保存，是否放弃？</div>',
+        confirmText: '放弃',
+        onConfirm: () => {
+          resetDirty();
+          notifyParent('cancel');
+        }
+      });
+    } else {
+      notifyParent('cancel');
+    }
+  }
+  function handleSave() {
+    if (!dirty) return;
+    const payload = getActiveSavePayload();
+    resetDirty();
+    setTimeout(() => notifyParent('save', payload), 200);
+  }
+
+  function getActiveSavePayload() {
+    const activeScene = document.querySelector('.scene.active');
+    if(activeScene?.id === 'scene-quick'){
+      return {
+        kind: 'quick',
+        time: normalizePeriodDetailTime(document.getElementById('recordTime-quick').textContent),
+        recordLabel: quickRecordState.recordLabel,
+        recordValue: quickRecordState.recordValue,
+        icon: quickRecordState.icon,
+        detailItems: (quickRecordState.detailItems || []).map(item => ({ ...item })),
+      };
+    }
+    if(activeScene?.id === 'scene-daily-record'){
+      return {
+        kind: 'daily-record',
+        time: normalizePeriodDetailTime(document.getElementById('recordTime-daily-record').textContent),
+        recordType: dailyRecordState.recordType,
+        recordLabel: dailyRecordState.recordLabel,
+        recordValue: dailyRecordState.recordValue,
+        recordDetail: dailyRecordState.recordDetail,
+        icon: dailyRecordState.icon,
+        iconText: dailyRecordState.iconText || '',
+        dietItems: dailyRecordState.dietItems ? dailyRecordState.dietItems.map(item => ({ ...item })) : undefined,
+        totalKcal: dailyRecordState.totalKcal,
+        mealType: dailyRecordState.mealType,
+        photoUrl: dailyRecordState.photoUrl,
+        brand: dailyRecordState.brand,
+        beverageName: dailyRecordState.beverageName,
+        beverageCategory: dailyRecordState.beverageCategory,
+        capacityMl: dailyRecordState.capacityMl,
+        iceLevel: dailyRecordState.iceLevel,
+        sugarLevel: dailyRecordState.sugarLevel,
+        spec: dailyRecordState.spec,
+        calories: dailyRecordState.calories,
+        caffeineMg: dailyRecordState.caffeineMg,
+        note: dailyRecordState.note || '',
+        dayLabel: dailyRecordState.dayLabel || '今天',
+        area: dailyRecordState.area,
+        acne: dailyRecordState.acne,
+        redness: dailyRecordState.redness,
+        acneMarks: dailyRecordState.acneMarks,
+        product: dailyRecordState.product,
+        managementStatus: dailyRecordState.managementStatus,
+      };
+    }
+    if(activeScene?.id !== 'scene-period-detail') return null;
+    return {
+      kind: 'period-detail',
+      time: normalizePeriodDetailTime(document.getElementById('recordTime-period-detail').textContent),
+      periodDetailItems: periodDetailState.periodDetailItems.map(item => ({ ...item })),
+    };
+  }
+
+  // ========== 原文编辑 ==========
+  function enableEdit(id, btn) {
+    const el = document.getElementById(id);
+    if (el.getAttribute('contenteditable') === 'true') {
+      el.setAttribute('contenteditable', 'false');
+      el.blur();
+      btn.textContent = '修改';
+    } else {
+      el.setAttribute('contenteditable', 'true');
+      el.focus();
+      btn.textContent = '完成';
+      // 光标移到末尾
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      // 监听变更
+      el.addEventListener('input', markDirty, { once: true });
+    }
+  }
+
+  // ========== 时间选择器 ==========
+  let currentTimeTarget = null;
+  function openTimePicker() {
+    // 找到当前 active 场景里的时间元素
+    const activeScene = document.querySelector('.scene.active');
+    currentTimeTarget = activeScene.querySelector('[id^="recordTime-"]');
+    buildPicker();
+    document.getElementById('timeSheetMask').classList.add('show');
+    document.getElementById('timeSheet').classList.add('show');
+  }
+  function closeTimePicker() {
+    document.getElementById('timeSheetMask').classList.remove('show');
+    document.getElementById('timeSheet').classList.remove('show');
+  }
+  function confirmTimePicker() {
+    const day = getPickerSelected('dayCol');
+    const hour = getPickerSelected('hourCol');
+    const min = getPickerSelected('minCol');
+    if (currentTimeTarget) {
+      currentTimeTarget.textContent = `${day} ${hour}:${min}`;
+      if(currentTimeTarget.id === 'recordTime-period-detail'){
+        periodDetailState.time = `${hour}:${min}`;
+        renderPeriodDetailEditor();
+      }
+      if(currentTimeTarget.id === 'recordTime-daily-record'){
+        dailyRecordState.time = `${hour}:${min}`;
+        dailyRecordState.dayLabel = day || '今天';
+        renderDailyRecordEditor();
+      }
+      markDirty();
+    }
+    closeTimePicker();
+  }
+
+  function buildPicker() {
+    const days = ['前天', '昨天', '今天'];
+    const hours = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'));
+    const mins = Array.from({length: 60}, (_, i) => String(i).padStart(2, '0'));
+    const currentValue = currentTimeTarget?.textContent || '';
+    const selectedDay = days.find(day => currentValue.includes(day)) || '今天';
+    const timeMatch = currentValue.match(/(\d{1,2}):(\d{2})/);
+    const selectedHour = timeMatch ? Number(timeMatch[1]) : 12;
+    const selectedMinute = timeMatch ? Number(timeMatch[2]) : 0;
+    fillCol('dayCol', days, Math.max(0, days.indexOf(selectedDay)));
+    fillCol('hourCol', hours, Math.max(0, Math.min(23, selectedHour)));
+    fillCol('minCol', mins, Math.max(0, Math.min(59, selectedMinute)));
+  }
+  function fillCol(colId, items, defaultIdx) {
+    const col = document.getElementById(colId);
+    col.innerHTML = items.map((v, i) =>
+      `<div class="picker-item ${i === defaultIdx ? 'selected' : ''}" data-value="${v}">${v}</div>`
+    ).join('');
+    // 滚动到默认值
+    setTimeout(() => {
+      col.scrollTop = defaultIdx * 40;
+      attachPickerScroll(col);
+    }, 0);
+  }
+  function attachPickerScroll(col) {
+    let timer;
+    col.addEventListener('scroll', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const idx = Math.round(col.scrollTop / 40);
+        col.scrollTo({ top: idx * 40, behavior: 'smooth' });
+        [...col.children].forEach((c, i) => c.classList.toggle('selected', i === idx));
+      }, 100);
+    });
+  }
+  function getPickerSelected(colId) {
+    const col = document.getElementById(colId);
+    const sel = col.querySelector('.picker-item.selected');
+    return sel ? sel.dataset.value : '';
+  }
+
+  function normalizePeriodDetailTime(text) {
+    const match = String(text || '').match(/(\d{2}:\d{2})/);
+    return match ? match[1] : String(text || '').replace(/^今天\s*/, '') || '09:15';
+  }
+
+  function formatPeriodDetailTime(time) {
+    const value = normalizePeriodDetailTime(time);
+    return /^今天\s/.test(String(time || '')) ? time : `今天 ${value}`;
+  }
+
+  function periodDetailKeyFromLabel(label) {
+    if(label === '流量') return 'flow';
+    if(label === '颜色') return 'color';
+    if(label === '痛经') return 'cramps';
+    return 'flow';
+  }
+
+  function renderPeriodDetailEditor() {
+    const list = document.getElementById('periodDetailList');
+    const count = document.getElementById('periodDetailCount');
+    const items = periodDetailState.periodDetailItems || [];
+    count.textContent = `经期记录项 ${items.length} 条`;
+    list.innerHTML = items.map((item, index) => {
+      const key = item.icon || periodDetailKeyFromLabel(item.label);
+      const config = PERIOD_DETAIL_OPTIONS[key] || PERIOD_DETAIL_OPTIONS.flow;
+      return `
+        <div class="record-item" data-index="${index}">
+          <div class="record-icon ${config.className}">${config.emoji}</div>
+          <div class="record-main">
+            <div class="record-type">${item.label}</div>
+            <div class="record-value">${item.value}</div>
+            <div class="record-time">${formatPeriodDetailTime(periodDetailState.time)}</div>
+          </div>
+          <div class="record-actions">
+            <button class="record-edit" onclick="openOptionPicker(${index})" aria-label="编辑${item.label}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+              </svg>
+            </button>
+            <button class="record-delete" onclick="confirmDeleteRecord(this, '${item.label}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function getDailyRecordConfig(type) {
+    return DAILY_RECORD_OPTIONS[type] || { label:'记录', className:'diet', emoji:'', options:[] };
+  }
+
+  function normalizeDailyRecordValue(type, value) {
+    if(type !== 'temp') return value || '';
+    const raw = String(value || '').replace(/[^\d.]/g, '');
+    return raw ? `${Number(raw).toFixed(1)}°C` : '36.5°C';
+  }
+
+  function splitDailyRecordValues(value) {
+    return String(value || '')
+      .split(/[·、,，]/)
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  function tempDigitsFromValue(value) {
+    const raw = String(value || '').replace(/[^\d]/g, '');
+    return raw === '0' ? '' : raw.slice(0, 3);
+  }
+
+  function tempNumberFromDigits(digits) {
+    if(!digits) return '0';
+    return digits.length > 2 ? `${digits.slice(0, -1)}.${digits.slice(-1)}` : digits;
+  }
+
+  function weightDigitsFromValue(value) {
+    return String(value || '').replace(/[^\d]/g, '').slice(0, 4);
+  }
+
+  function weightNumberFromDigits(digits) {
+    if(!digits) return '0';
+    return digits.length > 2 ? `${digits.slice(0, -1)}.${digits.slice(-1)}` : digits;
+  }
+
+  function normalizeWeightValue(value) {
+    const raw = String(value || '').replace(/[^\d.]/g, '');
+    if(!raw) return '50.0kg';
+    return `${Number(raw).toFixed(1)}kg`;
+  }
+
+  function normalizeDietItems(items) {
+    const source = Array.isArray(items) ? items : [];
+    const normalized = source.map((item, index) => ({
+      id: item.id || `food-${index + 1}`,
+      name: item.name || item.title || '',
+      amount: item.amount || item.weight || item.grams || '',
+      kcal: Number(item.kcal) || 0,
+    })).filter(item => item.name);
+    return normalized.length ? normalized : [{ id:'food-1', name:'', amount:'', kcal:0 }];
+  }
+
+  function renderEditHrpIcon(meta, tone) {
+    if(meta?.face) return renderEditMoodFace(meta.face, meta.bg);
+    if(meta?.icon && meta.icon.startsWith('assets/')){
+      return `<img src="${meta.icon}" alt="">`;
+    }
+    return `<span>${meta?.icon || '•'}</span>`;
+  }
+
+  function renderDailyRecordIconHtml() {
+    if(dailyRecordState.recordType === 'diet'){
+      return '<img src="assets/record-diet.png" alt="" draggable="false">';
+    }
+    if(dailyRecordState.recordType === 'beverage'){
+      return '<img src="assets/record-beverage.svg" alt="" draggable="false">';
+    }
+    if(dailyRecordState.recordType === 'skin'){
+      return '<img src="assets/record-symptom.png" alt="" draggable="false">';
+    }
+    if(dailyRecordState.recordType === 'cosmetic'){
+      return '<img src="assets/record-cosmetic.svg" alt="" draggable="false">';
+    }
+    if(dailyRecordState.recordType === 'weight'){
+      return '<img src="assets/record-weight.png" alt="" draggable="false">';
+    }
+    if(dailyRecordState.recordType === 'mood'){
+      const value = dailyRecordState.recordDetail || dailyRecordState.recordValue;
+      const moodMeta = DAILY_RECORD_OPTION_META.mood.options[value] || DAILY_RECORD_OPTION_META.mood.options[dailyRecordState.recordValue];
+      if(moodMeta) return renderEditMoodFace(moodMeta.face, moodMeta.bg);
+    }
+    const config = getDailyRecordConfig(dailyRecordState.recordType);
+    return dailyRecordState.iconText || config.emoji;
+  }
+
+  function renderEditMoodFace(face, bg) {
+    const skin = bg || '#FFE875';
+    const eye = '#5A4030';
+    const mouth = '#E06B88';
+    const eyeMarkup = face === 'confident'
+      ? `<rect x="12" y="20" width="24" height="8" rx="4" fill="#3A3A3A"/>`
+      : face === 'calm' || face === 'indifferent'
+        ? `<path d="M15 22h6M27 22h6" stroke="${eye}" stroke-width="2" stroke-linecap="round"/>`
+        : face === 'irritable' || face === 'temper' || face === 'angry'
+          ? `<path d="M14 20l5 2M34 20l-5 2" stroke="${eye}" stroke-width="2.2" stroke-linecap="round"/>`
+          : face === 'super-happy'
+            ? `<path d="M12 22c0-3 3-5 6-5s6 2 6 5M24 22c0-3 3-5 6-5s6 2 6 5" stroke="${eye}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+            : `<circle cx="17" cy="22" r="2.2" fill="${eye}"/><circle cx="31" cy="22" r="2.2" fill="${eye}"/>`;
+    const mouthMarkup = (face === 'super-happy' || face === 'excited' || face === 'heart-flutter')
+      ? `<path d="M14 30c4 6 16 6 20 0" stroke="${mouth}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
+      : (face === 'happy' || face === 'satisfied' || face === 'relaxed')
+        ? `<path d="M16 30c3 4 13 4 16 0" stroke="${mouth}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+        : (face === 'normal' || face === 'calm' || face === 'indifferent')
+          ? `<path d="M18 31h12" stroke="${mouth}" stroke-width="2" stroke-linecap="round"/>`
+          : (face === 'surprised' || face === 'scared')
+            ? `<ellipse cx="24" cy="31" rx="4" ry="5" fill="${mouth}"/>`
+            : `<path d="M16 33c4-4 12-4 16 0" stroke="${mouth}" stroke-width="2.3" fill="none" stroke-linecap="round"/>`;
+    const extra = {
+      'very-sad': `<path d="M14 18v5M34 18v5" stroke="#6BB8FF" stroke-width="2" stroke-linecap="round"/>`,
+      excited: `<path d="M30 10l2 4 4 1-4 1-2 4-2-4-4-1 4-1z" fill="#FF8CB0"/>`,
+      satisfied: `<circle cx="36" cy="16" r="3" fill="#FFB8D0"/>`,
+      'heart-flutter': `<path d="M10 12l1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5zM38 10l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#FF8CB0"/>`,
+      temper: `<path d="M18 12l2-3M24 10v-3M30 12l-2-3" stroke="#FF8888" stroke-width="1.8" stroke-linecap="round"/>`,
+      angry: `<rect x="34" y="10" width="6" height="6" rx="1" fill="#555"/>`,
+      indifferent: `<rect x="34" y="18" width="6" height="10" rx="1" fill="#8CC8FF"/>`,
+    }[face] || '';
+    return `
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="${skin}"/>
+        ${eyeMarkup}
+        ${mouthMarkup}
+        ${extra}
+      </svg>
+    `;
+  }
+
+  function renderEditHealthTimeCard() {
+    const [hourRaw, minuteRaw] = String(dailyRecordState.time || '21:58').split(':');
+    const hour = String(Number(hourRaw || 21)).padStart(2, '0');
+    const minute = String(Number(minuteRaw || 58)).padStart(2, '0');
+    return `
+      <section class="edit-hrp-card edit-hrp-time-card">
+        <h3 class="edit-hrp-title">时间</h3>
+        <div class="edit-hrp-time-wheel" aria-label="记录时间 ${hour}:${minute}">
+          <span>${String(Math.max(0, Number(hour) - 1)).padStart(2, '0')}</span>
+          <span>${String(Math.max(0, Number(minute) - 1)).padStart(2, '0')}</span>
+          <strong><span>${hour}</span><em>:</em><span>${minute}</span></strong>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderDailyHealthPicker(type, currentValue) {
+    const config = getDailyRecordConfig(type);
+    if(type === 'temp'){
+      const digits = tempDigitsFromValue(currentValue);
+      return `
+        <input type="hidden" id="editTempDigits" value="${digits}">
+        <section class="edit-hrp-card edit-hrp-temp-card">
+          <div class="edit-hrp-temp-value" id="editTempValue">
+            <span>${tempNumberFromDigits(digits)}</span>
+            <em>°C</em>
+          </div>
+        </section>
+        <div class="edit-hrp-temp-keypad" aria-label="体温数字键盘">
+          ${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(key => `
+            <button type="button" class="edit-hrp-temp-key" onclick="pressEditTempKey('${key}')">${key}</button>
+          `).join('')}
+          <span aria-hidden="true"></span>
+          <button type="button" class="edit-hrp-temp-key" onclick="pressEditTempKey('0')">0</button>
+          <button type="button" class="edit-hrp-temp-delete" onclick="pressEditTempKey('delete')" aria-label="删除">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      `;
+    }
+
+    const currentValues = splitDailyRecordValues(currentValue);
+    const sections = DAILY_RECORD_SHEET_SECTIONS[type] || [{ key: type, title: config.label, options: config.options }];
+    const sheetMeta = DAILY_RECORD_OPTION_META[type] || {};
+    const tone = sheetMeta.tone || 'pink';
+    const content = sections.map((section, sectionIndex) => {
+      if(sheetMeta.layout === 'list'){
+        return `
+          <section class="edit-hrp-list" aria-label="${section.title}">
+            ${section.options.map((option, optionIndex) => {
+              const isActive = currentValues.includes(option) || (!currentValues.length && sectionIndex === 0 && optionIndex === 0);
+              const meta = sheetMeta.options?.[option] || {};
+              return `
+                <button type="button" class="edit-hrp-list-option${isActive ? ' active' : ''}" data-key="${section.key}" data-value="${option}" aria-pressed="${isActive ? 'true' : 'false'}">
+                  <span class="edit-hrp-icon is-${tone}" aria-hidden="true">${renderEditHrpIcon(meta, tone)}</span>
+                  <span class="edit-hrp-list-copy">
+                    <strong>${option}</strong>
+                    ${meta.desc ? `<em>${meta.desc}</em>` : ''}
+                  </span>
+                  <span class="edit-hrp-radio" aria-hidden="true"></span>
+                </button>
+              `;
+            }).join('')}
+          </section>
+        `;
+      }
+      return `
+        <section class="edit-hrp-card">
+          <h3 class="edit-hrp-title">${section.title}</h3>
+          <div class="edit-hrp-grid">
+            ${section.options.map((option, optionIndex) => {
+              const isActive = currentValues.includes(option) || (!currentValues.length && sectionIndex === 0 && optionIndex === 0);
+              const meta = sheetMeta.options?.[option] || {};
+              return `
+                <button type="button" class="edit-hrp-option${isActive ? ' active' : ''}" data-key="${section.key}" data-value="${option}" aria-pressed="${isActive ? 'true' : 'false'}">
+                  <span class="edit-hrp-icon is-${tone}" aria-hidden="true">${renderEditHrpIcon(meta, tone)}</span>
+                  <span>${option}</span>
+                  <span class="edit-hrp-mark" aria-hidden="true"></span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      `;
+    }).join('');
+    return ['love', 'stool'].includes(type) ? `${content}${renderEditHealthTimeCard()}` : content;
+  }
+
+  function pressEditTempKey(key) {
+    const input = document.getElementById('editTempDigits');
+    if(!input) return;
+    let digits = input.value || '';
+    if(key === 'delete') digits = digits.slice(0, -1);
+    else if(digits.length < 3 && !(digits === '' && key === '0')) digits += key;
+    input.value = digits;
+    syncEditTempValue();
+  }
+
+  function syncEditTempValue() {
+    const digits = document.getElementById('editTempDigits')?.value || '';
+    const value = tempNumberFromDigits(digits);
+    const display = document.getElementById('editTempValue');
+    if(display) display.innerHTML = `<span>${value}</span><em>°C</em>`;
+  }
+
+  function renderDailyWeightPicker() {
+    const digits = weightDigitsFromValue(dailyRecordState.recordValue || dailyRecordState.recordDetail || '500');
+    return `
+      <input type="hidden" id="editWeightDigits" value="${digits}">
+      <section class="edit-weight-card">
+        <div class="edit-weight-value" id="editWeightValue">
+          <span>${weightNumberFromDigits(digits)}</span>
+          <em>kg</em>
+        </div>
+      </section>
+      <div class="edit-hrp-temp-keypad" aria-label="体重数字键盘">
+        ${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(key => `
+          <button type="button" class="edit-hrp-temp-key" onclick="pressEditWeightKey('${key}')">${key}</button>
+        `).join('')}
+        <span aria-hidden="true"></span>
+        <button type="button" class="edit-hrp-temp-key" onclick="pressEditWeightKey('0')">0</button>
+        <button type="button" class="edit-hrp-temp-delete" onclick="pressEditWeightKey('delete')" aria-label="删除">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+    `;
+  }
+
+  function pressEditWeightKey(key) {
+    const input = document.getElementById('editWeightDigits');
+    if(!input) return;
+    let digits = input.value || '';
+    if(key === 'delete') digits = digits.slice(0, -1);
+    else if(digits.length < 4 && !(digits === '' && key === '0')) digits += key;
+    input.value = digits;
+    syncEditWeightValue();
+  }
+
+  function syncEditWeightValue() {
+    const digits = document.getElementById('editWeightDigits')?.value || '';
+    const display = document.getElementById('editWeightValue');
+    if(display) display.innerHTML = `<span>${weightNumberFromDigits(digits)}</span><em>kg</em>`;
+  }
+
+  function renderDailyDietPicker() {
+    const items = normalizeDietItems(dailyRecordState.dietItems);
+    const mealType = dailyRecordState.mealType || '午餐';
+    return `
+      <section class="edit-diet-card">
+        <h3 class="edit-diet-title">餐别</h3>
+        <div class="edit-diet-meals">
+          ${['早餐', '午餐', '晚餐', '加餐'].map(meal => `
+            <button type="button" class="edit-diet-meal${meal === mealType ? ' active' : ''}" data-value="${meal}">${meal}</button>
+          `).join('')}
+        </div>
+      </section>
+      <section class="edit-diet-card">
+        <h3 class="edit-diet-title">食物</h3>
+        <div id="editDietRows">
+          ${items.map(renderEditDietRow).join('')}
+        </div>
+        <button type="button" class="edit-diet-add" onclick="addEditDietRow()">添加食物</button>
+        <div class="edit-diet-total" id="editDietTotal"></div>
+      </section>
+    `;
+  }
+
+  function renderEditDietRow(item, index) {
+    return `
+      <div class="edit-diet-row">
+        <input class="edit-diet-input edit-diet-name" value="${escapeHtml(item.name || '')}" placeholder="食物名称" oninput="syncEditDietTotal()">
+        <input class="edit-diet-input edit-diet-amount" value="${escapeHtml(item.amount || '')}" placeholder="份量" oninput="syncEditDietTotal()">
+        <input class="edit-diet-input edit-diet-kcal" value="${Number(item.kcal) || ''}" placeholder="kcal" inputmode="decimal" oninput="syncEditDietTotal()">
+        <button type="button" class="edit-diet-remove" onclick="removeEditDietRow(this)" aria-label="删除食物">×</button>
+      </div>
+    `;
+  }
+
+  function addEditDietRow() {
+    const rows = document.getElementById('editDietRows');
+    rows.insertAdjacentHTML('beforeend', renderEditDietRow({ name:'', amount:'', kcal:0 }, rows.children.length));
+    syncEditDietTotal();
+  }
+
+  function removeEditDietRow(button) {
+    const rows = document.getElementById('editDietRows');
+    if(rows.children.length <= 1) {
+      const row = button.closest('.edit-diet-row');
+      row.querySelectorAll('input').forEach(input => input.value = '');
+    } else {
+      button.closest('.edit-diet-row')?.remove();
+    }
+    syncEditDietTotal();
+  }
+
+  function collectEditDietItems() {
+    return [...document.querySelectorAll('#editDietRows .edit-diet-row')].map((row, index) => {
+      const name = row.querySelector('.edit-diet-name')?.value.trim() || '';
+      const amount = row.querySelector('.edit-diet-amount')?.value.trim() || '';
+      const kcal = Number(String(row.querySelector('.edit-diet-kcal')?.value || '').replace(/[^\d.]/g, '')) || 0;
+      return name ? { id:`food-${index + 1}`, name, amount, kcal } : null;
+    }).filter(Boolean);
+  }
+
+  function syncEditDietTotal() {
+    const total = collectEditDietItems().reduce((sum, item) => sum + (Number(item.kcal) || 0), 0);
+    const target = document.getElementById('editDietTotal');
+    if(target) target.textContent = total ? `合计 ${Math.round(total)} kcal` : '合计 0 kcal';
+  }
+
+  function renderDailyCameraPicker(type) {
+    if(type === 'beverage'){
+      const capacity = Math.max(100, Math.min(1000, Number(dailyRecordState.capacityMl) || 500));
+      const categoryOptions = ['水', '奶茶', '咖啡', '果茶', '纯茶', '果汁', '果蔬汁', '纯奶饮品', '饮料', '其他'];
+      const selectedCategory = dailyRecordState.beverageCategory
+        || (dailyRecordState.beverageName === '白水' ? '水' : '奶茶');
+      const waterSelected = selectedCategory === '水';
+      const baseCalories = Number(dailyRecordState.calories) || 0;
+      const baseCaffeine = Number(dailyRecordState.caffeineMg) || 0;
+      return `
+        <section class="edit-diet-card edit-beverage-card">
+          <h3 class="edit-diet-title">喝水信息</h3>
+          <div class="edit-camera-grid" data-beverage-identity ${waterSelected ? 'hidden' : ''}>
+            <div class="edit-camera-field is-wide">
+              <label for="edit-camera-brand">品牌</label>
+              <div class="edit-camera-input-wrap">
+                <input id="edit-camera-brand" class="edit-camera-input" data-field="brand" value="${escapeHtml(dailyRecordState.brand || '')}" placeholder="例如：星巴克">
+              </div>
+            </div>
+            <div class="edit-camera-field is-wide">
+              <label for="edit-camera-beverageName">饮品名称</label>
+              <div class="edit-camera-input-wrap">
+                <input id="edit-camera-beverageName" class="edit-camera-input" data-field="beverageName" value="${escapeHtml(dailyRecordState.beverageName || '')}" placeholder="例如：红茶咖啡拿铁鸳鸯">
+              </div>
+            </div>
+          </div>
+          <div class="edit-beverage-segment-group">
+            <span class="edit-beverage-segment-label">品类标签</span>
+            <div class="edit-beverage-category-scroll" data-beverage-group="beverageCategory" aria-label="饮品品类">
+              ${categoryOptions.map(option=>`<button type="button" class="edit-beverage-segment${selectedCategory === option ? ' active' : ''}" data-value="${option}">${option}</button>`).join('')}
+            </div>
+          </div>
+          <div class="edit-beverage-capacity">
+            <div class="edit-beverage-row-title">
+              <span>容量</span>
+              <strong id="editBeverageCapacityValue">${capacity} ml</strong>
+            </div>
+            <input id="editBeverageCapacity" class="edit-beverage-range" type="range" min="100" max="1000" step="1" value="${capacity}" aria-label="饮品容量">
+            <div class="edit-beverage-range-labels"><span>100</span><span>300</span><span>500</span><span>750</span><span>1000ml</span></div>
+          </div>
+          <div class="edit-beverage-nutrition" data-beverage-extra ${waterSelected ? 'hidden' : ''}
+            data-base-capacity="${capacity}" data-base-calories="${baseCalories}" data-base-caffeine="${baseCaffeine}">
+            <div class="edit-beverage-nutrition-item">
+              <span>热量</span>
+              <strong id="editBeverageCaloriesValue">${baseCalories}</strong><i>千卡</i>
+              <input type="hidden" class="edit-camera-input" data-field="calories" value="${baseCalories}">
+            </div>
+            <div class="edit-beverage-nutrition-item">
+              <span>咖啡因</span>
+              <strong id="editBeverageCaffeineValue">${baseCaffeine}</strong><i>毫克</i>
+              <input type="hidden" class="edit-camera-input" data-field="caffeineMg" value="${baseCaffeine}">
+            </div>
+            <p class="edit-beverage-nutrition-note">热量与咖啡因根据容量自动换算</p>
+          </div>
+        </section>
+      `;
+    }
+    const fields = type === 'beverage'
+      ? []
+      : type === 'skin'
+        ? [
+            { key:'area', label:'部位', value:dailyRecordState.area, wide:true, placeholder:'例如：额头、下巴' },
+            { key:'acne', label:'痘痘', value:dailyRecordState.acne, placeholder:'例如：3 颗' },
+            { key:'redness', label:'泛红', value:dailyRecordState.redness, placeholder:'例如：轻微' },
+            { key:'acneMarks', label:'痘印', value:dailyRecordState.acneMarks, wide:true, placeholder:'例如：少量浅色痘印' },
+          ]
+        : [
+            { key:'brand', label:'品牌', value:dailyRecordState.brand, wide:true, placeholder:'例如：黛珂' },
+            { key:'product', label:'产品名称', value:dailyRecordState.product, wide:true, placeholder:'例如：紫苏精华水' },
+            { key:'managementStatus', label:'管理状态', value:dailyRecordState.managementStatus, wide:true, placeholder:'例如：已加入护肤品管理' },
+          ];
+    const title = type === 'beverage' ? '饮品信息' : type === 'skin' ? '皮肤状态' : '化妆品信息';
+    return `
+      <section class="edit-diet-card">
+        <h3 class="edit-diet-title">${title}</h3>
+        <div class="edit-camera-grid">
+          ${fields.map(field => `
+            <div class="edit-camera-field${field.wide ? ' is-wide' : ''}">
+              <label for="edit-camera-${field.key}">${field.label}</label>
+              <div class="edit-camera-input-wrap">
+                <input
+                  id="edit-camera-${field.key}"
+                  class="edit-camera-input"
+                  data-field="${field.key}"
+                  value="${escapeHtml(field.value ?? '')}"
+                  placeholder="${field.placeholder || ''}"
+                  ${field.numeric ? 'inputmode="decimal"' : ''}
+                >
+                ${field.unit ? `<span class="edit-camera-unit">${field.unit}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function collectDailyCameraFields() {
+    if(dailyRecordState.recordType === 'beverage'){
+      const valueOf = (key)=>document.querySelector(`#optionList .edit-camera-input[data-field="${key}"]`)?.value.trim() || '';
+      const activeValue = (key)=>document.querySelector(`#optionList [data-beverage-group="${key}"] .edit-beverage-segment.active`)?.dataset.value || '';
+      const beverageCategory = activeValue('beverageCategory') || '水';
+      const waterSelected = beverageCategory === '水';
+      return {
+        brand:waterSelected ? '' : valueOf('brand'),
+        beverageName:waterSelected ? '白水' : valueOf('beverageName'),
+        beverageCategory,
+        capacityMl:Number(document.getElementById('editBeverageCapacity')?.value) || 0,
+        iceLevel:'',
+        sugarLevel:'',
+        calories:waterSelected ? 0 : (Number(valueOf('calories').replace(/[^\d.]/g, '')) || 0),
+        caffeineMg:waterSelected ? 0 : (Number(valueOf('caffeineMg').replace(/[^\d.]/g, '')) || 0),
+      };
+    }
+    return [...document.querySelectorAll('#optionList .edit-camera-input')].reduce((result, input) => {
+      const key = input.dataset.field;
+      const value = input.value.trim();
+      result[key] = ['calories', 'caffeineMg'].includes(key)
+        ? (Number(value.replace(/[^\d.]/g, '')) || 0)
+        : value;
+      return result;
+    }, {});
+  }
+
+  function syncBeverageCategoryFields() {
+    const category = document.querySelector('#optionList [data-beverage-group="beverageCategory"] .edit-beverage-segment.active')?.dataset.value || '水';
+    const waterSelected = category === '水';
+    document.querySelectorAll('#optionList [data-beverage-identity]').forEach(element => {
+      element.hidden = waterSelected;
+    });
+    document.querySelectorAll('#optionList [data-beverage-extra]').forEach(element => {
+      element.hidden = waterSelected;
+    });
+  }
+
+  function syncBeverageNutritionByCapacity() {
+    const panel = document.querySelector('#optionList .edit-beverage-nutrition');
+    const capacity = Number(document.getElementById('editBeverageCapacity')?.value) || 0;
+    if(!panel || !capacity) return;
+    const baseCapacity = Number(panel.dataset.baseCapacity) || capacity;
+    const calories = Math.round((Number(panel.dataset.baseCalories) || 0) * capacity / baseCapacity);
+    const caffeine = Math.round((Number(panel.dataset.baseCaffeine) || 0) * capacity / baseCapacity);
+    const caloriesInput = panel.querySelector('[data-field="calories"]');
+    const caffeineInput = panel.querySelector('[data-field="caffeineMg"]');
+    if(caloriesInput) caloriesInput.value = calories;
+    if(caffeineInput) caffeineInput.value = caffeine;
+    const caloriesValue = document.getElementById('editBeverageCaloriesValue');
+    const caffeineValue = document.getElementById('editBeverageCaffeineValue');
+    if(caloriesValue) caloriesValue.textContent = calories;
+    if(caffeineValue) caffeineValue.textContent = caffeine;
+  }
+
+  function renderDailyRecordEditor() {
+    const list = document.getElementById('dailyRecordList');
+    const title = document.getElementById('dailyRecordTitle');
+    const config = getDailyRecordConfig(dailyRecordState.recordType);
+    const label = dailyRecordState.recordLabel || config.label;
+    if(dailyRecordState.recordType === 'photo'){
+      const note = dailyRecordState.note || '';
+      title.textContent = '照片备注';
+      list.innerHTML = `
+        <div class="edit-photo-record">
+          <div class="edit-photo-preview">
+            <img src="${escapeHtml(dailyRecordState.photoUrl || '')}" alt="生活照片" draggable="false">
+          </div>
+          <label class="edit-photo-note-label" for="editPhotoNote">备注</label>
+          <textarea
+            id="editPhotoNote"
+            class="edit-photo-note"
+            maxlength="160"
+            placeholder="写下拍照时发生的事情或此刻的想法"
+            oninput="updatePhotoNote(this)"
+          >${escapeHtml(note)}</textarea>
+          <div class="edit-photo-note-count" id="editPhotoNoteCount">${note.length}/160</div>
+        </div>
+      `;
+      return;
+    }
+    const displayLabel = label;
+    const value = dailyRecordState.recordDetail || dailyRecordState.recordValue || '';
+    const iconHtml = renderDailyRecordIconHtml();
+    title.textContent = displayLabel;
+    list.innerHTML = `
+      <div class="record-item" data-record-kind="daily">
+        <div class="record-icon ${config.className}">${iconHtml}</div>
+        <div class="record-main">
+          <div class="record-type">${displayLabel}</div>
+          <div class="record-value">${value}</div>
+          <div class="record-time">${dailyRecordState.dayLabel || '今天'} ${normalizePeriodDetailTime(dailyRecordState.time)}</div>
+        </div>
+        <div class="record-actions">
+          <button class="record-edit" onclick="openDailyOptionPicker()" aria-label="编辑${label}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+          </button>
+          <button class="record-delete" onclick="confirmDeleteEntry('daily-record')" aria-label="删除${label}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function updatePhotoNote(input) {
+    dailyRecordState.note = input.value;
+    const count = document.getElementById('editPhotoNoteCount');
+    if(count) count.textContent = `${input.value.length}/160`;
+    markDirty();
+  }
+
+  function getQuickRecordTarget(index){
+    if(index === -1){
+      return {
+        label: quickRecordState.recordLabel,
+        value: quickRecordState.recordValue,
+        icon: quickRecordState.icon,
+      };
+    }
+    return quickRecordState.detailItems?.[index] || null;
+  }
+
+  function openQuickOptionPicker(index) {
+    const item = getQuickRecordTarget(index);
+    if(!item) return;
+    const key = quickEditableKey(item);
+    const config = quickPickerConfig(key);
+    if(!config) return;
+    if(key === 'flow'){
+      openFlowOptionPicker(item, index, config);
+      return;
+    }
+    if(key === 'symptom'){
+      openSymptomOptionPicker(item, index);
+      return;
+    }
+    resetOptionSheetMode();
+    currentOptionTarget = { kind: 'quick-record', index };
+    document.getElementById('optionSheetTitle').textContent = `修改${config.label}`;
+    document.getElementById('optionList').innerHTML = config.options.map(option => {
+      const value = key === 'temp' ? normalizeDailyRecordValue('temp', option) : option;
+      const active = value === item.value || option === item.value;
+      return `
+        <button type="button" class="option-btn${active ? ' active' : ''}" data-value="${value}">
+          ${value}
+        </button>
+      `;
+    }).join('');
+    document.querySelectorAll('#optionList .option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#optionList .option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+    document.getElementById('optionSheetMask').classList.add('show');
+    document.getElementById('optionSheet').classList.add('show');
+  }
+
+  function openDailyOptionPicker() {
+    const config = getDailyRecordConfig(dailyRecordState.recordType);
+    resetOptionSheetMode();
+    currentOptionTarget = { kind: 'daily-record' };
+    const sheet = document.getElementById('optionSheet');
+    sheet.classList.remove('is-period-picker');
+    sheet.classList.add('is-health-picker');
+    sheet.classList.add(`is-${dailyRecordState.recordType}-picker`);
+    document.querySelector('#optionSheet .confirm').textContent = '确定';
+    document.getElementById('optionSheetTitle').textContent = `修改${dailyRecordState.recordLabel || config.label}`;
+    if(dailyRecordState.recordType === 'weight'){
+      document.getElementById('optionList').innerHTML = renderDailyWeightPicker();
+    } else if(dailyRecordState.recordType === 'diet'){
+      document.getElementById('optionList').innerHTML = renderDailyDietPicker();
+      document.querySelectorAll('#optionList .edit-diet-meal').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#optionList .edit-diet-meal').forEach(item => item.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+      syncEditDietTotal();
+    } else if(['beverage', 'skin', 'cosmetic'].includes(dailyRecordState.recordType)){
+      document.getElementById('optionList').innerHTML = renderDailyCameraPicker(dailyRecordState.recordType);
+      if(dailyRecordState.recordType === 'beverage'){
+        const capacityInput = document.getElementById('editBeverageCapacity');
+        const capacityValue = document.getElementById('editBeverageCapacityValue');
+        capacityInput?.addEventListener('input', () => {
+          capacityValue.textContent = `${capacityInput.value} ml`;
+          syncBeverageNutritionByCapacity();
+        });
+        document.querySelectorAll('#optionList .edit-beverage-segment').forEach(button => {
+          button.addEventListener('click', () => {
+            button.parentElement.querySelectorAll('.edit-beverage-segment').forEach(item=>item.classList.remove('active'));
+            button.classList.add('active');
+            if(button.parentElement.dataset.beverageGroup === 'beverageCategory'){
+              syncBeverageCategoryFields();
+            }
+          });
+        });
+        syncBeverageCategoryFields();
+      }
+    } else {
+      document.getElementById('optionList').innerHTML = renderDailyHealthPicker(
+        dailyRecordState.recordType,
+        dailyRecordState.recordDetail || dailyRecordState.recordValue
+      );
+    }
+    document.querySelectorAll('#optionList .edit-hrp-option, #optionList .edit-hrp-list-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        document.querySelectorAll(`#optionList .edit-hrp-option[data-key="${key}"], #optionList .edit-hrp-list-option[data-key="${key}"]`).forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+    document.getElementById('optionSheetMask').classList.add('show');
+    document.getElementById('optionSheet').classList.add('show');
+  }
+
+  function openOptionPicker(index) {
+    const item = periodDetailState.periodDetailItems[index];
+    if(!item) return;
+    resetOptionSheetMode();
+    currentOptionTarget = index;
+    const key = item.icon || periodDetailKeyFromLabel(item.label);
+    const config = PERIOD_DETAIL_OPTIONS[key] || PERIOD_DETAIL_OPTIONS.flow;
+    document.getElementById('optionSheet').classList.add('is-period-picker');
+    document.querySelector('#optionSheet .confirm').textContent = '确定';
+    document.getElementById('optionSheetTitle').textContent = config.label;
+    document.getElementById('optionList').innerHTML = `
+      <section class="edit-prp-card">
+        <h3 class="edit-prp-title">${config.label}</h3>
+        <div class="edit-prp-row">
+          ${config.options.map((option, optionIndex) => `
+            <button type="button" class="edit-prp-opt${option === item.value ? ' active' : ''}" data-value="${option}" aria-pressed="${option === item.value ? 'true' : 'false'}" aria-label="${option}">
+              <span class="edit-prp-ic">
+                <span class="edit-prp-ic-inner">${periodPickerIconSvg(key, optionIndex)}</span>
+                ${pickerCheckMarkup()}
+              </span>
+              <span class="edit-prp-lb">${option}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+    document.querySelectorAll('#optionList .edit-prp-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#optionList .edit-prp-opt').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+    document.getElementById('optionSheetMask').classList.add('show');
+    document.getElementById('optionSheet').classList.add('show');
+  }
+
+  function closeOptionPicker() {
+    currentOptionTarget = null;
+    document.getElementById('optionSheetMask').classList.remove('show');
+    document.getElementById('optionSheet').classList.remove('show');
+    document.getElementById('optionSheet').classList.remove('is-period-picker');
+    document.getElementById('optionSheet').classList.remove('is-health-picker');
+    resetOptionSheetMode();
+  }
+
+  function confirmOptionPicker() {
+    const selected = document.querySelector('#optionList .option-btn.active, #optionList .edit-prp-opt.active, #optionList .flow-picker-option.active');
+    if(currentOptionTarget == null) return;
+    if(typeof currentOptionTarget === 'object' && currentOptionTarget.kind === 'quick-record'){
+      if(!selected) return;
+      const nextValue = selected.dataset.value;
+      if(currentOptionTarget.index === -1){
+        quickRecordState.recordValue = nextValue;
+      } else if(quickRecordState.detailItems?.[currentOptionTarget.index]){
+        quickRecordState.detailItems[currentOptionTarget.index].value = nextValue;
+      }
+      renderQuickRecordEditor();
+      markDirty();
+      closeOptionPicker();
+      return;
+    }
+    if(typeof currentOptionTarget === 'object' && currentOptionTarget.kind === 'daily-record'){
+      let nextValue = selected?.dataset.value || '';
+      let nextDetail = nextValue;
+      if(dailyRecordState.recordType === 'temp'){
+        nextValue = normalizeDailyRecordValue('temp', document.getElementById('editTempValue')?.textContent || '');
+        nextDetail = nextValue;
+      } else if(dailyRecordState.recordType === 'weight'){
+        nextValue = normalizeWeightValue(document.getElementById('editWeightValue')?.textContent || '');
+        nextDetail = nextValue;
+      } else if(dailyRecordState.recordType === 'diet'){
+        const dietItems = collectEditDietItems();
+        if(!dietItems.length) return;
+        const mealType = document.querySelector('#optionList .edit-diet-meal.active')?.dataset.value || dailyRecordState.mealType || '';
+        const totalKcal = dietItems.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0);
+        nextValue = dietItems.map(item => item.name).join('、');
+        nextDetail = nextValue;
+        dailyRecordState.dietItems = dietItems;
+        dailyRecordState.totalKcal = totalKcal;
+        dailyRecordState.mealType = mealType;
+      } else if(['beverage', 'skin', 'cosmetic'].includes(dailyRecordState.recordType)){
+        const fields = collectDailyCameraFields();
+        Object.assign(dailyRecordState, fields);
+        if(dailyRecordState.recordType === 'beverage'){
+          nextValue = `${fields.brand || ''}${fields.beverageName || ''}`.trim() || fields.beverageCategory;
+          const specParts = [
+            fields.capacityMl ? `${fields.capacityMl}ml` : '',
+          ].filter(Boolean);
+          dailyRecordState.spec = specParts.join(' / ');
+          nextDetail = `${nextValue}${specParts.length ? ` · ${specParts.join('/')}` : ''}`;
+        } else if(dailyRecordState.recordType === 'skin'){
+          if(!fields.area) return;
+          const conditions = [
+            fields.acne ? `${fields.acne}痘痘` : '',
+            fields.redness ? `${fields.redness}泛红` : '',
+            fields.acneMarks || '',
+          ].filter(Boolean);
+          nextValue = fields.area;
+          nextDetail = `${fields.area}${conditions.length ? `：${conditions.join('，')}` : ''}`;
+        } else {
+          if(!fields.product) return;
+          nextValue = `${fields.brand || ''} ${fields.product}`.trim();
+          nextDetail = `${nextValue}${fields.managementStatus ? ` · ${fields.managementStatus}` : ''}`;
+        }
+      } else {
+        const selectedValues = [...document.querySelectorAll('#optionList .edit-hrp-option.active, #optionList .edit-hrp-list-option.active')]
+          .map(btn => btn.dataset.value)
+          .filter(Boolean);
+        if(selectedValues.length){
+          nextValue = selectedValues[0];
+          nextDetail = selectedValues.join(' · ');
+        }
+      }
+      if(!nextValue) return;
+      dailyRecordState.recordValue = nextValue;
+      dailyRecordState.recordDetail = nextDetail;
+      if(dailyRecordState.recordType === 'habit'){
+        dailyRecordState.iconText = DAILY_HABIT_ICONS[nextValue] || dailyRecordState.iconText || '';
+      }
+      renderDailyRecordEditor();
+      markDirty();
+      closeOptionPicker();
+      return;
+    }
+    if(!selected) return;
+    periodDetailState.periodDetailItems[currentOptionTarget].value = selected.dataset.value;
+    renderPeriodDetailEditor();
+    markDirty();
+    closeOptionPicker();
+  }
+
+  window.addEventListener('message', function(event){
+    if(!event.data || event.data.type !== 'edit-init') return;
+    const payload = event.data.payload || {};
+    if(payload.kind === 'quick'){
+      quickRecordState = {
+        time: payload.time || '09:15',
+        recordLabel: payload.recordLabel || payload.label || '快捷记录',
+        recordValue: payload.recordValue || payload.recordDetail || '',
+        icon: payload.icon || 'quick',
+        detailItems: (payload.detailItems || payload.periodDetails || []).map(item => ({ ...item })),
+      };
+      renderQuickRecordEditor();
+      resetDirty();
+      return;
+    }
+    if(payload.kind === 'daily-record'){
+      const config = getDailyRecordConfig(payload.recordType);
+      dailyRecordState = {
+        time: payload.time || '09:15',
+        dayLabel: payload.dayLabel || '今天',
+        recordType: payload.recordType || 'love',
+        recordLabel: payload.recordLabel || config.label,
+        recordValue: payload.recordValue || payload.recordDetail || config.options[0] || '',
+        recordDetail: payload.recordDetail || payload.recordValue || config.options[0] || '',
+        icon: payload.icon || payload.recordType || 'love',
+        iconText: payload.iconText || '',
+        dietItems: normalizeDietItems(payload.dietItems),
+        totalKcal: Number(payload.totalKcal) || 0,
+        mealType: payload.mealType || '',
+        photoUrl: payload.photoUrl || null,
+        brand: payload.brand || '',
+        beverageName: payload.beverageName || '',
+        beverageCategory: payload.beverageCategory || '',
+        capacityMl: Number(payload.capacityMl) || 0,
+        iceLevel: payload.iceLevel || '',
+        sugarLevel: payload.sugarLevel || '',
+        spec: payload.spec || '',
+        calories: Number(payload.calories) || 0,
+        caffeineMg: Number(payload.caffeineMg) || 0,
+        note: payload.note || '',
+        area: payload.area || '',
+        acne: payload.acne || '',
+        redness: payload.redness || '',
+        acneMarks: payload.acneMarks || '',
+        product: payload.product || '',
+        managementStatus: payload.managementStatus || '',
+      };
+      document.getElementById('recordTime-daily-record').textContent =
+        `${dailyRecordState.dayLabel} ${normalizePeriodDetailTime(dailyRecordState.time)}`;
+      renderDailyRecordEditor();
+      resetDirty();
+      return;
+    }
+    periodDetailState = {
+      time: payload.time || '09:15',
+      periodDetailItems: (payload.periodDetailItems || []).map(item => ({ ...item })),
+    };
+    document.getElementById('recordTime-period-detail').textContent = formatPeriodDetailTime(periodDetailState.time);
+    renderPeriodDetailEditor();
+    resetDirty();
+  });
+
+  // ========== 对话框 ==========
+  function showDialog({ title, desc, confirmText, onConfirm }) {
+    document.getElementById('dialogTitle').textContent = title;
+    document.getElementById('dialogDesc').innerHTML = desc;
+    const btn = document.getElementById('dialogConfirmBtn');
+    btn.textContent = confirmText || '删除';
+    btn.onclick = () => {
+      onConfirm && onConfirm();
+      closeDialog();
+    };
+    document.getElementById('dialogMask').classList.add('show');
+  }
+  function closeDialog() {
+    document.getElementById('dialogMask').classList.remove('show');
+  }
+
+  // ========== 删除单条记录项 ==========
+  function confirmDeleteRecord(btn, name) {
+    showDialog({
+      title: '删除这条记录项？',
+      desc: `<div style="text-align:center;color:var(--my-text-secondary)">将移除 <strong style="color:var(--my-text-primary)">${name}</strong></div>`,
+      confirmText: '删除',
+      onConfirm: () => {
+        const item = btn.closest('.record-item');
+        item.style.transition = 'all 0.24s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+        setTimeout(() => {
+          const activeScene = document.querySelector('.scene.active');
+          if(activeScene?.id === 'scene-period-detail'){
+            const index = Number(item.dataset.index);
+            if(Number.isFinite(index)) periodDetailState.periodDetailItems.splice(index, 1);
+            item.remove();
+            renderPeriodDetailEditor();
+          } else {
+            item.remove();
+          }
+          markDirty();
+          showToast('已删除');
+        }, 240);
+      }
+    });
+  }
+
+  // ========== 删除语音/图片输入源 ==========
+  function confirmDeleteVoice() {
+    showDialog({
+      title: '删除语音原文？',
+      desc: '<div style="text-align:center;color:var(--my-text-secondary)">删除后保留已识别的记录项，<br>语音原文将无法恢复</div>',
+      confirmText: '删除',
+      onConfirm: () => {
+        markDirty();
+        showToast('语音已删除');
+      }
+    });
+  }
+  function confirmDeleteImage() {
+    showDialog({
+      title: '删除饮食照片？',
+      desc: '<div style="text-align:center;color:var(--my-text-secondary)">删除后保留已识别的饮食记录，<br>照片将无法恢复</div>',
+      confirmText: '删除',
+      onConfirm: () => {
+        markDirty();
+        showToast('照片已删除');
+      }
+    });
+  }
+
+  // ========== 删除整条记录（级联）==========
+  function confirmDeleteEntry(sceneType) {
+    const scene = document.getElementById('scene-' + sceneType);
+    const items = scene.querySelectorAll('.record-item');
+    const itemsHtml = [...items].map(i =>
+      `<li>${i.querySelector('.record-type').textContent}</li>`
+    ).join('');
+
+    showDialog({
+      title: '删除这条记录？',
+      desc: `
+        <div>删除后将同时移除：</div>
+        <ul class="item-list">${itemsHtml}</ul>
+        <div style="color:var(--my-text-tertiary);font-size:12px;margin-top:8px">此操作无法撤销</div>
+      `,
+      confirmText: '删除',
+      onConfirm: () => {
+        setTimeout(() => notifyParent('delete'), 200);
+      }
+    });
+  }
+
+  // ========== Toast ==========
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1500);
+  }
+</script>
+</body>
+</html>
