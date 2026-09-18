@@ -1049,6 +1049,7 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
           followUpEntry: item.followUpEntry,
           followUpHostId: item.id,
           followUpIsNew: isNew,
+          collapsed: !!item.feedbackCollapsed,
         } : null}
       />
     );

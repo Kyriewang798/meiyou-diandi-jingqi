@@ -6,7 +6,7 @@
 // 3. 确认 → 09:31 经期记录卡的「流量：中等」刷新为「流量：大量」，同时这句话的卡片补上「流量」标签；
 //    取消 → 关闭弹窗，记录不变
 
-const SCENE3_VOICE_TEXT = '说错了，今天流量特别大';
+const SCENE3_VOICE_TEXT = '刚才记错了，今天经血量比较大';
 const SCENE3_TARGET_ENTRY_ID = 's1-period-done';
 const SCENE3_FLOW_LABEL = '流量';
 const SCENE3_FLOW_FROM = '中等';
@@ -35,6 +35,17 @@ function createScene3CorrectionEntry(){
     // 提取结束后，确认改在这张卡的反馈模块里进行（不再弹窗）
     flowConfirm:'pending',
   };
+}
+
+// 场景3 初始态：先摆一条可以被改的经期记录（月经来了 / 流量：中等 / 痛经：轻微）
+function appendScene3InitialState(blocks){
+  if(!window.createScene1PeriodEntry) return blocks;
+  const todayId = blocks.find(b=>b.type === 'day' && b.isToday)?.id;
+  return window.appendTimelineEntry(
+    blocks,
+    window.createScene1PeriodEntry({ completed:true, time:'09:31' }),
+    { dayId:todayId },
+  );
 }
 
 function findScene3TargetEntry(blocks){
@@ -147,7 +158,12 @@ function Scene3FlowConfirmDialog({entry, onConfirm, onCancel}){
 // 结构对应点滴的信息结构：反馈（文案 + 前后对比）+ 操作区（取消 / 确认）。
 // state：pending 待确认 / confirmed 已修改 / cancelled 已取消
 // target：被修改的那条经期记录（09:31 的卡）；entryId：本次纠正语句卡片的 id
-function Scene3FlowConfirmInline({target, entryId, state = 'pending'}){
+// onResolve：给对话二级页用 —— 传了就走回调，不走时间轴那套事件
+function Scene3FlowConfirmInline({target, entryId, state = 'pending', onResolve}){
+  const resolve = (action)=>{
+    if(onResolve){ onResolve(action === 'confirm'); return; }
+    window.dispatchEvent(new CustomEvent('scene3FlowResolve', { detail:{ entryId, action } }));
+  };
   const record = target || {
     time:'',
     periodDetails:[{ label:SCENE3_FLOW_LABEL, value:SCENE3_FLOW_FROM, icon:'flow' }],
@@ -182,12 +198,12 @@ function Scene3FlowConfirmInline({target, entryId, state = 'pending'}){
         <button
           type="button"
           className="s3-inline-btn is-cancel"
-          onClick={()=>window.dispatchEvent(new CustomEvent('scene3FlowResolve', { detail:{ entryId, action:'cancel' } }))}
+          onClick={()=>resolve('cancel')}
         >取消</button>
         <button
           type="button"
           className="s3-inline-btn is-confirm"
-          onClick={()=>window.dispatchEvent(new CustomEvent('scene3FlowResolve', { detail:{ entryId, action:'confirm' } }))}
+          onClick={()=>resolve('confirm')}
         >确认</button>
       </div>
     </section>
@@ -196,6 +212,7 @@ function Scene3FlowConfirmInline({target, entryId, state = 'pending'}){
 
 Object.assign(window, {
   createScene3CorrectionEntry,
+  appendScene3InitialState,
   findScene3TargetEntry,
   applyScene3FlowCorrection,
   scrollScene3TargetIntoView,

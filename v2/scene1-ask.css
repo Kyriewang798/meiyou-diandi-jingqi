@@ -88,6 +88,21 @@
   stroke-linejoin:round;
 }
 
+/* v2 场景1：反馈模块（本次月经分析）内嵌进提问卡。
+   时间轴记录卡左右内边距是 16px，.s1-ask-card 是 12px，
+   这里把通栏元素的负边距按 12px 校正，否则会各溢出 4px。 */
+.s1-ask-card .tl-t5-divider-dashed{
+  margin-left:-12px;
+  margin-right:-12px;
+}
+.s1-ask-card .tl-period-review-entry{
+  width:calc(100% + 24px);
+  margin-left:-12px;
+  margin-right:-12px;
+  padding-left:12px;
+  padding-right:12px;
+}
+
 /* v2 场景4：反馈内容下方的追问栏。
    文字样式沿用 .tl-period-review-entry（查看月经周期变化趋势那一栏），
    这里只补图标与文字的排布。 */
@@ -98,16 +113,12 @@
   min-width:0;
 }
 .tl-period-followup-icon{
-  width:18px;
-  height:18px;
+  width:22px;
+  height:22px;
   display:flex;
   align-items:center;
   justify-content:center;
-  flex:0 0 18px;
-}
-.tl-period-followup-icon svg{
-  width:100%;
-  height:100%;
+  flex:0 0 22px;
 }
 
 /* 记录卡下方（无反馈内容时）的追问栏，保持原来的对话栏样式 */
@@ -340,4 +351,238 @@
   font-size:11px;
   line-height:1.4;
   color:var(--my-text-tertiary);
+}
+
+/* 对话二级页里原样带入的时间轴反馈模块（含柱状图 / 信号灯 / 台历）。
+   字号对齐对话气泡的 15px，而不是时间轴那档。 */
+.s1-chat-feedback .tl-t5-analysis-body{
+  margin:0;
+}
+.s1-chat-feedback .tl-t5-analysis-lead,
+.s1-chat-feedback .tl-t5-analysis-text,
+.s1-chat-feedback .tl-t5-analysis-prompt{
+  margin:0 0 8px;
+  font-size:15px;
+  line-height:1.65;
+  color:var(--my-text-primary);
+  letter-spacing:0;
+}
+.s1-chat-feedback .tl-t5-analysis-body > :last-child{
+  margin-bottom:0;
+}
+.s1-chat-feedback .tl-t5-analysis-body b,
+.s1-chat-feedback .tl-t5-analysis-body strong{
+  font-weight:500;
+  color:var(--my-brand-red, #ff4d88);
+}
+.s1-chat-feedback .cycle-card .cc-head .cc-title,
+.s1-chat-feedback .signal-card .cc-head .cc-title,
+.s1-chat-feedback .signal-card .sc-title{
+  font-size:15px;
+  line-height:1.35;
+}
+
+/* ============ 方案2：反馈从记录卡里拆出来，单独成卡 ============ */
+.s1-fb-card{
+  margin-top:8px;
+  padding:12px 14px 14px;
+  background:#fff;
+  border-radius:14px;
+  border:0.5px solid rgba(0,0,0,0.08);
+}
+/* 「💬 AI反馈：」浮在正文左上，正文第一段绕排，读起来是一句话 */
+.s1-fb-label{
+  float:left;
+  margin-right:2px;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  font-size:16px;
+  line-height:1.6;
+  font-weight:600;
+  color:#323232;
+}
+.s1-fb-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.s1-fb-inner::after{
+  content:'';
+  display:block;
+  clear:both;
+}
+/* 正文字号对齐时间轴记录详情那一档 */
+.s1-fb-inline .tl-t5-analysis-body,
+.s1-fb-inner .tl-t5-analysis-body,
+.s1-fb-inner .tl-t5-analysis-lead,
+.s1-fb-inner .tl-t5-analysis-text,
+.s1-fb-inner .tl-t5-analysis-prompt{
+  font-size:16px;
+  line-height:1.6;
+  color:#323232;
+  letter-spacing:0;
+}
+.s1-fb-inner .tl-t5-analysis-body > :last-child{
+  margin-bottom:0;
+}
+.s1-fb-inner .tl-t5-analysis-body b,
+.s1-fb-inner .tl-t5-analysis-body strong{
+  font-weight:500;
+  color:var(--my-brand-red, #ff4d88);
+}
+.s1-fb-inner .cycle-card .cc-head .cc-title,
+.s1-fb-inner .signal-card .cc-head .cc-title,
+.s1-fb-inner .signal-card .sc-title{
+  font-size:16px;
+  line-height:1.35;
+}
+
+/* 追问按钮：正文结束后另起一行，圆角描边胶囊，宽度随文字 */
+.s1-fb-ask{
+  display:block;
+  margin-top:12px;
+  max-width:100%;
+  padding:9px 14px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  border-radius:10px;
+  background:#fff;
+  font-family:inherit;
+  font-size:14px;
+  line-height:1.4;
+  color:#323232;
+  text-align:left;
+  cursor:pointer;
+  transition:background 150ms;
+  animation:s1FadeUp 280ms cubic-bezier(0.2,0,0,1) both;
+}
+.s1-fb-ask:active{
+  background:rgba(0,0,0,0.04);
+}
+
+/* 聊过之后：反馈卡收成一个轻量按钮，跟在记录卡下方。样式与追问按钮一致，
+   宽度随文字，不再占满整行、也不再是一张卡。 */
+.s1-fb-thread{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  max-width:100%;
+  margin-top:8px;
+  padding:9px 12px 9px 10px;
+  border:0.5px solid rgba(0,0,0,0.12);
+  border-radius:10px;
+  background:#fff;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+  transition:background 150ms;
+}
+.s1-fb-thread:active{
+  background:rgba(0,0,0,0.04);
+}
+.s1-fb-thread-title{
+  min-width:0;
+  font-size:14px;
+  line-height:1.4;
+  color:#323232;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.s1-fb-thread-arrow{
+  width:14px;
+  height:14px;
+  flex-shrink:0;
+  fill:none;
+  stroke:#b0b0b0;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* 方案2：反馈整体放在记录卡内 —— 不要卡壳，只留内容 */
+.s1-fb-inline{
+  padding-top:10px;
+  padding-bottom:4px;
+}
+/* 折叠态：追问栏形态，无边框、通栏一行 */
+.s1-fb-row{
+  width:100%;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:12px 0 8px;
+  border:0;
+  background:transparent;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+  transition:opacity 150ms;
+}
+.s1-fb-row:active{
+  opacity:0.6;
+}
+.s1-fb-row-title{
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  line-height:22px;
+  font-weight:500;
+  color:#323232;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.s1-fb-row-arrow{
+  width:16px;
+  height:16px;
+  flex-shrink:0;
+  fill:none;
+  stroke:var(--my-text-tertiary);
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* 方案3：「✓ 已记录：标签 标签 标签」一行 */
+.s1-ask-recorded{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px;
+  padding-bottom:2px;
+}
+.s1-ask-recorded-icon{
+  display:inline-flex;
+  align-items:center;
+  flex-shrink:0;
+}
+.s1-ask-recorded-label{
+  font-size:15px;
+  line-height:1.5;
+  font-weight:500;
+  color:#323232;
+}
+.s1-ask-recorded-tags{
+  display:inline-flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+/* 方案3：「AI分析：」与「已记录」同字号 */
+.s1-fb-inline.is-compact-label .s1-fb-label{
+  font-size:15px;
+  line-height:1.5;
+}
+
+/* 方案1：追问改成胶囊按钮后，在反馈区下方留出间距 */
+.tl-period-followup-ask{
+  padding:2px 0 8px;
+}
+.tl-period-followup-ask .s1-fb-ask{
+  margin-top:0;
 }

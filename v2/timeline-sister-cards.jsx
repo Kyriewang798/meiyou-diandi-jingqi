@@ -637,56 +637,28 @@ function PeriodRecordSummary({entry}){
   );
 }
 
-// 追问栏专用图标：描边气泡 + 问号。
-// 通用的 Scene1ChatIcon 是实心渐变气泡加三个白点，放在 18px 的紧凑行里过重，
-// 白点也糊成一团；这里改成细描边 + 品牌浅底，笔画粗细与同行的右箭头对齐。
-function PeriodFollowUpIcon({size = 18}){
-  const uid = React.useId().replace(/:/g, '');
-  const gradId = 'tl-followup-grad-' + uid;
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ff6aa0"/>
-          <stop offset="60%" stopColor="#ff4d88"/>
-          <stop offset="100%" stopColor="#b85cff"/>
-        </linearGradient>
-      </defs>
-      <path
-        d="M12 3.9c4.7 0 8.5 3.18 8.5 7.1s-3.8 7.1-8.5 7.1c-.85 0-1.68-.1-2.46-.3l-3.9 2.08a.6.6 0 01-.86-.66l.7-3.2C3.6 14.8 3.5 12.98 3.5 11c0-3.92 3.8-7.1 8.5-7.1z"
-        fill="rgba(255,77,136,0.10)"
-        stroke={'url(#' + gradId + ')'}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.5 8.9a2.6 2.6 0 1 1 3.7 2.36c-.72.36-1.2.9-1.2 1.64"
-        stroke={'url(#' + gradId + ')'}
-        strokeWidth="1.85"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 15.1v.01"
-        stroke={'url(#' + gradId + ')'}
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-// v2 场景4：反馈内容（本次月经分析）下方的追问栏
-// 反馈流式输出结束后才出现，标题逐字输出；切 Tab 回来重新挂载不重播
+// 反馈内容下方的追问 / 查看按钮。
+// 反馈流式输出结束后直接出现，问题本身不再逐字输出；
+// 这个 Set 只用来记「是否首次出现」，决定要不要把按钮滚进可视区。
 const periodFollowUpStreamed = new Set();
 
 function PeriodFollowUpRow({entry, isNew, variant}){
   const followUp = entry.followUpEntry || {};
-  const [streamTitle] = React.useState(()=>{
+  const rootRef = React.useRef(null);
+  const [firstAppear] = React.useState(()=>{
     if(!isNew || !entry.id) return false;
     if(periodFollowUpStreamed.has(entry.id)) return false;
     periodFollowUpStreamed.add(entry.id);
     return true;
   });
+
+  // 这一栏排在反馈正文之外，流式输出的自动滚动只盯正文，
+  // 不管它 —— 会正好长在输入框底下。首次出现时自己滚进可视区。
+  React.useLayoutEffect(()=>{
+    if(!firstAppear || !rootRef.current) return;
+    const raf = requestAnimationFrame(()=>scrollFeedContentIntoView(rootRef.current));
+    return ()=>cancelAnimationFrame(raf);
+  }, [firstAppear]);
 
   const openChat = ()=>{
     window.dispatchEvent(new CustomEvent('openScene1Chat', {
@@ -695,45 +667,44 @@ function PeriodFollowUpRow({entry, isNew, variant}){
         title: followUp.title,
         entryId: entry.id,
         answerKey: followUp.answerKey,
+        // 带入上一轮：时间轴上的原输入 + 那条即时反馈
+        context: followUp.contextKey
+          ? { text: followUp.contextText, key: followUp.contextKey }
+          : undefined,
       },
     }));
   };
 
-  const titleNode = streamTitle
-    ? <TypewriterText text={followUp.title} active charMs={90}/>
-    : followUp.title;
+  // 聊过之后这条栏变成「本次对话主题标题」：不带「追问：」前缀，也不再逐字输出，
+  // 点击行为变成回看历史对话（会话按 entryId 缓存，重进不会再发新问题）。
+  const threadTitle = followUp.threadTitle;
+  // 问题直接出现，不逐字输出
+  const titleNode = threadTitle ? threadTitle : followUp.title;
+  const labeledTitle = threadTitle ? titleNode : <>追问：{titleNode}</>;
 
   // 反馈内容下方：沿用「查看月经周期变化趋势」那一栏的样式（占同一个位置）
   if(variant === 'review'){
+    // 追问 / 查看共用同一个胶囊按钮，位置不变，只换前缀和文案
     return (
-      <button
-        type="button"
-        className="tl-period-review-entry tl-period-followup-entry"
-        onClick={openChat}
-      >
-        <span className="tl-period-followup-main">
-          <span className="tl-period-followup-icon">
-            <PeriodFollowUpIcon/>
-          </span>
-          <span>追问：{titleNode}</span>
-        </span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 6l6 6-6 6"/>
-        </svg>
-      </button>
+      <div className="tl-period-followup-ask">
+        <button ref={rootRef} type="button" className="s1-fb-ask" onClick={openChat}>
+          {threadTitle
+            ? <>查看：{threadTitle}</>
+            : <>{followUp.label || '追问：'}{titleNode}</>}
+        </button>
+      </div>
     );
   }
 
   return (
     <>
       <div className="s1-ask-chat-divider" role="separator"/>
-      <button type="button" className="s1-ask-chat-entry is-follow-up" onClick={openChat}>
+      <button ref={rootRef} type="button" className="s1-ask-chat-entry is-follow-up" onClick={openChat}>
         <span className="s1-ask-chat-icon">
           {window.Scene1ChatIcon ? <window.Scene1ChatIcon/> : null}
         </span>
         <span className="s1-ask-chat-title">
-          <span className="s1-ask-chat-label">追问：</span>
-          {titleNode}
+          {labeledTitle}
         </span>
         <svg className="s1-ask-chat-arrow" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 6l6 6-6 6"/>
@@ -996,7 +967,7 @@ function PeriodEndCycleChart({animated, onComplete, staticView = false}){
   );
 }
 
-function PeriodForecastCard({animated, onComplete, staticView = false}){
+function PeriodForecastCard({animated, onComplete, staticView = false, date}){
   const cardRef = React.useRef(null);
   const onCompleteRef = React.useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -1010,10 +981,11 @@ function PeriodForecastCard({animated, onComplete, staticView = false}){
     onCompleteRef.current?.();
   }, [animated, staticView]);
 
+  const d = date || { month:'7月', day:'5', weekday:'周日' };
   const cards = [
-    {key:'month', label:'MONTH', text:'7月'},
-    {key:'day', label:'DAY', text:'5'},
-    {key:'weekday', label:'DAY OF WEEK', text:'周日'},
+    {key:'month', label:'MONTH', text:d.month},
+    {key:'day', label:'DAY', text:d.day},
+    {key:'weekday', label:'DAY OF WEEK', text:d.weekday},
   ];
 
   return (
@@ -1170,7 +1142,174 @@ function TlAiChartIcon({size = 10, color = '#FF4D88'}){
   );
 }
 
-function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText, periodStyle = false, analysisKind = 'period-start', showPeriodFeelPrompt = true, periodFeelGuideCopy = PERIOD_FEEL_GUIDE_COPY, followUpEntry, followUpHostId, followUpIsNew}){
+// 方案1 第二轮：「下次月经什么时候？」的即时反馈。
+// 标题即结论，正文三句话（推算 → 撞上十一 → 提醒），图表复用经期结束反馈里的翻牌台历。
+const FORECAST_TITLE = '预计下次月经将开始于10月3日';
+const FORECAST_DATE = { month:'10月', day:'3', weekday:'周六' };
+const FORECAST_PARA = [
+  { text:'按你最近三次周期推算，下次月经大概在 ' },
+  { text:'10月3日', bold:true },
+  { text:' 前后到来，正好和' },
+  { text:'十一假期', bold:true },
+  { text:'撞上。' },
+  { text:'如果假期有出行安排，记得提前把卫生用品和常用止痛药放进行李。' },
+  { text:'实际日期可能有 1–2 天浮动，临近了我再提醒你。' },
+];
+
+// 台历图表 → 三句话文案，播完由外层接上追问栏
+function SisterForecastContent({playAnimation, onCycleComplete, animateText}){
+  const [chartDone, setChartDone] = React.useState(!animateText);
+  const [paraDone, setParaDone] = React.useState(!animateText);
+  const prevPlayRef = React.useRef(playAnimation);
+  const onCycleCompleteRef = React.useRef(onCycleComplete);
+  const bodyRef = React.useRef(null);
+  onCycleCompleteRef.current = onCycleComplete;
+
+  React.useEffect(()=>{
+    if(!animateText){
+      setChartDone(true);
+      setParaDone(true);
+      return;
+    }
+    if(playAnimation > prevPlayRef.current){
+      setChartDone(false);
+      setParaDone(false);
+    }
+    prevPlayRef.current = playAnimation;
+  }, [animateText, playAnimation]);
+
+  React.useLayoutEffect(()=>{
+    if(!animateText || !bodyRef.current) return;
+    requestAnimationFrame(()=>scrollFeedContentIntoView(bodyRef.current));
+  }, [animateText, chartDone, paraDone]);
+
+  React.useEffect(()=>{
+    if(!animateText || !chartDone) return;
+    onCycleCompleteRef.current?.();
+  }, [animateText, chartDone]);
+
+  React.useEffect(()=>{
+    if(animateText) return;
+    onCycleCompleteRef.current?.();
+  }, [animateText]);
+
+  // 文案在上、台历图表在下：先把话说完，再把日期亮出来
+  return (
+    <div className="tl-t5-analysis-body" ref={bodyRef}>
+      <p className="tl-t5-analysis-text">
+        {animateText && !paraDone ? (
+          <TypewriterText
+            segments={FORECAST_PARA}
+            active
+            followScroll
+            onComplete={()=>setParaDone(true)}
+          />
+        ) : (
+          renderTypedSegments(FORECAST_PARA, segmentsFullText(FORECAST_PARA).length)
+        )}
+      </p>
+      {(!animateText || paraDone) && (
+        <PeriodForecastCard
+          animated={animateText}
+          staticView={!animateText}
+          date={FORECAST_DATE}
+          onComplete={()=>setChartDone(true)}
+        />
+      )}
+    </div>
+  );
+}
+
+// 场景2：用户自己问了「我月经规律么」，反馈直接就是规律性结论。
+// 保留三周期柱状图（这是判断规律的依据），去掉月经信号灯和那段收尾，文案压到两句。
+const REGULARITY_TITLE = '月经规律分析';
+const REGULARITY_LEAD = '先看你最近 3 个周期：';
+const REGULARITY_PARA = [
+  { text:'30天、31天、29天，最大差值只有 ' },
+  { text:'2 天', bold:true },
+  { text:'。医学上周期在 ' },
+  { text:'21–35 天', bold:true },
+  { text:'、相邻两次相差不超过 7 天就算规律，你比这个标准稳得多。' },
+];
+
+function SisterRegularityContent({playAnimation, onCycleComplete, animateText}){
+  const [leadDone, setLeadDone] = React.useState(!animateText);
+  const [chartDone, setChartDone] = React.useState(!animateText);
+  const [paraDone, setParaDone] = React.useState(!animateText);
+  const [animated, setAnimated] = React.useState(false);
+  const prevPlayRef = React.useRef(playAnimation);
+  const onCycleCompleteRef = React.useRef(onCycleComplete);
+  const bodyRef = React.useRef(null);
+  onCycleCompleteRef.current = onCycleComplete;
+
+  React.useEffect(()=>{
+    if(!animateText){
+      setLeadDone(true); setChartDone(true); setParaDone(true);
+      return;
+    }
+    if(playAnimation > prevPlayRef.current){
+      setLeadDone(false); setChartDone(false); setParaDone(false); setAnimated(false);
+    }
+    prevPlayRef.current = playAnimation;
+  }, [animateText, playAnimation]);
+
+  React.useLayoutEffect(()=>{
+    if(!animateText || !bodyRef.current) return;
+    requestAnimationFrame(()=>scrollFeedContentIntoView(bodyRef.current));
+  }, [animateText, leadDone, chartDone, paraDone]);
+
+  React.useEffect(()=>{
+    if(!animateText || !paraDone) return;
+    onCycleCompleteRef.current?.();
+  }, [animateText, paraDone]);
+
+  React.useEffect(()=>{
+    if(animateText) return;
+    onCycleCompleteRef.current?.();
+  }, [animateText]);
+
+  const handleLeadComplete = React.useCallback(()=>{
+    setLeadDone(true);
+    if(animateText) setAnimated(true);
+  }, [animateText]);
+
+  return (
+    <div className="tl-t5-analysis-body" ref={bodyRef}>
+      <p className="tl-t5-analysis-lead">
+        {animateText && !leadDone ? (
+          <TypewriterText text={REGULARITY_LEAD} active followScroll onComplete={handleLeadComplete}/>
+        ) : REGULARITY_LEAD}
+      </p>
+      {(!animateText || leadDone) && (
+        <SisterCycleChart
+          animated={animated}
+          staticView={!animateText}
+          onComplete={()=>setChartDone(true)}
+        />
+      )}
+      {(!animateText || chartDone) && (
+        <p className="tl-t5-analysis-text">
+          {animateText && !paraDone ? (
+            <TypewriterText
+              segments={REGULARITY_PARA}
+              active
+              followScroll
+              onComplete={()=>setParaDone(true)}
+            />
+          ) : (
+            renderTypedSegments(REGULARITY_PARA, segmentsFullText(REGULARITY_PARA).length)
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText, periodStyle = false, analysisKind = 'period-start', showPeriodFeelPrompt = true, periodFeelGuideCopy = PERIOD_FEEL_GUIDE_COPY, followUpEntry, followUpHostId, followUpIsNew, collapsed = false}){
+  const isForecast = analysisKind === 'period-forecast';
+  const isRegularity = analysisKind === 'period-regularity';
+  const headerTitle = isForecast ? FORECAST_TITLE
+    : (isRegularity ? REGULARITY_TITLE : '本次月经分析');
   const [open, setOpen] = React.useState(true);
   const [canCollapse, setCanCollapse] = React.useState(!animateText);
   const [hasSeenAnimation, setHasSeenAnimation] = React.useState(!animateText);
@@ -1194,6 +1333,15 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
     onCycleComplete?.();
   }, [onCycleComplete]);
 
+  // 从二级页返回不折叠，反馈保持展开；只有切走 Tab 再回来才收起，
+  // 标题仍是「本次月经分析」，点标题可重新展开。
+  React.useEffect(()=>{
+    if(!collapsed) return;
+    setCanCollapse(true);
+    setHasSeenAnimation(true);
+    setOpen(false);
+  }, [collapsed]);
+
   const handleToggle = ()=>{
     if(!canCollapse) return;
     setOpen(v=>{
@@ -1216,7 +1364,7 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             {periodStyle ? <span className="tl-period-analysis-spark" aria-hidden="true"/> : <TlAiChartIcon size={10}/>}
           </span>
           {!periodStyle ? <span className="tl-ai-label">AI</span> : null}
-          <span className="tl-ai-title">本次月经分析</span>
+          <span className="tl-ai-title">{headerTitle}</span>
           <span className={'tl-ai-chevron'+(open ? ' is-open' : '')} aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M6 9l6 6 6-6" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1228,15 +1376,31 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             className={'tl-sister-ai-panel'+(!open ? ' is-collapsed' : '')}
             aria-hidden={!open}
           >
-            <SisterAnalysisContent
-              key={playAnimation}
-              playAnimation={contentAnimateText ? playAnimation : 0}
-              onCycleComplete={handleComplete}
-              animateText={contentAnimateText}
-              analysisKind={analysisKind}
-              showPeriodFeelPrompt={showPeriodFeelPrompt}
-              periodFeelGuideCopy={periodFeelGuideCopy}
-            />
+            {isRegularity ? (
+              <SisterRegularityContent
+                key={playAnimation}
+                playAnimation={contentAnimateText ? playAnimation : 0}
+                onCycleComplete={handleComplete}
+                animateText={contentAnimateText}
+              />
+            ) : isForecast ? (
+              <SisterForecastContent
+                key={playAnimation}
+                playAnimation={contentAnimateText ? playAnimation : 0}
+                onCycleComplete={handleComplete}
+                animateText={contentAnimateText}
+              />
+            ) : (
+              <SisterAnalysisContent
+                key={playAnimation}
+                playAnimation={contentAnimateText ? playAnimation : 0}
+                onCycleComplete={handleComplete}
+                animateText={contentAnimateText}
+                analysisKind={analysisKind}
+                showPeriodFeelPrompt={showPeriodFeelPrompt}
+                periodFeelGuideCopy={periodFeelGuideCopy}
+              />
+            )}
           </div>
         )}
         {/* 有追问栏时（v2 场景4），这一栏让位给追问栏，两者共用同一个位置 */}
@@ -1253,7 +1417,8 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             </svg>
           </button>
         ) : null}
-        {/* v2 场景4：反馈内容下方的追问栏，等流式输出结束再出现 */}
+        {/* 反馈内容下方的追问 / 查看按钮：流式输出结束才出现；
+            反馈收起时一并收进去，不单独留在外面 */}
         {followUpEntry && open && hasSeenAnimation ? (
           <PeriodFollowUpRow
             entry={{ id: followUpHostId, followUpEntry }}
@@ -1484,6 +1649,6 @@ function SisterAnalysisCard({item, playAnimation, onCycleComplete, animateText})
 
 Object.assign(window, {
   TlRecCardHead, TlRecKindIcon, inferRecordKind, TypewriterText, TypewriterBody, TlVoiceBar, TlVoicePlayBtn, TlVoiceInline, RecordedTags, AiNoteSection, RecordPhoto, resolveTag, CardMoreMenu,
-  SegmentedRecordCard, VoiceRecordCard, DemoVoiceCard, SisterAnalysisCard, SisterAnalysisCollapsible, SisterAnalysisContent,
+  SegmentedRecordCard, VoiceRecordCard, DemoVoiceCard, SisterAnalysisCard, SisterAnalysisCollapsible, SisterAnalysisContent, SisterForecastContent, SisterRegularityContent, scrollFeedContentIntoView,
   scrollFeedContentIntoView,
 });

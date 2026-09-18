@@ -2009,8 +2009,10 @@
 .tl-card-review-entry:active{
   background:rgba(0,0,0,.025);
 }
-.tl-period-review-entry svg,
-.tl-card-review-entry svg{
+/* 只管这一行右端的箭头。用 > 限定，否则行内嵌的图标（如追问栏的对话气泡）
+   会被一起改成 16px + fill:none + 描边 */
+.tl-period-review-entry > svg,
+.tl-card-review-entry > svg{
   width:16px;
   height:16px;
   flex:0 0 16px;
@@ -2132,6 +2134,33 @@
 .tl-t5-card.has-period-summary .cycle-card .cc-head .cc-title,
 .tl-t5-card.has-period-summary .signal-card .cc-head .cc-title,
 .tl-t5-card.has-period-summary .signal-card .sc-title{
+  font-size:16px;
+  line-height:1.35;
+}
+
+/* 方案1：反馈模块挂在提问卡（.s1-ask-card）里，够不到 .has-period-summary，
+   字号会掉回 13px 的通用档。这里对齐经期记录卡那一档：16px / #323232 / 加粗用品牌红。 */
+.s1-ask-card .tl-t5-analysis-body,
+.s1-ask-card .tl-t5-analysis-lead,
+.s1-ask-card .tl-t5-analysis-text,
+.s1-ask-card .tl-t5-analysis-prompt{
+  font-size:16px;
+  line-height:1.6;
+  color:#323232;
+  letter-spacing:0;
+}
+.s1-ask-card .tl-t5-analysis-body b,
+.s1-ask-card .tl-t5-analysis-body strong{
+  font-weight:500;
+  color:#ff4d88;
+}
+.s1-ask-card .tl-t5-insight .cycle-card,
+.s1-ask-card .tl-t5-insight .signal-card{
+  margin:0 0 12px;
+}
+.s1-ask-card .cycle-card .cc-head .cc-title,
+.s1-ask-card .signal-card .cc-head .cc-title,
+.s1-ask-card .signal-card .sc-title{
   font-size:16px;
   line-height:1.35;
 }

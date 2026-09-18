@@ -10,7 +10,8 @@
 //
 // 场景2 复用同一套卡片与对话页：按住说话松开 → 「我的月经规律么？」落轴 → 加载态 2s → 只展示对话入口（无标签）
 
-const SCENE1_QUESTION = '今天月经开始了，我的经期规律么？';
+// 方案1：时间轴里只说记录本身，问句交给反馈下方的追问栏
+const SCENE1_QUESTION = '今天月经开始了';
 const SCENE1_CHAT_TITLE = '经期规律分析';
 const SCENE1_EXTRACT_MS = 2000;
 const SCENE1_LOADING_COPY = ['记录提取中...', 'AI分析中...'];
@@ -108,8 +109,12 @@ function buildScene2Round2Answer(){
   ];
 }
 
-// 第四轮：语音纠正之前记录的流量（中等 → 大量），加载态结束后弹确认弹窗（同场景3）
+// 第四轮：语音纠正之前记录的流量（中等 → 大量）。
+// 确认操作直接放在模型输出的内容里（同方案3 在记录卡反馈模块里的做法），不再弹窗。
 const SCENE2_ROUND4_TEXT = '刚才说错了，今天流量应该是大量';
+const SCENE2_ROUND4_CONFIRM_PROMPT = [
+  { type:'confirm', text:'' },
+];
 const SCENE2_ROUND4_CANCEL_ANSWER = [
   { type:'p', text:'好的，那就保持原来的记录。想改的时候随时跟我说。' },
 ];
@@ -240,16 +245,62 @@ const SCENE4_PERIOD_DELAY = [
   { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
 ];
 
+// 追问栏「假期出行要准备什么？」的回答
+const SCENE4_HOLIDAY_TIPS = [
+  { type:'p', text:'按 10月3日 前后来算，假期前半段你大概率正好在经期头两天，也是量最多、最容易不舒服的时候。' },
+  { type:'h', text:'出发前放进行李' },
+  { type:'li', text:'卫生用品按平时用量多带 1–2 天的份' },
+  { type:'li', text:'常用止痛药，以及一片暖宝宝' },
+  { type:'li', text:'一条深色长裤或裙子，坐长途更安心' },
+  { type:'h', text:'行程上可以调一调' },
+  { type:'li', text:'把爬山、长时间暴走这类安排尽量放到假期后半段' },
+  { type:'li', text:'长途车程中间留出能去洗手间的时间' },
+  { type:'p', text:'临近出发我会再提醒你一次。到时候身体有什么反应，随时说给我听。' },
+];
+
+// 进二级页时带入的「上一轮」= 时间轴上的原输入 + 那条即时反馈本身。
+// 用 feedback 块原样渲染时间轴的反馈模块（含柱状图、信号灯、台历），不做文字版复刻。
+const SCENE1_ANALYSIS_FEEDBACK = [
+  { type:'feedback', text:'', kind:'period-start' },
+];
+const SCENE1_FORECAST_FEEDBACK = [
+  { type:'feedback', text:'', kind:'period-forecast' },
+];
+
+function resolveScene1Context(key){
+  if(key === 'analysis-feedback') return SCENE1_ANALYSIS_FEEDBACK;
+  if(key === 'forecast-feedback') return SCENE1_FORECAST_FEEDBACK;
+  return null;
+}
+
+// 追问「我的经期规律么？」的回答。上一轮已经把三周期数据摆出来了，
+// 这里只给结论和判断标准，不重复图表内容。
+const SCENE1_REGULARITY_ANSWER = [
+  { type:'p', text:'规律的。判断标准是周期落在 21–35 天之间、相邻两次相差不超过 7 天。' },
+  { type:'p', text:'你最近三次是 30天、31天、29天，最大差值只有 2 天，比大多数人都稳。这次推迟 2 天在正常波动范围内，不用担心。' },
+  { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
+];
+
+// 场景2 追问「经期这几天要注意什么？」的回答
+const SCENE2_CARE_ANSWER = [
+  { type:'p', text:'经期前两天子宫收缩最明显，注意腹部保暖，少碰生冷和咖啡。' },
+  { type:'p', text:'出血量大的时候别安排剧烈运动，晚餐可以加点含铁的食物，比如菠菜、瘦肉。' },
+  { type:'p', text:'对了，今天的流量和痛经情况怎么样？说给我听，我帮你记下来。' },
+];
+
 function resolveScene1Answer(answerKey){
   if(answerKey === 'scene2') return SCENE2_ANSWER;
-  if(answerKey === 'period-analysis') return SCENE4_PERIOD_ANALYSIS;
+  if(answerKey === 'period-analysis') return SCENE1_REGULARITY_ANSWER;
   if(answerKey === 'period-delay') return SCENE4_PERIOD_DELAY;
+  if(answerKey === 'holiday-tips') return SCENE4_HOLIDAY_TIPS;
+  if(answerKey === 'period-care') return SCENE2_CARE_ANSWER;
   return SCENE1_ANSWER;
 }
 
 function createScene1AskEntry(options = {}){
   const now = Date.now();
   const completed = !!options.completed;
+  const splitFeedback = !!options.splitFeedback;
   return {
     kind:'scene1-ask-record',
     id:completed ? 's1-ask-done' : 's1-ask-' + now,
@@ -257,10 +308,107 @@ function createScene1AskEntry(options = {}){
     time:options.time || window.formatNowTime(),
     text:SCENE1_QUESTION,
     tags:[{ cat:'月经来了' }],
-    chatTitle:SCENE1_CHAT_TITLE,
-    chatCompleted:completed,
+    // 反馈模块直接流式输出「本次月经分析」（与记录 tab 点横幅进来的内容同一套），
+    // 不再用一条对话栏把用户送去二级页
+    periodAnalysis:'period-start',
+    splitFeedback,
+    feedbackInCard:!!options.feedbackInCard,
+    collapseOnLeave:!!options.collapseOnLeave,
+    // 反馈播完后接一条追问栏；点进去是二级页 4 轮对话
+    followUpEntry:{
+      title:'我的经期规律么？',
+      question:'我的经期规律么？',
+      answerKey:'period-analysis',
+      // 不带入上一轮，进二级页就是干净的一问一答
+      // 聊过之后按钮变「查看：月经规律性分析」，位置不动
+      threadTitleText:'月经规律性分析',
+    },
     // 用时间戳而非本地计时，卡片重新挂载（如切 Tab 回来）不会重播加载态
     extractDoneAt:completed ? 0 : now + SCENE1_EXTRACT_MS,
+  };
+}
+
+// 方案3 第一轮：一句话里同时带记录和症状
+const SCENE1_PLAN3_QUESTION = '今天月经来了，肚子有点痛，目前血量比较小';
+
+function createScene1Plan3AskEntry(options = {}){
+  const now = Date.now();
+  return {
+    kind:'scene1-ask-record',
+    id:'s1-p3-' + now,
+    isNew:true,
+    time:window.formatNowTime(),
+    text:SCENE1_PLAN3_QUESTION,
+    // 提取结果写成「✓ 已记录：」一行，标签样式
+    tags:[{ cat:'月经来了' }, { cat:'症状' }, { cat:'流量' }],
+    recordSummary:true,
+    periodAnalysis:'period-start',
+    splitFeedback:true,
+    feedbackInCard:true,
+    feedbackLabel:'AI分析：',
+    collapseOnLeave:!!options.collapseOnLeave,
+    followUpEntry:{
+      title:'我的经期规律么？',
+      question:'我的经期规律么？',
+      answerKey:'period-analysis',
+      contextText:SCENE1_PLAN3_QUESTION,
+      contextKey:'analysis-feedback',
+      threadTitleText:'经期规律与今日症状',
+    },
+    extractDoneAt:now + SCENE1_EXTRACT_MS,
+  };
+}
+
+// 场景2：一句话里既有记录又有提问。
+// 记录照常落轴给反馈；问句不在轴里回答，变成反馈下方那一栏，点进二级页回答。
+const SCENE2_RECORD_QUESTION = '今天月经来了，我月经规律么';
+
+function createScene2RecordQuestionEntry(options = {}){
+  const now = Date.now();
+  return {
+    kind:'scene1-ask-record',
+    id:'s2-rq-' + now,
+    isNew:true,
+    time:window.formatNowTime(),
+    text:SCENE2_RECORD_QUESTION,
+    tags:[{ cat:'月经来了' }],
+    // 用户自己问了规律性，反馈直接给规律分析，不再走「本次月经分析」那套
+    periodAnalysis:'period-regularity',
+    collapseOnLeave:!!options.collapseOnLeave,
+    followUpEntry:{
+      // 规律性已经在反馈里答完了，这里换一个模型抛的下一步问题
+      title:'经期这几天要注意什么？',
+      question:'经期这几天要注意什么？',
+      answerKey:'period-care',
+      threadTitleText:'经期规律与注意事项',
+    },
+    extractDoneAt:now + SCENE1_EXTRACT_MS,
+  };
+}
+
+// 方案1 第二轮：时间轴里问「下次月经什么时候？」
+// 纯提问，没有可提取的记录，所以不带标签；加载态结束后给预测反馈 + 追问栏
+const SCENE1_FORECAST_QUESTION = '下次月经什么时候？';
+
+function createScene1ForecastEntry(options = {}){
+  const now = Date.now();
+  return {
+    kind:'scene1-ask-record',
+    id:'s1-forecast-' + now,
+    isNew:true,
+    time:window.formatNowTime(),
+    text:SCENE1_FORECAST_QUESTION,
+    tags:[],
+    periodAnalysis:'period-forecast',
+    splitFeedback:!!options.splitFeedback,
+    feedbackInCard:!!options.feedbackInCard,
+    followUpEntry:{
+      title:'假期出行要准备什么？',
+      question:'假期出行要准备什么？',
+      answerKey:'holiday-tips',
+
+    },
+    extractDoneAt:now + SCENE1_EXTRACT_MS,
   };
 }
 
@@ -393,6 +541,124 @@ function Scene1ChatIcon({size = 22}){
 // 对话栏标题逐字输出（与场景4 一致）：仅卡片新落轴时播放，重新挂载不重播
 const scene1ChatTitleStreamed = new Set();
 
+// 方案2：反馈从记录卡里拆出来单独成卡。
+// 无标题，正文前缀「💬 AI反馈：」；正文播完后在下一行给出追问按钮（按钮在卡内）。
+// 聊过并从二级页返回后，整张卡收缩成一个对话按钮，只留图标 + 主题标题。
+function Scene1FeedbackCard({entry, isNew, inline}){
+  const kind = entry.periodAnalysis === true ? 'period-start' : entry.periodAnalysis;
+  const followUp = entry.followUpEntry || {};
+  const threadTitle = followUp.threadTitle;
+  const [done, setDone] = React.useState(!isNew);
+  const [expanded, setExpanded] = React.useState(false);
+  const rootRef = React.useRef(null);
+
+  const openChat = ()=>{
+    window.dispatchEvent(new CustomEvent('openScene1Chat', {
+      detail:{
+        question: followUp.question,
+        title: followUp.title,
+        entryId: entry.id,
+        answerKey: followUp.answerKey,
+        context: followUp.contextKey
+          ? { text: followUp.contextText, key: followUp.contextKey }
+          : undefined,
+      },
+    }));
+  };
+
+  // 追问按钮出现在输入栏底下会看不见，出现时自己滚进可视区
+  React.useLayoutEffect(()=>{
+    if(!done || !isNew || !rootRef.current) return;
+    const raf = requestAnimationFrame(()=>window.scrollFeedContentIntoView?.(rootRef.current));
+    return ()=>cancelAnimationFrame(raf);
+  }, [done, isNew]);
+
+  // 聊过之后的折叠态：
+  // 卡内（方案2）→ 追问栏形态，无边框、通栏一行
+  // 卡外（方案3）→ 独立的轻量按钮，样式同追问按钮
+  // 方案3：没点追问就切走 Tab，回来时也收起 —— 此时还没有对话，
+  // 折叠行显示反馈本身的名字（「AI分析」），点开是展开反馈而不是进二级页
+  const collapsedOnly = !threadTitle && entry.feedbackCollapsed && !expanded;
+  if(collapsedOnly && inline){
+    const label = (entry.feedbackLabel || 'AI反馈：').replace(/[：:]$/, '');
+    return (
+      <button type="button" className="s1-fb-row" onClick={()=>setExpanded(true)}>
+        <span className="s1-fb-icon">
+          {window.Scene1ChatIcon ? <window.Scene1ChatIcon size={22}/> : null}
+        </span>
+        <span className="s1-fb-row-title">{label}</span>
+        <svg className="s1-fb-row-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6"/>
+        </svg>
+      </button>
+    );
+  }
+
+  if(threadTitle){
+    if(inline){
+      return (
+        <button type="button" className="s1-fb-row" onClick={openChat}>
+          <span className="s1-fb-icon">
+            {window.Scene1ChatIcon ? <window.Scene1ChatIcon size={22}/> : null}
+          </span>
+          <span className="s1-fb-row-title">{threadTitle}</span>
+          <svg className="s1-fb-row-arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6"/>
+          </svg>
+        </button>
+      );
+    }
+    return (
+      <button type="button" className="s1-fb-thread" onClick={openChat}>
+        <span className="s1-fb-icon">
+          {window.Scene1ChatIcon ? <window.Scene1ChatIcon size={16}/> : null}
+        </span>
+        <span className="s1-fb-thread-title">{threadTitle}</span>
+        <svg className="s1-fb-thread-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6"/>
+        </svg>
+      </button>
+    );
+  }
+
+  const Body = kind === 'period-forecast'
+    ? window.SisterForecastContent
+    : window.SisterAnalysisContent;
+
+  return (
+    <section
+      className={(inline ? 's1-fb-inline' : 's1-fb-card')
+        + (entry.recordSummary ? ' is-compact-label' : '')
+        + (isNew ? ' fade-in' : '')}
+      ref={rootRef}
+    >
+      <div className="s1-fb-inner tl-t5-insight">
+        <span className="s1-fb-label">
+          <span className="s1-fb-icon">
+            {window.Scene1ChatIcon ? <window.Scene1ChatIcon size={20}/> : null}
+          </span>
+          {entry.feedbackLabel || 'AI反馈：'}
+        </span>
+        {Body ? (
+          <Body
+            key={isNew ? 'anim' : 'static'}
+            playAnimation={isNew ? 1 : 0}
+            animateText={!!isNew}
+            analysisKind={kind}
+            showPeriodFeelPrompt={false}
+            onCycleComplete={()=>setDone(true)}
+          />
+        ) : null}
+      </div>
+      {done && followUp.title ? (
+        <button type="button" className="s1-fb-ask" onClick={openChat}>
+          追问：{followUp.title}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
 function Scene1AskRecordCard({entry, isNew}){
   const [extracting, setExtracting] = React.useState(()=>Date.now() < (entry.extractDoneAt || 0));
 
@@ -421,10 +687,19 @@ function Scene1AskRecordCard({entry, isNew}){
   const hasTags = (entry.tags || []).length > 0;
   // v2 场景3：修改流量的确认改在这张卡的反馈模块里做，不再弹窗
   const flowConfirm = entry.flowConfirm;
-  // 无标签、无对话入口、也没有待确认的修改：加载结束后只保留原话
-  const textOnly = !extracting && !hasTags && !entry.chatTitle && !flowConfirm;
+  // 方案1：反馈模块里流式输出即时反馈，播完接追问栏
+  // periodAnalysis 取 'period-start'（本次月经分析）或 'period-forecast'（下次月经预测）；
+  // 老数据写的是 true，兼容为 period-start
+  const SisterAnalysisCollapsible = window.SisterAnalysisCollapsible;
+  const analysisKind = entry.periodAnalysis === true ? 'period-start' : entry.periodAnalysis;
+  const splitFeedback = !!entry.splitFeedback;
+  // 方案2：反馈整体放在记录卡内，用分割线与上方内容隔开
+  const feedbackInCard = splitFeedback && !!entry.feedbackInCard;
+  const showPeriodAnalysis = !!analysisKind && !!SisterAnalysisCollapsible && !splitFeedback;
+  // 无标签、无对话入口、无反馈、也没有待确认的修改：加载结束后只保留原话
+  const textOnly = !extracting && !hasTags && !entry.chatTitle && !flowConfirm && !showPeriodAnalysis && !splitFeedback;
 
-  return (
+  const recordCard = (
     <div className={'s1-ask-card' + (isNew ? ' fade-in' : '') + (textOnly ? ' is-text-only' : '')} data-entry-id={entry.id}>
       {V3v2Header ? <V3v2Header time={entry.time}/> : null}
       <div className="s1-ask-body">{entry.text}</div>
@@ -434,9 +709,35 @@ function Scene1AskRecordCard({entry, isNew}){
       ) : (
         <>
           {hasTags ? (
-            <div className={'s1-ask-tags' + revealCls}>
-              {TLTag ? entry.tags.map((tag, i)=><TLTag key={i} tag={tag}/>) : null}
-            </div>
+            entry.recordSummary ? (
+              <>
+              <div className="s1-ask-divider" role="separator"/>
+              <div className={'s1-ask-recorded' + revealCls}>
+                <span className="s1-ask-recorded-icon"><Scene1CheckIcon/></span>
+                <span className="s1-ask-recorded-label">已记录：</span>
+                <span className="s1-ask-recorded-tags">
+                  {TLTag ? entry.tags.map((tag, i)=><TLTag key={i} tag={tag}/>) : null}
+                </span>
+              </div>
+              </>
+            ) : (
+              <div className={'s1-ask-tags' + revealCls}>
+                {TLTag ? entry.tags.map((tag, i)=><TLTag key={i} tag={tag}/>) : null}
+              </div>
+            )
+          ) : null}
+          {showPeriodAnalysis ? (
+            <SisterAnalysisCollapsible
+              playAnimation={isNew ? 1 : 0}
+              animateText={!!isNew}
+              periodStyle
+              analysisKind={analysisKind}
+              showPeriodFeelPrompt={false}
+              followUpEntry={entry.followUpEntry}
+              followUpHostId={entry.id}
+              followUpIsNew={!!isNew}
+              collapsed={!!entry.feedbackCollapsed}
+            />
           ) : null}
           {flowConfirm && window.Scene3FlowConfirmInline ? (
             <div className={'s1-ask-feedback' + revealCls}>
@@ -447,6 +748,12 @@ function Scene1AskRecordCard({entry, isNew}){
                 state={flowConfirm}
               />
             </div>
+          ) : null}
+          {feedbackInCard ? (
+            <>
+              {entry.recordSummary ? null : <div className="s1-ask-divider" role="separator"/>}
+              <Scene1FeedbackCard entry={entry} isNew={isNew} inline/>
+            </>
           ) : null}
           {entry.chatTitle ? (
             <>
@@ -468,6 +775,15 @@ function Scene1AskRecordCard({entry, isNew}){
       )}
     </div>
   );
+
+  if(!splitFeedback || feedbackInCard) return recordCard;
+  // 记录卡（原话 + 标签）+ 反馈卡，两张卡上下排布
+  return (
+    <>
+      {recordCard}
+      {!extracting ? <Scene1FeedbackCard entry={entry} isNew={isNew}/> : null}
+    </>
+  );
 }
 
 function countScene1Chars(blocks){
@@ -478,13 +794,42 @@ function renderScene1AnswerBlocks(blocks, shownChars, streaming){
   let remaining = shownChars;
   const out = [];
   for(let i = 0; i < blocks.length; i++){
-    if(remaining <= 0) break;
     const block = blocks[i];
+    // remaining < 0：前一块还没输出完，后面的先不出
+    if(remaining < 0) break;
+    // 零字数的块（确认操作区）不占字数，等它前面的文字都输出完再出现
+    if(remaining === 0 && block.text) break;
     const visible = block.text.slice(0, remaining);
     remaining -= block.text.length;
-    const isTail = streaming && remaining <= 0;
+    const isTail = streaming && remaining <= 0 && !!block.text;
     const caret = isTail ? <span className="ai-caret"/> : null;
-    if(block.type === 'record'){
+    if(block.type === 'feedback'){
+      // 原样渲染时间轴上的反馈模块（含图表）。包一层 .tl-t5-insight 才能吃到那套卡片样式；
+      // animateText=false 直接出完成态，不重播流式。
+      const Body = block.kind === 'period-forecast'
+        ? window.SisterForecastContent
+        : window.SisterAnalysisContent;
+      out.push(
+        <div key={i} className="tl-t5-insight s1-chat-feedback">
+          {Body ? (
+            <Body
+              playAnimation={0}
+              animateText={false}
+              analysisKind={block.kind}
+              showPeriodFeelPrompt={false}
+            />
+          ) : null}
+        </div>
+      );
+    } else if(block.type === 'confirm'){
+      out.push(
+        <window.Scene3FlowConfirmInline
+          key={i}
+          state={block.state || 'pending'}
+          onResolve={(confirmed)=>window.dispatchEvent(new CustomEvent('scene1ChatFlowResolve', { detail:{ confirmed } }))}
+        />
+      );
+    } else if(block.type === 'record'){
       out.push(<Scene1ChatRecordCard key={i} record={block.record}/>);
     } else if(block.type === 'done'){
       out.push(
@@ -677,8 +1022,14 @@ function resetScene1ChatStore(){
   scene1ChatStore.clear();
 }
 
-function getScene1ChatSession(key, completed, question, answerKey){
+function getScene1ChatSession(key, completed, question, answerKey, context){
   if(!scene1ChatStore.has(key)){
+    // 带入上一轮：时间轴上的原输入 + 那条即时反馈，直接展示不重播
+    const ctxBlocks = context && resolveScene1Context(context.key);
+    const ctxMessages = (context && context.text && ctxBlocks) ? [
+      { id:'ctx-u', role:'user', text:context.text },
+      { id:'ctx-a', role:'ai', blocks:ctxBlocks, instant:true },
+    ] : [];
     // completed：场景3初始态，直接是场景1播放完成后的完整对话，不再加载、不再流式输出
     const messages = completed ? [
       { id:'u-0', role:'user', text:question },
@@ -686,6 +1037,7 @@ function getScene1ChatSession(key, completed, question, answerKey){
       { id:'u-1', role:'user', text:SCENE1_FOLLOWUP_TEXT },
       { id:'a-1', role:'ai', blocks:SCENE1_FOLLOWUP_ANSWER, instant:true },
     ] : [
+      ...ctxMessages,
       { id:'u-0', role:'user', text:question },
       { id:'a-0', role:'ai', blocks:resolveScene1Answer(answerKey) },
     ];
@@ -700,8 +1052,8 @@ function isScene1MessageDone(msg, session){
     && (session.shown[msg.id] || 0) >= countScene1Chars(msg.blocks);
 }
 
-function Scene1ChatPage({question, title, completed = false, entryId, answerKey, onBack, onRecord, onCorrection}){
-  const [session] = React.useState(()=>getScene1ChatSession(entryId || question, completed, question, answerKey));
+function Scene1ChatPage({question, title, completed = false, entryId, answerKey, context, onBack, onRecord, onCorrection}){
+  const [session] = React.useState(()=>getScene1ChatSession(entryId || question, completed, question, answerKey, context));
   const [messages, setMessages] = React.useState(session.messages);
   const [replying, setReplying] = React.useState(()=>session.messages.some(msg=>!isScene1MessageDone(msg, session)));
   const scrollRef = React.useRef(null);
@@ -724,7 +1076,8 @@ function Scene1ChatPage({question, title, completed = false, entryId, answerKey,
     // 按轮次发送：流量/痛经 → 心情/症状 → 纠正流量（弹确认弹窗）；之后重复最后一轮
     // 场景1、场景2 用同一套；场景4 只有落轴的记录形式不同
     const askedCount = session.messages.filter(m=>m.role === 'user').length - 1;
-    const isScene4Key = answerKey === 'period-analysis' || answerKey === 'period-delay';
+    const isScene4Key = answerKey === 'period-analysis' || answerKey === 'period-delay'
+      || answerKey === 'period-care' || answerKey === 'holiday-tips';
     const rounds = isScene4Key ? SCENE4_ROUNDS : SCENE2_ROUNDS;
     const round = rounds[Math.min(askedCount, rounds.length - 1)];
     const aiId = 'a-' + now;
@@ -734,7 +1087,7 @@ function Scene1ChatPage({question, title, completed = false, entryId, answerKey,
       {
         id:aiId,
         role:'ai',
-        blocks:round.correction ? [] : round.buildAnswer(),
+        blocks:round.correction ? SCENE2_ROUND4_CONFIRM_PROMPT : round.buildAnswer(),
         loadingUntil:now + SCENE1_EXTRACT_MS,
       },
     ];
@@ -742,8 +1095,8 @@ function Scene1ChatPage({question, title, completed = false, entryId, answerKey,
     setMessages(next);
     setReplying(true);
     if(round.correction){
+      // 确认操作区已经随这条回复一起输出，等用户点确认 / 取消再替换内容
       pendingCorrectionIdRef.current = aiId;
-      onCorrectionRef.current?.();
       return;
     }
     // 记录的落轴时机由 App 层计时（与加载态同步），返回点滴页也不会取消
@@ -817,6 +1170,11 @@ Object.assign(window, {
   applyChatFlowCorrection,
   createScene1PeriodEntry,
   appendScene1CompletedState,
+  createScene2RecordQuestionEntry,
+  createScene1Plan3AskEntry,
+  Scene1FeedbackCard,
+  resolveScene1Context,
+  createScene1ForecastEntry,
   resetScene1ChatStore,
   Scene1AskRecordCard,
   Scene1ChatIcon,

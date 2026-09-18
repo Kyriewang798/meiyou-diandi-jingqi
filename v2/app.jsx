@@ -14,6 +14,10 @@ const DEFAULT_REVIEW_SHARE_STATE = {
 // 入口没了，PeriodFeelOverlay 录制弹层同样进不去。改回 true 即可整体恢复。
 const PERIOD_FEEL_ENABLED = false;
 
+// 聊过之后追问栏变成的「本次对话主题标题」。真实产品里由模型基于整段对话生成，
+// demo 里写死：这段对话聊的是周期规律 + 今天的流量 / 痛经 / 心情记录与修正。
+const CHAT_THREAD_TITLE = '经期规律与今日记录';
+
 function PeriodFeelOverlay({open, onClose, onComplete, label='经期感受'}){
   const [state, setState] = React.useState('ready');
   const [text, setText] = React.useState('');
@@ -641,9 +645,9 @@ function App(){
       periodRecord.color ? { label:'颜色', value: periodRecord.color, icon:'color' } : null,
       periodRecord.cramps ? { label:'痛经', value: periodRecord.cramps, icon:'cramps' } : null,
     ].filter(Boolean);
-    // v2 场景4：点滴 tab 内联流式输出「本次月经分析」（与其他场景一致），
+    // 记录 tab 点横幅进来：点滴 tab 内联流式输出「本次月经分析」，
     // 反馈内容下方再挂一条追问栏，点进二级对话页继续问
-    const isScene4 = scene.id === 'scene-4';
+    const withFollowUp = true;
     const syncEntry = {
       kind:'sync-card', id:'e-period-'+Date.now(), time: window.formatNowTime(),
       cardLabel:'自动同步', cardLabelKind:'sync',
@@ -653,11 +657,14 @@ function App(){
       periodDetails,
       periodSummaryLabel: isPeriodEndAnalysis ? '月经走喽' : '月经来了',
       analysisKind: isPeriodEndAnalysis ? 'period-end' : 'period-start',
-      followUpEntry: (isScene4 && !isPeriodEndAnalysis)
+      collapseOnLeave: true,
+      followUpEntry: (withFollowUp && !isPeriodEndAnalysis)
         ? {
-            title:'推迟2天正常吗？',
-            question:'推迟2天正常吗？',
-            answerKey:'period-delay',
+            title:'我的经期规律么？',
+            question:'我的经期规律么？',
+            answerKey:'period-analysis',
+            // 与时间轴一致：不带入上一轮，进去就是一问一答
+            threadTitleText:'月经规律性分析',
           }
         : undefined,
     };
@@ -1857,7 +1864,7 @@ function App(){
 
   const submitVoice = (transcript, durSec)=>{
     // v2 场景3：语音纠正 → 按时间轴样式落轴 + 2s 提取加载态 → 弹出确认弹窗（流量 中等 → 大量）
-    if(scene.id === 'scene-3' && window.createScene3CorrectionEntry){
+    if(scene.voiceFlow === 'correct' && window.createScene3CorrectionEntry){
       markUserRecorded();
       const entry = window.createScene3CorrectionEntry();
       scene3CorrectEntryIdRef.current = entry.id;
@@ -1876,14 +1883,24 @@ function App(){
       return;
     }
 
-    // v2 场景1：固定演示语句落轴 → 2s 提取/分析加载态 → 标签 + 对话入口
-    // v2 场景2 / 场景4（场景2 的副本）：纯提问「我的月经规律么？」落轴 → 2s 加载态 → 只展示对话入口
-    const isScene2Like = scene.id === 'scene-2' || scene.id === 'scene-4';
-    if((scene.id === 'scene-1' || isScene2Like) && window.createScene1AskEntry){
+    // 固定演示语句落轴 → 2s 提取/分析加载态 → 标签 + 即时反馈 + 追问栏
+    // askVariant='question-only' 时是纯提问，无可提取记录，只展示对话入口
+    const isQuestionOnly = scene.askVariant === 'question-only';
+    if(scene.voiceFlow === 'ask' && window.createScene1AskEntry){
       markUserRecorded();
-      const entry = isScene2Like && window.createScene2AskEntry
+      // 方案1 分两轮：第一轮「今天月经开始了」，再按一次是第二轮「下次月经什么时候？」
+      const askedFirstRound = timeline.some(block=>(
+        block.type === 'day' && (block.items || block.entries || []).some(it=>it.periodAnalysis)
+      ));
+      const askOptions = { collapseOnLeave: !!scene.collapseOnLeave };
+      const makeFirstRound = scene.askFactory === 'record-question' && window.createScene2RecordQuestionEntry
+        ? window.createScene2RecordQuestionEntry
+        : window.createScene1AskEntry;
+      const entry = isQuestionOnly && window.createScene2AskEntry
         ? window.createScene2AskEntry()
-        : window.createScene1AskEntry();
+        : (askedFirstRound && window.createScene1ForecastEntry
+            ? window.createScene1ForecastEntry(askOptions)
+            : makeFirstRound(askOptions));
       setTimeline(blocks=>{
         const todayId = blocks.find(b=>b.type==='day' && b.isToday)?.id;
         return window.appendTimelineEntry(blocks, entry, { dayId: todayId });
@@ -2634,6 +2651,8 @@ function App(){
   const scene3ConfirmTimerRef = React.useRef(null);
   // 本次纠正语句的卡片 id：确认后给它补上「流量」标签
   const scene3CorrectEntryIdRef = React.useRef(null);
+  // 结果行（已修改 / 已取消）3 秒后收起的计时器
+  const scene3ResultTimerRef = React.useRef(null);
   // 弹窗来源：'scene3'（时间轴语音纠正）或 'chat'（对话第四轮纠正）
   const [scene3ConfirmSource, setScene3ConfirmSource] = React.useState('scene3');
 
@@ -2663,9 +2682,63 @@ function App(){
         });
       });
       if(confirmed) window.scrollScene3TargetIntoView?.();
+      // 结果行展示 3 秒后收起，卡片回到「只剩这句话」
+      clearTimeout(scene3ResultTimerRef.current);
+      scene3ResultTimerRef.current = setTimeout(()=>{
+        setTimeline(blocks=>blocks.map(block=>{
+          if(block.type !== 'day') return block;
+          const items = block.items || block.entries || [];
+          if(!items.some(it=>it.id === entryId && it.flowConfirm)) return block;
+          return {
+            ...block,
+            entries:undefined,
+            items:items.map(it=>(
+              it.id === entryId ? { ...it, flowConfirm:null } : it
+            )),
+          };
+        }));
+      }, 3000);
     };
     window.addEventListener('scene3FlowResolve', onResolve);
-    return ()=>window.removeEventListener('scene3FlowResolve', onResolve);
+    return ()=>{
+      window.removeEventListener('scene3FlowResolve', onResolve);
+      clearTimeout(scene3ResultTimerRef.current);
+    };
+  }, []);
+
+  // 方案3：离开点滴 Tab 时，把还没聊过的反馈收起来，回来就是折叠态
+  useEffect(()=>{
+    if(activeTab === 'note') return;
+    setTimeline(blocks=>{
+      let changed = false;
+      const next = blocks.map(block=>{
+        if(block.type !== 'day') return block;
+        const items = block.items || block.entries || [];
+        if(!items.some(it=>it.collapseOnLeave && !it.feedbackCollapsed)) return block;
+        changed = true;
+        return {
+          ...block,
+          entries:undefined,
+          items:items.map(it=>(
+            it.collapseOnLeave && !it.feedbackCollapsed
+              ? { ...it, feedbackCollapsed:true, isNew:false }
+              : it
+          )),
+        };
+      });
+      return changed ? next : blocks;
+    });
+  }, [activeTab]);
+
+  // 对话二级页第四轮：确认操作区就在模型输出里，点完这里同步时间轴并回传结果
+  useEffect(()=>{
+    const onChatResolve = (e)=>{
+      const confirmed = !!(e.detail && e.detail.confirmed);
+      if(confirmed) setTimeline(blocks=>window.applyChatFlowCorrection(blocks));
+      window.dispatchEvent(new CustomEvent('scene1FlowCorrectionResult', { detail:{ confirmed } }));
+    };
+    window.addEventListener('scene1ChatFlowResolve', onChatResolve);
+    return ()=>window.removeEventListener('scene1ChatFlowResolve', onChatResolve);
   }, []);
 
   useEffect(()=>{
@@ -3097,7 +3170,27 @@ function App(){
           completed={!!scene1Chat.completed}
           entryId={scene1Chat.entryId}
           answerKey={scene1Chat.answerKey}
+          context={scene1Chat.context}
           onBack={()=>{
+            // 需求 5.4.3：聊过并退出后，追问栏改为本次对话的主题标题，点击只回看。
+            // 5.8 第 1 条：首次生成后固定，不逐轮改写，否则用户认不出这个入口。
+            const hostId = scene1Chat.entryId;
+            if(hostId){
+              setTimeline(blocks=>blocks.map(block=>{
+                if(block.type !== 'day') return block;
+                const items = block.items || block.entries || [];
+                if(!items.some(it=>it.id === hostId && it.followUpEntry && !it.followUpEntry.threadTitle)) return block;
+                return {
+                  ...block,
+                  entries:undefined,
+                  items:items.map(it=>(
+                    it.id === hostId && it.followUpEntry && !it.followUpEntry.threadTitle
+                      ? { ...it, followUpEntry:{ ...it.followUpEntry, threadTitle:(it.followUpEntry.threadTitleText || CHAT_THREAD_TITLE) } }
+                      : it
+                  )),
+                };
+              }));
+            }
             setScene1Chat(null);
             scrollTimelineToLastItem('smooth');
           }}
