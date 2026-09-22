@@ -1,22 +1,53 @@
 // ============ 底部 Dock — 输入栏 + 右下悬浮快捷发布 ============
 
 function UnifiedQuickIcon({type}){
-  const key = type === 'period-feel' ? 'menses' : type;
+  const key = type === 'period-feel' ? 'menses'
+    : type === 'beverage' ? 'water'
+    : type;
   const colors = {
-    menses:['#ff8fb4','#ff5f8f','#ff3d7a'], weight:['#c5a3f8','#ac78f3','#9b5ef0'],
+    menses:['#ff8fb4','#ff5f8f','#ff3d7a'],
+    'period-start':['#ff9bb8','#ff5f8f','#ff3d7a'],
+    'period-end':['#ffd0e0','#ff9eb8','#f07a9e'],
+    weight:['#c5a3f8','#ac78f3','#9b5ef0'],
     symptom:['#8fcdff','#4fb0f7','#2e9bf0'], mood:['#ffeb93','#ffd849','#ffc700'],
     diet:['#ffb68e','#ff7d47','#ff5f22'], water:['#8fe8c4','#34cf99','#16b981'],
+    stool:['#ffd98a','#ffb84a','#f09a28'], exercise:['#ff9b8a','#ff6b5a','#f24b3d'],
+    sleep:['#c9b6ff','#9b7cf0','#7a58e0'], medicine:['#9bd8ff','#5eb6f5','#3a9ae6'],
+    habit:['#9be0c4','#4ecf9a','#2bb87a'], diary:['#ffe08a','#ffc94a','#f0ad1e'],
+    checkup:['#9ec8ff','#6aa3f5','#4a86e8'], account:['#ffd28a','#ffb24a','#f09220'],
+    travel:['#9ad8ff','#5bb8f2','#3498e0'], pet:['#ffc09a','#ff9460','#f07438'],
   }[key] || ['#c9c9cf','#aaaab0','#888990'];
   const id = 'quick-' + key;
   const body = {
     menses:<><path d="M32 11.5c8.8 9.9 15 17.6 15 24.8A15 15 0 0 1 17 36.3c0-7.2 6.2-14.9 15-24.8z" fill={'url(#b-'+id+')'}/><g stroke="#fff" strokeLinecap="round" fill="none" opacity=".72"><path d="M25.4 33.6v6.4" strokeWidth="3.1"/><path d="M32 29.6v14.6" strokeWidth="3.4"/><path d="M38.6 32.4v8.8" strokeWidth="3.1"/></g><ellipse cx="25.8" cy="25.4" rx="3.4" ry="5.2" fill={'url(#h-'+id+')'} transform="rotate(-28 25.8 25.4)"/></>,
+    'period-start':<><path d="M32 12c9.2 10.4 15.6 18.4 15.6 26.2A15.6 15.6 0 1 1 16.4 38.2C16.4 30.4 22.8 22.4 32 12z" fill={'url(#b-'+id+')'}/><ellipse cx="26.2" cy="34.5" rx="5.2" ry="3.4" fill="#fff" opacity=".55"/><path d="M29.5 28.5c1.8 4.2 4.8 6.4 7.8 6.8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" fill="none" opacity=".7"/></>,
+    'period-end':<><path d="M32 11c8.6 9.7 14.8 17.2 14.8 25.2A14.8 14.8 0 1 1 17.2 36.2C17.2 28.2 23.4 20.7 32 11z" fill={'url(#b-'+id+')'}/><ellipse cx="25.6" cy="26.2" rx="3.6" ry="5.4" fill="#fff" opacity=".55" transform="rotate(-28 25.6 26.2)"/><path d="M24.2 36.6l5.2 5.2 11.2-11.6" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
     weight:<><rect x="10" y="24" width="44" height="27" rx="10" fill={'url(#b-'+id+')'}/><path d="M21 42a11 11 0 0 1 22 0z" fill="#fff" opacity=".85"/><path d="M32 42l6.2-7.2" stroke="#7b3fd6" strokeWidth="2.6" strokeLinecap="round"/><circle cx="32" cy="42" r="1.9" fill="#7b3fd6"/></>,
     symptom:<><path d="M26 16h12a5 5 0 0 1 5 5v3H21v-3a5 5 0 0 1 5-5z" fill={'url(#b-'+id+')'} opacity=".85"/><rect x="11" y="22" width="42" height="30" rx="10" fill={'url(#b-'+id+')'}/><g fill="#fff" opacity=".92"><rect x="28.6" y="29" width="6.8" height="16" rx="3.4"/><rect x="24" y="33.6" width="16" height="6.8" rx="3.4"/></g></>,
     mood:<><circle cx="32" cy="33" r="20" fill={'url(#b-'+id+')'}/><g fill="#c98600"><ellipse cx="25" cy="29.5" rx="2.7" ry="3.4"/><ellipse cx="39" cy="29.5" rx="2.7" ry="3.4"/></g><path d="M24.5 38.5c2 3.4 4.6 5.1 7.5 5.1s5.5-1.7 7.5-5.1" stroke="#c98600" strokeWidth="3.2" strokeLinecap="round" fill="none"/></>,
     diet:<><g fill="#fff4e6"><rect x="33" y="35" width="20" height="8.6" rx="4.3" transform="rotate(42 33 35)"/><circle cx="46.5" cy="47.5" r="5.4"/><circle cx="50.5" cy="43.5" r="4.6"/></g><path d="M17.6 17.4c7-6.4 17.4-5.6 22.4.6s4.2 15.4-2.4 21-16.6 5.4-21.4-1.2-5.6-14 1.4-20.4z" fill={'url(#b-'+id+')'}/></>,
     water:<><path d="M18.5 17h27a2 2 0 0 1 2 2.2l-3.1 28.4A6.5 6.5 0 0 1 38 53.4H26a6.5 6.5 0 0 1-6.4-5.8L16.5 19.2a2 2 0 0 1 2-2.2z" fill={'url(#g-'+id+')'}/><path d="M21 31.5h22l-1.8 16.1a6.5 6.5 0 0 1-6.4 5.8H29.2a6.5 6.5 0 0 1-6.4-5.8z" fill={'url(#b-'+id+')'}/></>,
-  }[key];
+    stool:<><path d="M32 14c4.2 0 7.2 2.6 8.2 6.2 3.8.4 6.8 3.4 6.8 7.2 0 .6-.1 1.2-.2 1.8 3.2 1.2 5.4 4.2 5.4 7.8 0 4.6-3.6 8.2-8.2 8.2H20c-4.6 0-8.2-3.6-8.2-8.2 0-3.6 2.2-6.6 5.4-7.8-.1-.6-.2-1.2-.2-1.8 0-3.8 3-6.8 6.8-7.2C24.8 16.6 27.8 14 32 14z" fill={'url(#b-'+id+')'}/><path d="M26 40c2.2 2.4 4.6 3.5 6 3.5s3.8-1.1 6-3.5" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" fill="none" opacity=".9"/></>,
+    exercise:<><circle cx="36" cy="16.5" r="5.2" fill={'url(#b-'+id+')'}/><path d="M18 28.5c3.2-1.2 6.8-1.6 10.2-.4l6.6 2.4 7.8-6.2c1.2-1 3-.4 3.4 1.1l1.6 6.2c.4 1.4-.6 2.8-2 3l-8.2 1.2-4.6 10.4c-.6 1.4-2.4 1.8-3.6.8L21.4 39c-1.2-1-.8-3 .6-3.6l5.2-2.2-4.8-1.8c-2.2-.8-4.4.2-5.2 2.2l-2.8 7.2c-.6 1.4-2.2 2-3.6 1.4l-1.8-.8c-1.6-.8-2-2.8-1-4.2z" fill={'url(#b-'+id+')'}/><path d="M28 48l-2.4 6.8c-.4 1.2.4 2.4 1.6 2.8h.2c1 .2 2-.4 2.4-1.4L34 48" fill="#fff" opacity=".88"/></>,
+    sleep:<><path d="M38.5 18.5a13.5 13.5 0 1 0 1.2 24.2 16.5 16.5 0 0 1-1.2-24.2z" fill={'url(#b-'+id+')'}/><g fill="#fff" opacity=".85"><circle cx="44" cy="22" r="2"/><circle cx="48.5" cy="27.5" r="1.4"/><circle cx="42.5" cy="30.5" r="1.1"/></g></>,
+    medicine:<><rect x="14" y="26" width="36" height="16" rx="8" fill={'url(#b-'+id+')'}/><path d="M32 26v16" stroke="#fff" strokeWidth="2.4" opacity=".35"/><circle cx="23" cy="34" r="3.2" fill="#fff" opacity=".9"/><rect x="38" y="31.4" width="6.4" height="5.2" rx="2.6" fill="#fff" opacity=".9"/></>,
+    habit:<><circle cx="32" cy="32" r="18" fill={'url(#b-'+id+')'}/><path d="M23.5 32.2l5.2 5.4 12-12.4" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+    diary:<><rect x="16" y="12" width="30" height="40" rx="7" fill={'url(#b-'+id+')'}/><path d="M40 12v10l-4-2.4-4 2.4V12" fill="#fff" opacity=".88"/><g fill="#fff" opacity=".78"><rect x="22" y="30" width="16" height="3.2" rx="1.6"/><rect x="22" y="37" width="12" height="3.2" rx="1.6"/></g></>,
+    checkup:<><rect x="15" y="14" width="34" height="38" rx="8" fill={'url(#b-'+id+')'}/><path d="M24 14v-2.5a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4V14" fill={'url(#b-'+id+')'} opacity=".85"/><g fill="#fff" opacity=".9"><circle cx="23" cy="28" r="2.4"/><rect x="28" y="26.4" width="14" height="3.2" rx="1.6"/><circle cx="23" cy="38" r="2.4"/><rect x="28" y="36.4" width="14" height="3.2" rx="1.6"/></g></>,
+    account:<><circle cx="32" cy="32" r="18" fill={'url(#b-'+id+')'}/><path d="M32 20.5v23M26.5 25.5c1.2-2 3.2-3.2 5.5-3.2 3.4 0 5.8 1.8 5.8 4.6s-2.4 4.4-6.2 5.2c-3.6.8-5.8 2.4-5.8 5.2 0 2.8 2.6 4.8 6.2 4.8 2.4 0 4.4-1 5.6-2.8" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" fill="none"/></>,
+    travel:<><path d="M14 34.5l12.5-3.2L42 14.8c1.2-1.4 3.4-.4 3.4 1.5v.2L39.6 32l10.8 2.8c1.4.4 1.4 2.4 0 2.8L39.6 40l5.8 15.5c.4 1.2-.8 2.2-2 1.6L28.5 47.2 16 50.5c-1.6.4-3-1.2-2.4-2.8L18 36.2z" fill={'url(#b-'+id+')'}/></>,
+    pet:<><path d="M20 26c0-3.2 2.2-5.6 5-5.6s5 2.4 5 5.6-2.2 5.6-5 5.6-5-2.4-5-5.6zm14 0c0-3.2 2.2-5.6 5-5.6s5 2.4 5 5.6-2.2 5.6-5 5.6-5-2.4-5-5.6zM14.5 36c0-3 2-5.2 4.6-5.2s4.6 2.2 4.6 5.2-2 5.2-4.6 5.2-4.6-2.2-4.6-5.2zm26.4 0c0-3 2-5.2 4.6-5.2s4.6 2.2 4.6 5.2-2 5.2-4.6 5.2-4.6-2.2-4.6-5.2z" fill={'url(#b-'+id+')'} opacity=".92"/><ellipse cx="32" cy="44" rx="11" ry="9.5" fill={'url(#b-'+id+')'}/></>,
+  }[key] || <circle cx="32" cy="32" r="12" fill={'url(#b-'+id+')'} opacity=".55"/>;
   return <svg className="dock-unified-quick-icon" viewBox="0 0 64 64" width="44" height="44" aria-hidden="true"><defs><linearGradient id={'b-'+id} x1="24%" y1="4%" x2="78%" y2="96%"><stop stopColor={colors[0]}/><stop offset=".52" stopColor={colors[1]}/><stop offset="1" stopColor={colors[2]}/></linearGradient><linearGradient id={'g-'+id} x1="20%" y1="0%" x2="85%" y2="100%"><stop stopColor={colors[0]} stopOpacity=".55"/><stop offset="1" stopColor={colors[1]} stopOpacity=".38"/></linearGradient><radialGradient id={'h-'+id}><stop stopColor="#fff" stopOpacity=".95"/><stop offset="1" stopColor="#fff" stopOpacity="0"/></radialGradient></defs><circle cx="32" cy="32" r="32" fill="#fff"/><ellipse cx="32" cy="54" rx="15" ry="4.6" fill={colors[2]} opacity=".2"/>{body}</svg>;
+}
+
+/** 圆形发送图标（纸飞机 · 对齐美柚记录输入） */
+function DockSendIco({size=16}){
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="currentColor">
+      <path d="M4.1 11.15c-.62-.25-.6-.9.04-1.1L19.55 3.7c.62-.2 1.12.36.88.95L14.7 20.55c-.22.54-.9.58-1.18.06L10.7 14.4 4.1 11.15z"/>
+    </svg>
+  );
 }
 
 /** 圆形语音图标（含音波弧线 — 参考附件还原） */
@@ -374,6 +405,7 @@ function DockPublisher({
   onFoodConfirm, onDietCapture, onCameraRecord,
   onVoiceDone, onPhoto, onDockExpandedChange, onCameraActiveChange, activeTab, showScheme3Bubble,
   highlightScheme3Input, dockPlaceholder, defaultInputMode = 'voice',
+  forceTextModeKey = 0,
   demoPhase, isDemoRunning, hideQuickFan = false, hideQuickFab = false,
   feedingQuickItems = null, feedingQuickLabel = '快捷记录', onFeedingQuickSelect,
   onPeriodFeelSelect, onVoiceStart,
@@ -401,10 +433,15 @@ function DockPublisher({
   const [cameraSourceRect, setCameraSourceRect] = React.useState(null);
   const [cameraPreferredMode, setCameraPreferredMode] = React.useState(null);
   const [feedingExpanded, setFeedingExpanded] = React.useState(false);
+  const [feedingPage, setFeedingPage] = React.useState(0);
+  const [periodFeelGuidePos, setPeriodFeelGuidePos] = React.useState(null);
   const recTimer = React.useRef(null);
   const prevTabRef = React.useRef(activeTab);
   const containerRef = React.useRef(null);
   const feedingDragStartY = React.useRef(null);
+  const feedingSwipeRef = React.useRef({x:0, y:0, active:false, locked:null});
+  const textAreaRef = React.useRef(null);
+  const dockWrapRef = React.useRef(null);
 
   React.useEffect(()=>{
     if(containerRef.current){
@@ -416,6 +453,21 @@ function DockPublisher({
   React.useEffect(()=>{
     setInputMode(defaultInputMode);
   }, [defaultInputMode]);
+
+  React.useEffect(()=>{
+    if(!forceTextModeKey) return;
+    setInputMode('text');
+    const t = setTimeout(()=>{
+      const el = textAreaRef.current;
+      if(!el) return;
+      el.focus();
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 72) + 'px';
+      const len = el.value.length;
+      try{ el.setSelectionRange(len, len); }catch(_){}
+    }, 40);
+    return ()=>clearTimeout(t);
+  }, [forceTextModeKey]);
 
   React.useEffect(()=>{
     if(activeTab === 'note' && prevTabRef.current !== 'note'){
@@ -605,9 +657,60 @@ function DockPublisher({
   const isQuickActive = quickOpen || !!quickSelected;
   const inputPlaceholder = dockPlaceholder || DOCK_PLACEHOLDER;
   const showFeedingQuick = Array.isArray(feedingQuickItems) && feedingQuickItems.length > 0;
-  const feedingVisibleItems = showFeedingQuick && !feedingExpanded
-    ? feedingQuickItems.slice(0, 6)
-    : (feedingQuickItems || []);
+  const FEEDING_COLS = 5;
+  const FEEDING_MAX_ROWS = 3;
+  const FEEDING_PAGE_SIZE = FEEDING_COLS * FEEDING_MAX_ROWS; // 每页最多 3 行 × 5 列
+  const feedingPages = React.useMemo(()=>{
+    const items = feedingQuickItems || [];
+    if(!items.length) return [[]];
+    const pages = [];
+    for(let i = 0; i < items.length; i += FEEDING_PAGE_SIZE){
+      pages.push(items.slice(i, i + FEEDING_PAGE_SIZE));
+    }
+    return pages;
+  }, [feedingQuickItems]);
+  const feedingPageCount = feedingPages.length;
+  const feedingPageSafe = Math.min(feedingPage, Math.max(0, feedingPageCount - 1));
+
+  React.useEffect(()=>{
+    setFeedingPage(0);
+  }, [feedingQuickItems]);
+
+  React.useEffect(()=>{
+    if(feedingPage > feedingPageCount - 1){
+      setFeedingPage(Math.max(0, feedingPageCount - 1));
+    }
+  }, [feedingPage, feedingPageCount]);
+
+  /* 收起：只渲染首页前 2 行做透出；展开：每页最多 3 行，左右滑翻页 */
+  const feedingVisiblePages = feedingExpanded
+    ? feedingPages
+    : [(feedingPages[0] || []).slice(0, FEEDING_COLS * 2)];
+
+  React.useEffect(()=>{
+    if(!feedingExpanded) setFeedingPage(0);
+  }, [feedingExpanded]);
+
+  React.useLayoutEffect(()=>{
+    if(!periodFeelGuide || !showFeedingQuick){
+      setPeriodFeelGuidePos(null);
+      return;
+    }
+    const update = ()=>{
+      const wrap = dockWrapRef.current;
+      if(!wrap) return;
+      const r = wrap.getBoundingClientRect();
+      setPeriodFeelGuidePos({
+        left: Math.round(r.left + 18),
+        bottom: Math.round(window.innerHeight - r.top + 12),
+        maxWidth: Math.min(250, Math.max(160, Math.round(r.width - 36))),
+      });
+    };
+    update();
+    window.addEventListener('resize', update);
+    return ()=>window.removeEventListener('resize', update);
+  }, [periodFeelGuide, showFeedingQuick, feedingExpanded, dockSheet, feedingPageSafe]);
+
   const MoodOverlay = window.MoodQuickOverlay || (()=>null);
   const SymptomOverlay = window.SymptomQuickOverlay || (()=>null);
 
@@ -620,8 +723,42 @@ function DockPublisher({
     if(!showFeedingQuick || feedingDragStartY.current == null) return;
     const dy = clientY - feedingDragStartY.current;
     feedingDragStartY.current = null;
+    if(feedingSwipeRef.current.locked === 'x') return;
     if(dy < -18) setFeedingExpanded(true);
     if(dy > 18) setFeedingExpanded(false);
+  };
+
+  const onFeedingSwipeStart = (event)=>{
+    if(!feedingExpanded || feedingPageCount <= 1) return;
+    const touch = event.touches?.[0] || event;
+    feedingSwipeRef.current = {x: touch.clientX, y: touch.clientY, active:true, locked:null};
+  };
+
+  const onFeedingSwipeMove = (event)=>{
+    const state = feedingSwipeRef.current;
+    if(!state.active) return;
+    const touch = event.touches?.[0] || event;
+    const dx = touch.clientX - state.x;
+    const dy = touch.clientY - state.y;
+    if(state.locked == null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)){
+      state.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if(state.locked === 'x'){
+      if(event.cancelable) event.preventDefault();
+      feedingDragStartY.current = null;
+    }
+  };
+
+  const onFeedingSwipeEnd = (event)=>{
+    const state = feedingSwipeRef.current;
+    if(!state.active) return;
+    const touch = event.changedTouches?.[0] || event;
+    const dx = touch.clientX - state.x;
+    const locked = state.locked;
+    feedingSwipeRef.current = {x:0, y:0, active:false, locked:null};
+    if(locked !== 'x') return;
+    if(dx <= -42) setFeedingPage(p=>Math.min(feedingPageCount - 1, p + 1));
+    if(dx >= 42) setFeedingPage(p=>Math.max(0, p - 1));
   };
 
   const handleDockQuickItemSelect = (item, buttonEl)=>{
@@ -716,7 +853,26 @@ function DockPublisher({
         document.body
       )}
 
-      <div className={'dock-wrap'+(isDockExpanded?' is-mood-expanded':'')+(showFeedingQuick?' is-feeding-dock':'')+(feedingExpanded?' is-feeding-expanded':'')}>
+      {periodFeelGuide && periodFeelGuidePos && ReactDOM.createPortal(
+        <div
+          className="period-feel-guide-bubble is-dock-float"
+          role="status"
+          style={{
+            left: periodFeelGuidePos.left + 'px',
+            bottom: periodFeelGuidePos.bottom + 'px',
+            maxWidth: periodFeelGuidePos.maxWidth + 'px',
+          }}
+        >
+          {periodFeelGuideText}
+          <span className="period-feel-guide-arrow" aria-hidden="true" />
+        </div>,
+        document.querySelector('.phone') || document.body
+      )}
+
+      <div
+        ref={dockWrapRef}
+        className={'dock-wrap'+(isDockExpanded?' is-mood-expanded':'')+(showFeedingQuick?' is-feeding-dock':'')+(feedingExpanded?' is-feeding-expanded':'')+(periodFeelGuide?' has-period-feel-guide':'')}
+      >
         <div
           className={'dock-panel'
             +(!dockSheet ? ' is-path-dock' : '')
@@ -755,12 +911,6 @@ function DockPublisher({
           <div className={'dock-bar is-path-dock'+(showFeedingQuick ? ' has-feeding-quick' : '')}>
             {showFeedingQuick ? (
               <div className="dock-feeding-quick" aria-label={feedingQuickLabel}>
-                {periodFeelGuide && (
-                  <div className="period-feel-guide-bubble" role="status">
-                    {periodFeelGuideText}
-                    <span className="period-feel-guide-arrow" aria-hidden="true" />
-                  </div>
-                )}
                 <button
                   type="button"
                   className="dock-feeding-handle"
@@ -770,21 +920,71 @@ function DockPublisher({
                 >
                   <span/>
                 </button>
-                <div className="dock-feeding-quick-scroll">
-                  {feedingVisibleItems.map((item)=>(
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={'dock-feeding-quick-item'+(item.id === 'period-feel' ? ' is-period-feel-enter' : '')+(item.drop ? ' is-period-feel-drop' : '')+(item.plan3Shift ? ' is-period-feel-plan3-shift' : '')+(item.pulse ? ' is-period-feel-pulse' : '')}
-                      onClick={(event)=>handleDockQuickItemSelect(item, event.currentTarget)}
-                    >
-                      <span className="dock-feeding-quick-icon" aria-hidden="true">
-                        {item.iconNode || item.icon || '🍼'}
-                      </span>
-                      <span className="dock-feeding-quick-label">{item.id === 'period-feel' ? periodFeelLabel : item.label}</span>
-                    </button>
-                  ))}
+                <div
+                  className={'dock-feeding-quick-viewport'+(feedingExpanded && feedingPageCount > 1 ? ' is-paged' : '')}
+                  onTouchStart={onFeedingSwipeStart}
+                  onTouchMove={onFeedingSwipeMove}
+                  onTouchEnd={onFeedingSwipeEnd}
+                  onTouchCancel={onFeedingSwipeEnd}
+                  onPointerDown={(e)=>{
+                    if(e.pointerType === 'touch') return;
+                    onFeedingSwipeStart(e);
+                  }}
+                  onPointerMove={(e)=>{
+                    if(e.pointerType === 'touch') return;
+                    onFeedingSwipeMove(e);
+                  }}
+                  onPointerUp={(e)=>{
+                    if(e.pointerType === 'touch') return;
+                    onFeedingSwipeEnd(e);
+                  }}
+                  onPointerCancel={(e)=>{
+                    if(e.pointerType === 'touch') return;
+                    onFeedingSwipeEnd(e);
+                  }}
+                >
+                  <div
+                    className="dock-feeding-quick-track"
+                    style={feedingExpanded ? {transform:`translateX(-${feedingPageSafe * 100}%)`} : undefined}
+                  >
+                    {feedingVisiblePages.map((pageItems, pageIdx)=>(
+                      <div
+                        key={'feeding-page-'+pageIdx}
+                        className="dock-feeding-quick-scroll"
+                        aria-hidden={feedingExpanded && pageIdx !== feedingPageSafe}
+                      >
+                        {pageItems.map((item)=>(
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={'dock-feeding-quick-item'+(item.id === 'period-feel' ? ' is-period-feel-enter' : '')+(item.drop ? ' is-period-feel-drop' : '')+(item.plan3Shift ? ' is-period-feel-plan3-shift' : '')+(item.pulse ? ' is-period-feel-pulse' : '')}
+                            onClick={(event)=>handleDockQuickItemSelect(item, event.currentTarget)}
+                          >
+                            <span className="dock-feeding-quick-icon" aria-hidden="true">
+                              {item.iconNode || item.icon || '🍼'}
+                            </span>
+                            <span className="dock-feeding-quick-label">{item.id === 'period-feel' ? periodFeelLabel : item.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+                {feedingExpanded && feedingPageCount > 1 ? (
+                  <div className="dock-feeding-page-dots" role="tablist" aria-label="快捷记录翻页">
+                    {feedingPages.map((_, idx)=>(
+                      <button
+                        key={'dot-'+idx}
+                        type="button"
+                        role="tab"
+                        aria-selected={idx === feedingPageSafe}
+                        className={'dock-feeding-page-dot'+(idx === feedingPageSafe ? ' is-active' : '')}
+                        onClick={()=>setFeedingPage(idx)}
+                        aria-label={'第'+(idx + 1)+'页'}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             <div className="dock-input-row dock-input-pill">
@@ -816,6 +1016,7 @@ function DockPublisher({
                     focused={inputFocused}
                   />
                   <textarea
+                    ref={textAreaRef}
                     rows="1"
                     placeholder=""
                     aria-label={inputPlaceholder}
@@ -877,18 +1078,9 @@ function DockPublisher({
 
               {inputMode==='text' && draft.trim() ? (
                 <button type="button" className="dock-send-btn" onClick={onSend} aria-label="发送">
-                  <I name="send" size={16} stroke={2}/>
+                  <DockSendIco size={15}/>
                 </button>
               ) : null}
-
-              <button
-                type="button"
-                className="dock-camera-btn"
-                aria-label="智能拍照记录"
-                onClick={(event)=>openRecognitionCamera(event.currentTarget)}
-              >
-                <I name="camera" size={22} stroke={1.7}/>
-              </button>
             </div>
 
           </div>

@@ -333,14 +333,15 @@
 }
 
 /* ============ Path 风格胶囊输入框 ============ */
-.dock-panel.is-path-dock{
+/* 无快捷面板时保持透明；feeding-dock 走 liquid 卡片，不在这里清空背景 */
+.dock-panel.is-path-dock:not(.is-feeding-dock){
   background:transparent;
   border-top:none;
   box-shadow:none;
   overflow:visible;
 }
 
-.dock-wrap:has(.dock-panel.is-path-dock){
+.dock-wrap:has(.dock-panel.is-path-dock:not(.is-feeding-dock)){
   overflow:visible;
 }
 
@@ -357,7 +358,7 @@
   align-items:center;
   gap:8px;
   min-height:48px;
-  padding:5px 14px 5px 8px;
+  padding:5px 6px 5px 8px;
   background:#fff;
   border-radius:80px;
   border:0.5px solid rgba(0,0,0,0.04);
@@ -407,10 +408,13 @@
 }
 
 .dock-input-pill .dock-send-btn{
-  width:34px;
-  height:34px;
-  margin-right:0;
+  width:32px;
+  height:32px;
+  margin:0;
   border-radius:50%;
+  background:#ff4d88;
+  color:#fff;
+  box-shadow:none;
 }
 
 .dock-input-pill .dock-float-ph{

@@ -159,6 +159,8 @@ const BABY_FEEDING_QUICK_ITEMS = [
 ];
 
 const PERIOD_DOCK_QUICK_ITEMS = [
+  { id:'period-start', label:'月经来了', action:'period-start', text:'月经来了' },
+  { id:'period-end', label:'月经走了', action:'period-end', text:'月经走了' },
   { id:'weight', label:'体重', action:'weight', iconSrc:'assets/record-weight.png' },
   { id:'symptom', label:'症状', action:'symptom', iconSrc:'assets/record-symptom.png' },
   { id:'mood', label:'心情', action:'mood', iconSrc:'assets/record-mood.png' },
@@ -356,6 +358,7 @@ function App(){
 
   const initial = window.getSceneInitialState(t.demoScene);
   const [draft, setDraft] = useState(initial.draft);
+  const [dockForceTextKey, setDockForceTextKey] = useState(0);
   const [timeline, setTimeline] = useState(initial.timeline);
   const [toasts, setToasts] = useState([]);
   const [showPhoto, setShowPhoto] = useState(false);
@@ -1539,6 +1542,16 @@ function App(){
 
   const handlePeriodDockQuickSelect = (item)=>{
     if(!item) return;
+    if(item.action === 'period-start'){
+      setDraft('今天月经来了，症状是...');
+      setDockForceTextKey(k=>k + 1);
+      return;
+    }
+    if(item.action === 'period-end'){
+      setDraft('今天月经走了，身体感觉..');
+      setDockForceTextKey(k=>k + 1);
+      return;
+    }
     submitQuickMark({
       text:item.text || item.label,
       label:item.label,
@@ -1663,6 +1676,53 @@ function App(){
   const submitText = (textOverride, opts={})=>{
     const text = (textOverride || draft).trim();
     if(!text) return;
+
+    // 月经来了 / 月经走了 → 同步记录卡 + 周期分析反馈
+    const isPeriodStartText = /月经来了|来了姨妈|大姨妈来|来例假/.test(text)
+      || (/月经|姨妈/.test(text) && /来了|开始/.test(text) && !/走了|走喽|结束/.test(text));
+    const isPeriodEndText = /月经走了|月经走喽|姨妈走了|大姨妈走了/.test(text)
+      || (/月经|姨妈/.test(text) && /走了|走喽|结束/.test(text));
+    if((isPeriodStartText || isPeriodEndText) && recordLifeMode === '经期'){
+      const isEnd = isPeriodEndText;
+      const periodLabel = isEnd ? '月经走了' : '月经来了';
+      const analysisKind = isEnd ? 'period-end' : 'period-start';
+      const icon = isEnd ? 'period-end' : 'period';
+      setDraft('');
+      markUserRecorded();
+      const syncEntry = {
+        kind:'sync-card',
+        id:'e-period-'+Date.now(),
+        time: window.formatNowTime(),
+        cardLabel:'已记录',
+        cardLabelKind:'sync',
+        body: text,
+        tagLayout:'v3',
+        isNew: true,
+        tags:[{ label: periodLabel, cat:'period', val:'', icon }],
+        periodDetails: [],
+        periodSummaryLabel: periodLabel,
+        analysisKind,
+        recordSummary: true,
+      };
+      const sisterEntry = {
+        kind:'sister-card',
+        id:'e-sister-'+Date.now(),
+        time: window.formatNowTime(),
+        railDot:'ai',
+        analysisKind,
+        periodFeelPrompt: false,
+      };
+      const todayId = timeline.find(b=>b.type==='day' && b.isToday)?.id;
+      setTimeline(blocks=>{
+        let result = window.appendTimelineEntry(blocks, syncEntry, { dayId: todayId });
+        result = window.appendTimelineEntry(result, sisterEntry, { dayId: todayId });
+        return result;
+      });
+      setSisterCycleDone(false);
+      setSisterPlayAnimation(n=>n + 1);
+      setTimeout(()=>scrollTimelineToBottom('smooth'), 120);
+      return;
+    }
 
     const recordScenario = window.readCameraPermissionScenario?.() || 'unauthorized';
     const dietEntry = window.tryCreateDietTextFeedbackEntry?.(text, recordScenario, opts.voice);
@@ -2590,11 +2650,9 @@ function App(){
         ...item,
         iconNode:item.id === 'custom'
           ? <CustomQuickIcon />
-          : item.id === 'stool' && item.iconSrc
-          ? <img src={item.iconSrc} alt="" />
           : (window.UnifiedQuickIcon
             ? <UnifiedQuickIcon type={item.id === 'beverage' ? 'water' : item.id}/>
-            : (item.iconSrc ? <img src={item.iconSrc} alt="" /> : null)),
+            : (item.iconSrc ? <img src={item.iconSrc} alt="" /> : (item.icon || null))),
       }))
     : null;
   const dockQuickItems = babyFeedingDockItems || periodDockQuickItems;
@@ -2886,7 +2944,8 @@ function App(){
           onPhoto={()=>setShowPhoto(true)}
           onDockExpandedChange={setDockExpanded}
           activeTab={activeTab}
-          defaultInputMode="voice"
+          defaultInputMode="text"
+          forceTextModeKey={dockForceTextKey}
           hideQuickFan={showBabyFeedingQuickStrip}
           hideQuickFab={showPeriodQuickStrip}
           feedingQuickItems={dockQuickItems}

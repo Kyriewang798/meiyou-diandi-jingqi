@@ -45,20 +45,43 @@
   border-radius:16px 16px 0 0;
   transition:box-shadow 0.32s ease, transform 0.32s cubic-bezier(0.34,1.2,0.64,1);
 }
-.dock-panel.is-feeding-dock{
+/* liquid 快捷面板：悬浮圆角毛玻璃，贴合 tabbar 上方 */
+.dock-wrap.is-feeding-dock{
+  bottom:calc(var(--my-tabbar-h) + 8px);
+}
+.dock-panel.is-feeding-dock,
+.dock-panel.is-path-dock.is-feeding-dock{
   width:calc(100% - 22px);
   margin:0 auto;
-  background:rgba(255,255,255,0.96);
-  border:0.5px solid rgba(255,255,255,0.9);
-  border-radius:28px;
-  box-shadow:0 12px 36px rgba(26,22,35,0.14);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
+  background:rgba(255,255,255,0.42);
+  border:0.5px solid rgba(255,255,255,0.78);
+  border-radius:32px;
+  box-shadow:
+    0 10px 28px rgba(26,22,35,0.08),
+    0 1px 0 rgba(255,255,255,0.85) inset;
+  backdrop-filter:blur(28px) saturate(1.35);
+  -webkit-backdrop-filter:blur(28px) saturate(1.35);
   overflow:hidden;
 }
-.dock-panel.is-feeding-expanded{
-  border-radius:28px;
-  box-shadow:0 16px 44px rgba(26,22,35,0.18);
+/* 经期感受引导气泡挂在 dock-wrap 外层，可超出 liquid 面板 */
+.dock-wrap.is-feeding-dock.has-period-feel-guide{
+  overflow:visible;
+  z-index:96;
+}
+.dock-wrap.has-period-feel-guide > .period-feel-guide-bubble{
+  z-index:8;
+}
+.dock-wrap.has-period-feel-guide > .dock-panel{
+  position:relative;
+  z-index:1;
+}
+.dock-panel.is-feeding-expanded,
+.dock-panel.is-path-dock.is-feeding-expanded{
+  border-radius:32px;
+  background:rgba(255,255,255,0.52);
+  box-shadow:
+    0 14px 36px rgba(26,22,35,0.09),
+    0 1px 0 rgba(255,255,255,0.88) inset;
 }
 .dock-wrap.is-mood-expanded{
   bottom:var(--my-tabbar-h);
@@ -1547,6 +1570,23 @@
   min-width:0;
   position:relative;
 }
+/* 收起态：第二行图标透出 + 底部白雾渐隐（对标图2） */
+.dock-panel.is-feeding-dock:not(.is-feeding-expanded) .dock-feeding-quick-viewport::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:36px;
+  background:linear-gradient(
+    180deg,
+    rgba(236,238,243,0) 0%,
+    rgba(236,238,243,0.55) 42%,
+    rgba(236,238,243,0.96) 100%
+  );
+  pointer-events:none;
+  z-index:2;
+}
 .dock-feeding-handle{
   width:100%;
   height:14px;
@@ -1568,18 +1608,77 @@
   width:42px;
   height:5px;
   border-radius:999px;
-  background:rgba(132,141,164,0.22);
+  background:rgba(132,141,164,0.28);
+}
+.dock-feeding-quick-viewport{
+  position:relative;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  touch-action:pan-y;
+}
+.dock-feeding-quick-viewport.is-paged{
+  touch-action:pan-x;
+}
+.dock-feeding-quick-track{
+  display:flex;
+  width:100%;
+  transition:transform .28s cubic-bezier(.22,.9,.3,1);
+  will-change:transform;
 }
 .dock-feeding-quick-scroll{
+  flex:0 0 100%;
+  width:100%;
+  box-sizing:border-box;
   display:grid;
-  grid-template-columns:repeat(6, minmax(0, 1fr));
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  grid-auto-rows:auto;
   column-gap:4px;
-  row-gap:11px;
-  overflow:visible;
+  row-gap:12px;
+  overflow:hidden;
   padding:0 2px 2px;
+  align-content:start;
+}
+.dock-panel.is-feeding-dock:not(.is-feeding-expanded) .dock-feeding-quick-viewport{
+  /* 第一行完整（图标+文案）+ 第二行图标约一半透出 */
+  max-height:100px;
+}
+.dock-panel.is-feeding-dock:not(.is-feeding-expanded) .dock-feeding-quick-scroll{
+  max-height:100px;
+  padding-bottom:0;
+}
+.dock-panel.is-feeding-expanded .dock-feeding-quick-viewport{
+  /* 最多 3 行完整展示 */
+  max-height:220px;
+}
+.dock-panel.is-feeding-expanded .dock-feeding-quick-scroll{
+  row-gap:14px;
+  padding:0 2px 4px;
+  max-height:220px;
+}
+.dock-feeding-page-dots{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:2px 0 4px;
+}
+.dock-feeding-page-dot{
+  width:6px;
+  height:6px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:rgba(0,0,0,0.16);
+  cursor:pointer;
+}
+.dock-feeding-page-dot.is-active{
+  background:#ff4d88;
+  transform:scale(1.15);
 }
 .dock-feeding-quick-item{
   min-width:0;
+  min-height:60px;
   border:0;
   background:transparent;
   padding:0;
@@ -1623,9 +1722,10 @@
 }
 .period-feel-guide-bubble{
   position:absolute;
-  left:-12px;
-  bottom:calc(100% + 3px);
-  max-width:250px;
+  left:18px;
+  bottom:calc(100% + 14px);
+  z-index:6;
+  max-width:min(250px, calc(100% - 36px));
   padding:9px 12px;
   border-radius:13px;
   background:#fff1f4;
@@ -1633,7 +1733,16 @@
   font-size:13px;
   line-height:1.45;
   box-shadow:0 5px 18px rgba(84,45,72,.14);
+  pointer-events:none;
   animation:periodFeelGuideIn .45s cubic-bezier(.2,.9,.25,1.2) both;
+}
+/* portal 到 .phone：彻底超出 liquid 面板裁剪与 backdrop 层 */
+.period-feel-guide-bubble.is-dock-float{
+  position:fixed;
+  left:auto;
+  bottom:auto;
+  z-index:120;
+  max-width:250px;
 }
 .period-feel-guide-arrow{
   position:absolute;
@@ -1795,40 +1904,35 @@
 .period-feel-result-tip{margin:14px 0;padding:14px;border-radius:10px;background:var(--my-brand-soft);font-size:12px;line-height:1.7;color:var(--my-text-secondary)}
 .period-feel-result-actions{display:flex;gap:10px;margin-top:22px;position:relative;z-index:1}.period-feel-result-actions button{width:100%;height:48px;border:0;border-radius:24px;background:var(--my-brand-red);color:#fff;font:15px inherit;font-weight:600}
 .dock-feeding-quick-icon{
-  width:40px;
-  height:40px;
+  width:44px;
+  height:44px;
   border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
   background:transparent;
   box-shadow:none;
-  overflow:hidden;
+  overflow:visible;
   font-size:28px;
   line-height:1;
+  flex-shrink:0;
 }
 .dock-unified-quick-icon{display:block;width:44px;height:44px}
 .dock-feeding-quick-icon svg,
 .dock-feeding-quick-icon img{
-  width:100%;
-  height:100%;
+  width:44px;
+  height:44px;
   display:block;
   object-fit:contain;
 }
 .dock-feeding-quick-label{
-  max-width:50px;
+  max-width:62px;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
   font-size:10px;
   line-height:1.2;
   color:rgba(0,0,0,0.68);
-}
-.dock-panel.is-feeding-expanded .dock-feeding-quick-scroll{
-  grid-template-columns:repeat(6, minmax(0, 1fr));
-  column-gap:4px;
-  row-gap:12px;
-  padding:0 2px 4px;
 }
 .dock-panel.is-feeding-expanded .dock-feeding-quick-item{
   gap:4px;
@@ -2258,12 +2362,27 @@
 }
 
 .dock-send-btn{
-  width:36px;height:36px;flex-shrink:0;
-  border:none;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
+  width:32px;
+  height:32px;
+  flex-shrink:0;
+  align-self:center;
+  border:none;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   cursor:pointer;
-  background:var(--my-brand-red);
+  padding:0;
+  background:#ff4d88;
   color:#fff;
+}
+.dock-send-btn svg{
+  display:block;
+  transform:translate(0.5px, -0.5px);
+}
+.dock-send-btn:active{
+  opacity:0.88;
+  transform:scale(0.96);
 }
 
 .dock-camera-btn{

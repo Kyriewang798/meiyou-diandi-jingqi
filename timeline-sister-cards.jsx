@@ -172,7 +172,8 @@ function renderTypedSegments(segments, len){
     if(take <= 0) return;
     const chunk = seg.text.slice(0, take);
     left -= take;
-    if(seg.bold) out.push(<b key={i}>{chunk}</b>);
+    if(seg.accent) out.push(<span key={i} className="tl-period-stat-accent">{chunk}</span>);
+    else if(seg.bold) out.push(<b key={i}>{chunk}</b>);
     else out.push(<React.Fragment key={i}>{chunk}</React.Fragment>);
   });
   return out;
@@ -1011,7 +1012,7 @@ const PERIOD_END_LEAD = '以下是本次月经情况的分析。先看一下你�
 
 const SISTER_PARA1 = [
   { text:'你最近三次周期分别是' },
-  { text:'30天、31天、29天', bold:true },
+  { text:'30天、31天、29天', accent:true },
   { text:'，整体波动幅度很小，属于' },
   { text:'非常规律', bold:true },
   { text:'的状态。' },
@@ -1019,7 +1020,7 @@ const SISTER_PARA1 = [
 
 const SISTER_CLOSING = [
   { text:'这次周期天数落在' },
-  { text:'21–35天的理想范围', bold:true },
+  { text:'21–35天的理想范围', accent:true },
   { text:'内。很棒哦，继续保持现在的健康生活节奏就可以。' },
 ];
 
@@ -1034,17 +1035,17 @@ const PERIOD_FEEL_GUIDE_COPY = [
 
 const PERIOD_END_PARA = [
   { text:'最近3次经期天数呈逐渐变长的趋势。本次 ' },
-  { text:'8 天', bold:true },
+  { text:'8 天', accent:true },
   { text:'比平时稍长一点，超过了' },
-  { text:'7天', bold:true },
+  { text:'7天', accent:true },
   { text:'的正常范围。单次的小波动通常受作息、压力等影响，不用太担心，留意后续几次是否回到平时节奏就好。' },
 ];
 
 const PERIOD_END_FORECAST_TEXT = [
   { text:'按照你的周期规律计算，预计下次月经将' },
-  { text:'7月5日', bold:true },
+  { text:'7月5日', accent:true },
   { text:'前后到来，还有' },
-  { text:'25天', bold:true },
+  { text:'25天', accent:true },
   { text:'，到时记得提前做好准备哦。' },
 ];
 
@@ -1102,7 +1103,7 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             {periodStyle ? <span className="tl-period-analysis-spark" aria-hidden="true"/> : <TlAiChartIcon size={10}/>}
           </span>
           {!periodStyle ? <span className="tl-ai-label">AI</span> : null}
-          <span className="tl-ai-title">本次月经分析</span>
+          <span className="tl-ai-title">本次周期分析</span>
           <span className={'tl-ai-chevron'+(open ? ' is-open' : '')} aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M6 9l6 6 6-6" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1125,10 +1126,10 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
             />
           </div>
         )}
-        {periodStyle && analysisKind === 'period-start' ? (
+        {periodStyle && analysisKind === 'period-start' && canCollapse ? (
           <button
             type="button"
-            className="tl-period-review-entry"
+            className="tl-period-review-entry is-reveal"
             onClick={()=>window.dispatchEvent(new CustomEvent('openReviewCycleDetail'))}
             aria-label="查看月经周期变化趋势"
           >
@@ -1353,6 +1354,8 @@ function SisterAnalysisCard({item, playAnimation, onCycleComplete, animateText})
         playAnimation={playAnimation}
         onCycleComplete={onCycleComplete}
         animateText={!!animateText}
+        periodStyle
+        analysisKind={item?.analysisKind || 'period-start'}
         showPeriodFeelPrompt={item?.periodFeelPrompt !== false}
       />
     </div>
