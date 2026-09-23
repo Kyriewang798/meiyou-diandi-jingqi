@@ -47,9 +47,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const __TWEAKS_STYLE = `
-  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+  .twk-panel{position:fixed;right:16px;top:16px;z-index:2147483646;width:280px;max-width:calc(100vw - 32px);
     max-height:calc(100vh - 32px);display:flex;flex-direction:column;
-    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:top right;
     background:rgba(250,249,247,.78);color:#29261b;
     -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
     border:.5px solid rgba(255,255,255,.6);border-radius:14px;
@@ -227,13 +227,13 @@ function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
     if (!panel) return;
     const w = panel.offsetWidth, h = panel.offsetHeight;
     const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
-    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    const maxTop = Math.max(PAD, window.innerHeight - h - PAD);
     offsetRef.current = {
       x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
-      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+      y: Math.min(maxTop, Math.max(PAD, offsetRef.current.y)),
     };
     panel.style.right = offsetRef.current.x + 'px';
-    panel.style.bottom = offsetRef.current.y + 'px';
+    panel.style.top = offsetRef.current.y + 'px';
   }, []);
 
   React.useEffect(() => {
@@ -270,11 +270,11 @@ function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
     const r = panel.getBoundingClientRect();
     const sx = e.clientX, sy = e.clientY;
     const startRight = window.innerWidth - r.right;
-    const startBottom = window.innerHeight - r.bottom;
+    const startTop = r.top;
     const move = (ev) => {
       offsetRef.current = {
         x: startRight - (ev.clientX - sx),
-        y: startBottom - (ev.clientY - sy),
+        y: startTop + (ev.clientY - sy),
       };
       clampToViewport();
     };
@@ -291,7 +291,7 @@ function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
     <>
       <style>{__TWEAKS_STYLE}</style>
       <div ref={dragRef} className="twk-panel" data-noncommentable=""
-           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+           style={{ right: offsetRef.current.x, top: offsetRef.current.y }}>
         <div className="twk-hd" onMouseDown={onDragStart}>
           <b>{title}</b>
           <button className="twk-x" aria-label="Close tweaks"
