@@ -1,0 +1,60 @@
+.love-layer{position:absolute;inset:0;z-index:200;font-family:-apple-system,"PingFang SC",sans-serif;display:flex;flex-direction:column;justify-content:flex-end;color:#353139}
+.love-dismiss{position:absolute;inset:0;border:0;background:transparent;cursor:default}
+.love-bottom{position:relative;background:#f2f2f5;padding:8px 12px 0;max-height:95%;overflow:auto}
+.love-context{display:flex;justify-content:flex-end;align-items:center;padding:0 5px 5px;font-size:12px;color:#81727b}
+.love-context button,.love-suggestion-title button{border:0;background:transparent;font-size:23px;color:#8d8189;cursor:pointer}
+.love-suggestions{background:rgba(255,255,255,.94);border:1px solid #eee5e9;border-radius:21px;padding:13px 15px;margin-bottom:10px;box-shadow:0 8px 28px #64344a0c;animation:love-appear .18s ease-out}
+.love-suggestion-title{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#82727a;margin-bottom:10px}
+.love-methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.love-methods button{display:flex;align-items:center;justify-content:space-between;background:#faf6f8;border:1px solid transparent;border-radius:12px;padding:12px 11px;font-size:14px;color:#52434a;cursor:pointer}
+.love-methods button[aria-pressed=true]{background:#ffedf4;border-color:#ee9cbd;color:#cc5183}
+.love-methods button span+span{color:#ce8aa7}
+.love-options{display:flex;gap:7px;flex-wrap:wrap}
+.love-options button{border:0;border-radius:10px;background:#f8edf2;padding:10px 12px;color:#795866;font-size:13px;cursor:pointer}
+.love-skip,.love-next{display:block;border:0;background:none;color:#a07186;font-size:12px;margin:12px 0 0 auto;padding:5px;cursor:pointer}
+.love-date-label{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:#8b7580;margin-top:15px}
+.love-date-label input{min-width:0;max-width:100%;border:1px solid #eadce3;border-radius:9px;padding:8px;background:white;color:#554650;font:inherit}
+.love-note-hint{font-size:13px;color:#8e7b84;line-height:1.6;margin:0 0 12px}
+.love-composer{margin-bottom:6px;display:flex;align-items:center;gap:8px;min-height:48px;box-sizing:border-box;border-radius:80px;background:#fff;padding:5px 6px 5px 16px;border:.5px solid rgba(0,0,0,.04);box-shadow:0 4px 18px rgba(0,0,0,.10)}
+.love-sentence{display:flex;align-items:center;flex-wrap:wrap;gap:7px;flex:1;min-width:0;font-size:15px;line-height:1.7}
+.love-prefix{display:inline-flex;align-items:center;gap:4px;font:inherit;font-weight:400;margin-right:1px;border:0;padding:0;background:none;color:inherit;cursor:pointer}
+.love-token{border:0;border-radius:7px;padding:3px 7px;background:#f1f1f3;color:#88888f;font-size:13px;cursor:pointer;max-width:100%}
+.love-token.empty{color:#88888f}
+.love-token.active{background:#dedee2;color:#55555d;box-shadow:none}
+.love-sentence textarea{width:100%;resize:none;border:0;outline:none;font:inherit;font-size:14px;background:none;color:#484048;padding:3px 0;line-height:1.6}
+.love-sentence textarea::placeholder{color:#bda5b0}
+.love-note-hidden{position:absolute!important;width:1px!important;height:1px!important;opacity:0;pointer-events:none}
+.love-send{display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;width:32px;height:32px;border:0;border-radius:50%;background:#ff4d88;color:#fff;line-height:1;cursor:pointer}
+.love-send:disabled,.love-next:disabled{opacity:.4;cursor:default}
+.love-footnote{text-align:center;font-size:10px;color:#ac949f;padding:10px 0}
+.love-bottom .dock-fake-keyboard{position:relative;left:auto;right:auto;width:calc(100% + 24px);margin-left:-12px;animation:none}
+.love-bottom:has(.love-sentence textarea:not(.love-note-hidden)){padding-bottom:24px}
+@keyframes love-appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.love-suggestions{animation:none}}
+
+.love-time-bubbles{margin:0 0 10px;gap:8px;padding:0 2px}
+.love-time-bubbles button{height:28px;padding:0 12px;border:.5px solid rgba(0,0,0,.12);background:rgba(242,242,245,.96);color:rgba(0,0,0,.55);border-radius:80px;font-size:13px;box-shadow:none;white-space:nowrap}
+.love-free-input{flex:1;min-width:24px;width:24px;border:0;outline:none;background:none;font:inherit;color:#484048;caret-color:#d95f94;padding:0}
+.love-suggestions>input{max-width:100%;border:1px solid #eadce3;border-radius:9px;padding:8px;background:white;color:#554650;font:inherit}
+.love-next{display:inline-block;margin:0 0 0 8px}
+.love-method-scroll{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.love-method-scroll::-webkit-scrollbar{display:none}
+.love-method-scroll button{flex:0 0 auto;white-space:nowrap}
+.love-natural-input{flex:1;min-width:0;resize:none;border:0;outline:none;background:transparent;font:15px/1.6 -apple-system,"PingFang SC",sans-serif;color:#353139;caret-color:#d95f94;padding:4px 0;height:48px}
+.med-field-row{display:flex;gap:8px;align-items:center;margin:0 0 10px;padding:8px 10px;border-radius:16px;background:#fff}
+.med-field-row input{min-width:0;flex:1;width:100%;border:0;background:transparent;outline:none;font:14px/1.6 -apple-system,"PingFang SC",sans-serif;color:#353139}
+.med-field-row button{flex-shrink:0;border:0;background:#f1f1f3;color:#55555d;border-radius:12px;padding:6px 10px;cursor:pointer}
+.med-field-row button:disabled{opacity:.4}
+.med-inline-drug{min-width:44px;max-width:160px;outline:none;font-family:inherit;box-sizing:border-box}
+.med-inline-drug::placeholder{color:#88888f}
+.med-inline-dose{display:inline-flex;align-items:center;gap:2px}
+.med-inline-dose input{min-width:28px;max-width:100px;padding:0;border:0;outline:none;background:transparent;font:inherit;color:inherit}
+.med-inline-dose input::placeholder{color:#88888f}
+.med-natural-wrap{position:relative;flex:1;min-width:0}
+.med-natural-wrap textarea{display:block;width:100%;box-sizing:border-box;position:relative}
+.med-natural-hint{position:absolute;inset:0;pointer-events:none;white-space:pre-wrap;overflow-wrap:anywhere;font:15px/1.6 -apple-system,"PingFang SC",sans-serif;padding:4px 0}
+.med-natural-hint>span{color:transparent}
+.med-natural-hint>b{font-weight:400;color:#929299;background:#e9e9ec;border-radius:4px;margin-left:3px;padding:2px 5px}
+.love-time-bubbles button[aria-pressed=true]{background:#dedee2;color:#55555d}
+
+.sleep-context-hint{font-size:12px;color:#88888f;padding:0 2px 8px}
