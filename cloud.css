@@ -2721,3 +2721,150 @@
   opacity:1;
   transform:translateX(-50%) translateY(0);
 }
+
+/* ============ 经期快捷记录 · 假键盘 ============ */
+.phone{
+  --dock-fake-kb-h:248px;
+}
+.phone.is-fake-kb-open .tabbar{
+  visibility:hidden;
+  pointer-events:none;
+}
+.phone.is-fake-kb-open .dock-wrap,
+.phone.is-fake-kb-open .dock-wrap.is-feeding-dock{
+  bottom:var(--dock-fake-kb-h);
+  z-index:125;
+}
+.dock-compose-mask{
+  position:fixed;
+  top:0;
+  bottom:0;
+  left:50%;
+  width:100%;
+  max-width:390px;
+  transform:translateX(-50%);
+  z-index:120;
+  background:rgba(242,242,245,0.6);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  animation:dockComposeMaskIn 0.24s ease both;
+}
+@keyframes dockComposeMaskIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+.phone.is-fake-kb-open .dock-bar.is-path-dock{
+  padding:12px;
+}
+.phone.is-fake-kb-open .dock-input-pill{
+  flex-wrap:wrap;
+  align-items:center;
+  gap:4px 8px;
+  padding:12px;
+  border-radius:12px;
+  box-shadow:0 0 12px rgba(0,0,0,0.06);
+}
+.phone.is-fake-kb-open .dock-input-pill .dock-text-field{
+  order:-1;
+  flex:1 0 100%;
+  min-height:96px;
+}
+.phone.is-fake-kb-open .dock-input-pill .dock-text-field textarea{
+  min-height:96px;
+  padding:0 4px;
+  font-size:17px;
+  line-height:1.47;
+}
+.phone.is-fake-kb-open .dock-input-pill .dock-float-ph{
+  top:0;
+  transform:none;
+  font-size:17px;
+  line-height:1.47;
+}
+.phone.is-fake-kb-open .dock-input-pill .dock-mode-btn{
+  width:36px;
+  height:36px;
+}
+.phone.is-fake-kb-open .dock-input-pill .dock-send-btn{
+  width:36px;
+  height:36px;
+  margin-left:auto;
+}
+.phone.is-fake-kb-open .suiji-stream{
+  padding-bottom:calc(var(--dock-fake-kb-h) + 88px + var(--my-safe-bottom));
+  scroll-padding-bottom:calc(var(--dock-fake-kb-h) + 88px + var(--my-safe-bottom));
+}
+.dock-fake-keyboard{
+  position:fixed;
+  left:50%;
+  bottom:0;
+  width:100%;
+  max-width:390px;
+  transform:translateX(-50%);
+  z-index:130;
+  padding:4px 4px calc(4px + var(--my-safe-bottom));
+  background:#d1d5db;
+  border-top:0.5px solid rgba(0,0,0,0.08);
+  animation:dockFakeKbUp 0.28s cubic-bezier(0.2,0,0,1) both;
+  font-family:'PingFang SC',-apple-system,sans-serif;
+}
+@keyframes dockFakeKbUp{
+  from{transform:translate(-50%,100%);opacity:.6}
+  to{transform:translate(-50%,0);opacity:1}
+}
+.dock-fake-kb-candidates{
+  display:flex;
+  overflow-x:auto;
+  padding:0 4px 4px;
+  margin-bottom:4px;
+  border-bottom:0.5px solid rgba(0,0,0,0.08);
+  scrollbar-width:none;
+}
+.dock-fake-kb-candidates::-webkit-scrollbar{display:none}
+.dock-fake-kb-candidate{
+  flex-shrink:0;
+  border:none;
+  background:transparent;
+  padding:4px 12px;
+  font-size:17px;
+  line-height:1.47;
+  font-weight:400;
+  color:rgba(0,0,0,0.8);
+  cursor:pointer;
+}
+.dock-fake-kb-rows{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.dock-fake-kb-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:0 4px;
+}
+.dock-fake-kb-key{
+  min-width:31px;
+  height:42px;
+  padding:0 8px;
+  border:none;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 1px 0 rgba(0,0,0,0.28);
+  font-family:inherit;
+  font-size:21px;
+  font-weight:400;
+  line-height:1;
+  color:#000;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.dock-fake-kb-key:active{background:#b8bcc4}
+.dock-fake-kb-key.is-wide{min-width:42px;font-size:17px}
+.dock-fake-kb-key.is-muted{background:#adb3bc;color:rgba(0,0,0,0.8)}
+.dock-fake-kb-key.is-fn{min-width:46px;font-size:15px;background:#adb3bc}
+.dock-fake-kb-key.is-space{flex:1;min-width:0;font-size:15px}
+.dock-fake-kb-key.is-return{min-width:72px;font-size:15px;font-weight:500}

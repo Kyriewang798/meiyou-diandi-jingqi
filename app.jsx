@@ -359,6 +359,7 @@ function App(){
   const initial = window.getSceneInitialState(t.demoScene);
   const [draft, setDraft] = useState(initial.draft);
   const [dockForceTextKey, setDockForceTextKey] = useState(0);
+  const [periodComposeActive, setPeriodComposeActive] = useState(false);
   const [timeline, setTimeline] = useState(initial.timeline);
   const [toasts, setToasts] = useState([]);
   const [showPhoto, setShowPhoto] = useState(false);
@@ -1542,13 +1543,9 @@ function App(){
 
   const handlePeriodDockQuickSelect = (item)=>{
     if(!item) return;
-    if(item.action === 'period-start'){
-      setDraft('今天月经来了，症状是...');
-      setDockForceTextKey(k=>k + 1);
-      return;
-    }
-    if(item.action === 'period-end'){
-      setDraft('今天月经走了，身体感觉..');
+    if(item.action === 'period-start' || item.action === 'period-end'){
+      setDraft(item.action === 'period-end' ? '今天月经走了 ' : '今天月经来了 ');
+      setPeriodComposeActive(true);
       setDockForceTextKey(k=>k + 1);
       return;
     }
@@ -1559,6 +1556,70 @@ function App(){
     });
     setTimeout(()=>scrollTimelineToBottom('smooth'), 80);
   };
+
+  const trimDraftTail = (value)=>String(value || '').replace(/[\u2009\u2006\u00A0 ]+$/, '');
+
+  const handleFakeKbInsert = (ch)=>{
+    setDraft(prev=>trimDraftTail(prev) + ch);
+  };
+
+  const handleFakeKbBackspace = ()=>{
+    setDraft(prev=>trimDraftTail(prev).slice(0, -1));
+  };
+
+  const dismissPeriodCompose = ()=>{
+    if(!periodComposeActive) return;
+    setPeriodComposeActive(false);
+    setDraft(prev=>trimDraftTail(prev));
+  };
+
+  const submitPeriodCompose = ()=>{
+    setPeriodComposeActive(false);
+    submitText();
+  };
+
+  const reopenPeriodComposeFromInput = ()=>{
+    if(periodComposeActive || recordLifeMode !== '经期') return;
+    setPeriodComposeActive(true);
+  };
+
+  const handlePhonePointerDown = (e)=>{
+    if(!periodComposeActive) return;
+    const target = e.target;
+    if(!(target instanceof Element)) return;
+    if(target.closest('.dock-wrap, .dock-fake-keyboard, .demo-controls-stack, .stream-header, .tabbar')) return;
+    dismissPeriodCompose();
+  };
+
+  React.useEffect(()=>{
+    if(periodComposeActive) return undefined;
+    const raf = requestAnimationFrame(()=>{
+      const el = document.querySelector('.dock-wrap .dock-text-field textarea');
+      if(!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 72) + 'px';
+    });
+    return ()=>cancelAnimationFrame(raf);
+  }, [periodComposeActive]);
+
+  React.useEffect(()=>{
+    if(!periodComposeActive) return;
+    const pushForKeyboard = ()=>{
+      const el = streamRef.current;
+      if(!el) return;
+      el.scrollTo({ top: Math.max(0, el.scrollHeight - el.clientHeight), behavior: 'smooth' });
+    };
+    const t1 = setTimeout(pushForKeyboard, 60);
+    const t2 = setTimeout(pushForKeyboard, 300);
+    return ()=>{
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [periodComposeActive]);
+
+  React.useEffect(()=>{
+    if(recordLifeMode !== '经期' || activeTab !== 'note') setPeriodComposeActive(false);
+  }, [recordLifeMode, activeTab]);
 
   React.useEffect(()=>{
     setTimeline(blocks=>refreshBabyFeedingLatestMarks(blocks));
@@ -2627,7 +2688,7 @@ function App(){
     && recordLifeMode === '经期'
     && !isSearchActive
     && !voiceTranscribe;
-  const showDockQuickStrip = showBabyFeedingQuickStrip || showPeriodQuickStrip;
+  const showDockQuickStrip = (showBabyFeedingQuickStrip || showPeriodQuickStrip) && !periodComposeActive;
   const showBabyFeedingHeader = showRecordShell
     && !showRecordEmpty
     && !showRecordBlank
@@ -2659,7 +2720,13 @@ function App(){
 
   return (
     <>
-      <div className={'phone' + (homeDetailOpen ? ' is-home-detail-open' : '') + (showDockQuickStrip ? ' is-dock-quick-entry' : '')}>
+      <div
+        className={'phone'
+          + (homeDetailOpen ? ' is-home-detail-open' : '')
+          + (showDockQuickStrip ? ' is-dock-quick-entry' : '')
+          + (periodComposeActive ? ' is-fake-kb-open' : '')}
+        onPointerDown={handlePhonePointerDown}
+      >
         <StatusBar isMember={isMember} onMemberChange={setIsMember} showMemberSwitch={showReview}/>
 
       {showHome && HomePage && (
@@ -2932,7 +2999,7 @@ function App(){
         <DockPublisher
           draft={draft}
           onDraft={setDraft}
-          onSend={()=>submitText()}
+          onSend={submitPeriodCompose}
           onQuickMark={submitQuickMark}
           onMoodConfirm={submitMoodRecord}
           onSymptomConfirm={submitSymptomRecord}
@@ -2946,9 +3013,10 @@ function App(){
           activeTab={activeTab}
           defaultInputMode="text"
           forceTextModeKey={dockForceTextKey}
+          onInputFocus={reopenPeriodComposeFromInput}
           hideQuickFan={showBabyFeedingQuickStrip}
           hideQuickFab={showPeriodQuickStrip}
-          feedingQuickItems={dockQuickItems}
+          feedingQuickItems={periodComposeActive ? null : dockQuickItems}
           feedingQuickLabel={showPeriodQuickStrip ? '经期快捷记录' : '宝宝喂养快捷记录'}
           onFeedingQuickSelect={showPeriodQuickStrip ? handlePeriodDockQuickSelect : handleBabyFeedingQuickSelect}
           onPeriodFeelSelect={()=>{
@@ -3040,6 +3108,14 @@ function App(){
       {recordLifeMode === '育儿' && (
         <BabyVoiceOverlay session={babyVoiceSession} success={babyVoiceSuccess}/>
       )}
+      {periodComposeActive ? <div className="dock-compose-mask" aria-hidden="true"/> : null}
+      {periodComposeActive && window.DockFakeKeyboard ? (
+        <window.DockFakeKeyboard
+          onInsert={handleFakeKbInsert}
+          onBackspace={handleFakeKbBackspace}
+          onReturn={submitPeriodCompose}
+        />
+      ) : null}
       </div>
 
       {!window.__STANDALONE_LOCKED_SCENE && (

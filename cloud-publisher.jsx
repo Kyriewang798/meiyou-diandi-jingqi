@@ -405,7 +405,7 @@ function DockPublisher({
   onFoodConfirm, onDietCapture, onCameraRecord,
   onVoiceDone, onPhoto, onDockExpandedChange, onCameraActiveChange, activeTab, showScheme3Bubble,
   highlightScheme3Input, dockPlaceholder, defaultInputMode = 'voice',
-  forceTextModeKey = 0,
+  forceTextModeKey = 0, onInputFocus,
   demoPhase, isDemoRunning, hideQuickFan = false, hideQuickFab = false,
   feedingQuickItems = null, feedingQuickLabel = '快捷记录', onFeedingQuickSelect,
   onPeriodFeelSelect, onVoiceStart,
@@ -1029,6 +1029,7 @@ function DockPublisher({
                     onFocus={()=>{
                       notifyGuideDockInteract();
                       setInputFocused(true);
+                      if(typeof onInputFocus === 'function') onInputFocus();
                     }}
                     onBlur={()=>setInputFocused(false)}
                     onKeyDown={(e)=>{
@@ -1092,3 +1093,64 @@ function DockPublisher({
 }
 
 Object.assign(window, { DockPublisher, CloudPublisher: DockPublisher, UnifiedQuickIcon });
+
+const DOCK_FAKE_KB_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m'],
+];
+const DOCK_FAKE_KB_CANDIDATES = ['的','了','是','我','不','在','有','和','人','这','他','们'];
+
+/** 演示用假键盘：点「月经来了／走了」后从底部弹起 */
+function DockFakeKeyboard({ onInsert, onBackspace, onReturn }){
+  const rootRef = React.useRef(null);
+  React.useLayoutEffect(()=>{
+    const el = rootRef.current;
+    const phone = el && el.closest('.phone');
+    if(!el || !phone) return undefined;
+    const sync = ()=>phone.style.setProperty('--dock-fake-kb-h', el.offsetHeight + 'px');
+    sync();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
+    ro?.observe(el);
+    return ()=>{
+      ro?.disconnect();
+      phone.style.removeProperty('--dock-fake-kb-h');
+    };
+  }, []);
+  const keep = (e)=>e.preventDefault();
+  return (
+    <div className="dock-fake-keyboard" ref={rootRef} role="group" aria-label="键盘">
+      <div className="dock-fake-kb-candidates">
+        {DOCK_FAKE_KB_CANDIDATES.map((word)=>(
+          <button key={word} type="button" className="dock-fake-kb-candidate" onMouseDown={keep} onClick={()=>onInsert?.(word)}>
+            {word}
+          </button>
+        ))}
+      </div>
+      <div className="dock-fake-kb-rows">
+        {DOCK_FAKE_KB_ROWS.map((row, rowIndex)=>(
+          <div key={rowIndex} className="dock-fake-kb-row">
+            {rowIndex === 2 ? <span className="dock-fake-kb-key is-wide is-muted" aria-hidden="true">⇧</span> : null}
+            {row.map((key)=>(
+              <button key={key} type="button" className="dock-fake-kb-key" onMouseDown={keep} onClick={()=>onInsert?.(key)}>
+                {key}
+              </button>
+            ))}
+            {rowIndex === 2 ? (
+              <button type="button" className="dock-fake-kb-key is-wide is-muted" onMouseDown={keep} onClick={()=>onBackspace?.()} aria-label="删除">
+                ⌫
+              </button>
+            ) : null}
+          </div>
+        ))}
+        <div className="dock-fake-kb-row is-bottom">
+          <span className="dock-fake-kb-key is-fn is-muted" aria-hidden="true">123</span>
+          <button type="button" className="dock-fake-kb-key is-space" onMouseDown={keep} onClick={()=>onInsert?.(' ')}>空格</button>
+          <button type="button" className="dock-fake-kb-key is-fn is-return" onMouseDown={keep} onClick={()=>onReturn?.()}>换行</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { DockFakeKeyboard });
