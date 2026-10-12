@@ -2123,13 +2123,22 @@
   border-radius:10px;
 }
 .cycle-pager{
+  position:relative;
   margin:0 0 12px;
 }
 .cycle-pager-viewport{
   overflow:hidden;
 }
-.cycle-pager-viewport.is-switching{
-  transition:height .65s cubic-bezier(.32,.72,0,1);
+.cycle-pager-measure{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.tl-ai-toggle.is-static{
+  cursor:default;
 }
 .cycle-pager-track{
   display:flex;

@@ -1058,11 +1058,9 @@ function TlAiChartIcon({size = 10, color = '#FF4D88'}){
 }
 
 function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText, periodStyle = false, analysisKind = 'period-start', showPeriodFeelPrompt = true, periodFeelGuideCopy = PERIOD_FEEL_GUIDE_COPY}){
-  const [open, setOpen] = React.useState(true);
   const [canCollapse, setCanCollapse] = React.useState(!animateText);
   const [hasSeenAnimation, setHasSeenAnimation] = React.useState(!animateText);
   const contentAnimateText = animateText && !hasSeenAnimation;
-  const keepContentMounted = hasSeenAnimation;
 
   React.useEffect(()=>{
     if(!animateText){
@@ -1070,7 +1068,6 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
       setHasSeenAnimation(true);
       return;
     }
-    setOpen(true);
     setCanCollapse(false);
     setHasSeenAnimation(false);
   }, [animateText, playAnimation]);
@@ -1081,51 +1078,28 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
     onCycleComplete?.();
   }, [onCycleComplete]);
 
-  const handleToggle = ()=>{
-    if(!canCollapse) return;
-    setOpen(v=>{
-      if(v) setHasSeenAnimation(true);
-      return !v;
-    });
-  };
-
   return (
     <>
       <div className="tl-t5-divider-dashed" role="separator"/>
       <section className="tl-t5-insight tl-sister-ai-wrap" id="sister-analysis-anchor">
-        <button
-          type="button"
-          className={'tl-ai-toggle'+(canCollapse ? '' : ' is-locked')+(periodStyle ? ' is-period-style' : '')}
-          onClick={handleToggle}
-          aria-expanded={open}
-        >
+        <div className={'tl-ai-toggle is-static'+(periodStyle ? ' is-period-style' : '')}>
           <span className="tl-ai-badge">
             {periodStyle ? <span className="tl-period-analysis-spark" aria-hidden="true"/> : <TlAiChartIcon size={10}/>}
           </span>
           {!periodStyle ? <span className="tl-ai-label">AI</span> : null}
           <span className="tl-ai-title">本次周期分析</span>
-          <span className={'tl-ai-chevron'+(open ? ' is-open' : '')} aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M6 9l6 6 6-6" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </span>
-        </button>
-        {(open || keepContentMounted) && (
-          <div
-            className={'tl-sister-ai-panel'+(!open ? ' is-collapsed' : '')}
-            aria-hidden={!open}
-          >
-            <SisterAnalysisContent
-              key={playAnimation}
-              playAnimation={contentAnimateText ? playAnimation : 0}
-              onCycleComplete={handleComplete}
-              animateText={contentAnimateText}
-              analysisKind={analysisKind}
-              showPeriodFeelPrompt={showPeriodFeelPrompt}
-              periodFeelGuideCopy={periodFeelGuideCopy}
-            />
-          </div>
-        )}
+        </div>
+        <div className="tl-sister-ai-panel">
+          <SisterAnalysisContent
+            key={playAnimation}
+            playAnimation={contentAnimateText ? playAnimation : 0}
+            onCycleComplete={handleComplete}
+            animateText={contentAnimateText}
+            analysisKind={analysisKind}
+            showPeriodFeelPrompt={showPeriodFeelPrompt}
+            periodFeelGuideCopy={periodFeelGuideCopy}
+          />
+        </div>
         {periodStyle && analysisKind === 'period-start' && canCollapse ? (
           <button
             type="button"
@@ -1146,35 +1120,33 @@ function SisterAnalysisCollapsible({playAnimation, onCycleComplete, animateText,
 
 const CYCLE_PAGER_SLIDE_MS = 650;
 
-function CycleAnalysisPager({page, slides}){
-  const slideRefs = React.useRef([]);
+/** 两页高度统一取完整内容最高的一页，打字动画与翻页过程中卡片高度不变 */
+function CycleAnalysisPager({page, slides, measureSlides}){
+  const measureRefs = React.useRef([]);
   const [height, setHeight] = React.useState(null);
-  const [switching, setSwitching] = React.useState(false);
-  const prevPageRef = React.useRef(page);
 
   React.useLayoutEffect(()=>{
-    if(prevPageRef.current === page) return;
-    prevPageRef.current = page;
-    setSwitching(true);
-    const t = setTimeout(()=>setSwitching(false), CYCLE_PAGER_SLIDE_MS);
-    return ()=>clearTimeout(t);
-  }, [page]);
-
-  React.useLayoutEffect(()=>{
-    const el = slideRefs.current[page];
-    if(!el) return;
-    const sync = ()=>setHeight(el.offsetHeight);
+    const els = measureRefs.current.filter(Boolean);
+    if(!els.length) return;
+    const sync = ()=>setHeight(Math.max(...els.map(el=>el.offsetHeight)));
     sync();
     if(typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(sync);
-    ro.observe(el);
+    els.forEach(el=>ro.observe(el));
     return ()=>ro.disconnect();
-  }, [page]);
+  }, []);
 
   return (
     <div className="cycle-pager">
+      <div className="cycle-pager-measure" aria-hidden="true">
+        {(measureSlides || []).map((slide, i)=>(
+          <div key={i} ref={el => { measureRefs.current[i] = el; }} className="cycle-pager-slide">
+            {slide}
+          </div>
+        ))}
+      </div>
       <div
-        className={'cycle-pager-viewport'+(switching ? ' is-switching' : '')}
+        className="cycle-pager-viewport"
         style={height != null ? {height} : undefined}
       >
         <div
@@ -1184,7 +1156,6 @@ function CycleAnalysisPager({page, slides}){
           {slides.map((slide, i) => (
             <div
               key={i}
-              ref={el => { slideRefs.current[i] = el; }}
               className={'cycle-pager-slide'+(i === page ? ' is-active' : '')}
               aria-hidden={i !== page}
             >
@@ -1324,6 +1295,23 @@ function SisterAnalysisContent({playAnimation, onCycleComplete, animateText, ana
     <div className="tl-t5-analysis-body" ref={bodyRef}>
       <CycleAnalysisPager
         page={cyclePage}
+        measureSlides={[
+          <>
+            <p className="tl-t5-analysis-lead">{leadText}</p>
+            <ChartComponent animated={false} staticView/>
+            <p className="tl-t5-analysis-text">
+              {renderTypedSegments(mainParagraph, segmentsFullText(mainParagraph).length)}
+            </p>
+          </>,
+          <>
+            {isPeriodEnd
+              ? <PeriodForecastCard animated={false} staticView/>
+              : <SisterSignalCard animated={false}/>}
+            <p className="tl-t5-analysis-text">
+              {renderTypedSegments(closingSegments, segmentsFullText(closingSegments).length)}
+            </p>
+          </>,
+        ]}
         slides={[
           <>
             {leadNode}
