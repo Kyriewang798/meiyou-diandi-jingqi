@@ -1,4 +1,4 @@
-/* ============ 方案一 · 时间轴「现在」记录点 ============ */
+/* ============ 方案二 / 三 · 时间轴「现在」记录卡片 ============ */
 .phone.is-now-anchor .tl-rail-node.is-feed-last{
   padding-bottom:16px;
 }
@@ -33,6 +33,16 @@
   pointer-events:none;
 }
 
+.now-anchor.is-inline{--now-anchor-dot-top:20.5px}
+.now-anchor.is-stack{--now-anchor-dot-top:16.5px}
+
+.now-anchor-card{
+  padding:12px;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 0 12px rgba(0,0,0,0.04);
+}
+
 .now-anchor-head{
   display:flex;
   align-items:center;
@@ -40,63 +50,51 @@
   min-height:20px;
   margin-bottom:12px;
 }
+.now-anchor-time-dot{
+  width:4px;
+  height:4px;
+  flex-shrink:0;
+  border-radius:50%;
+  background:#ff4d88;
+  opacity:.7;
+}
 .now-anchor-head-label{
   font-size:14px;
+  font-weight:500;
   line-height:1.29;
-  color:rgba(255,77,136,0.7);
+  color:#ff4d88;
 }
-.now-anchor-head-now{
+.now-anchor-time-pill{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  height:28px;
+  padding:0 8px;
+  border-radius:8px;
+  background:rgba(255,77,136,0.06);
+  font-size:15px;
   font-weight:500;
   color:#ff4d88;
 }
+
 .now-anchor-bar{
-  width:100%;
-  height:50px;
-  box-sizing:border-box;
   display:flex;
   align-items:center;
   gap:4px;
-  padding:5px 6px;
-  border:1px solid rgba(255,77,136,0.3);
-  border-radius:80px;
-  background:#fff;
-}
-.now-anchor-mode,
-.now-anchor-bar-photo,
-.now-anchor-bar-send{
-  width:38px;
-  height:38px;
-  flex-shrink:0;
-  padding:0;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border:none;
-  border-radius:50%;
-  background:#f7f7f9;
-  color:rgba(0,0,0,0.6);
-  cursor:pointer;
-}
-.now-anchor-bar-send{
-  background:#ff4d88;
-  color:#fff;
 }
 .now-anchor-field{
   flex:1;
   min-width:0;
-  height:38px;
   display:flex;
   align-items:center;
-  padding:0 8px;
-  border-radius:80px;
   font-size:17px;
   cursor:text;
   user-select:none;
   -webkit-user-select:none;
   touch-action:none;
 }
-.now-anchor-field.is-listening{background:rgba(255,77,136,0.08)}
-.now-anchor-field-ph{color:rgba(0,0,0,0.4)}
+.now-anchor-field-ph{color:rgba(0,0,0,0.3)}
 .now-anchor-field-text{
   overflow:hidden;
   white-space:nowrap;
@@ -110,18 +108,38 @@
   font-size:15px;
   color:#ff4d88;
 }
+.now-anchor-bar-mic,
+.now-anchor-bar-photo,
+.now-anchor-bar-send{
+  flex-shrink:0;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:50%;
+  background:transparent;
+  color:rgba(0,0,0,0.3);
+  cursor:pointer;
+}
+.now-anchor-bar-send{
+  background:#ff4d88;
+  color:#fff;
+}
+
 .now-anchor-hold{
   flex:1;
-  height:38px;
+  min-width:0;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   gap:8px;
+  padding:0;
   border:none;
-  border-radius:80px;
-  background:transparent;
+  border-radius:8px;
+  background:#f7f7f9;
   font:inherit;
-  font-size:17px;
+  font-size:15px;
   font-weight:500;
   color:rgba(0,0,0,0.8);
   cursor:pointer;
@@ -132,14 +150,53 @@
 .now-anchor-hold.is-listening{
   background:rgba(255,77,136,0.08);
   color:#ff4d88;
-  font-size:15px;
+}
+
+/* 单行：时间胶囊 + 输入 + 话筒/相册 */
+.now-anchor.is-inline .now-anchor-hold{
+  height:36px;
+  margin-right:4px;
+}
+.now-anchor.is-stack .now-anchor-hold{height:44px}
+.now-anchor.is-inline .now-anchor-bar{height:36px}
+.now-anchor.is-inline .now-anchor-field{
+  height:36px;
+  padding:0 4px;
+}
+.now-anchor.is-inline .now-anchor-bar-mic,
+.now-anchor.is-inline .now-anchor-bar-photo,
+.now-anchor.is-inline .now-anchor-bar-send{
+  width:32px;
+  height:32px;
+}
+
+/* 分层：话筒 | 灰底输入框 | 相册，下方分割线 */
+.now-anchor.is-stack .now-anchor-bar{gap:12px}
+.now-anchor.is-stack .now-anchor-field{
+  height:44px;
+  padding:0 12px;
+  border-radius:8px;
+  background:#f7f7f9;
+}
+.now-anchor.is-stack .now-anchor-field.is-listening{background:rgba(255,77,136,0.08)}
+.now-anchor.is-stack .now-anchor-bar-mic,
+.now-anchor.is-stack .now-anchor-bar-photo{
+  width:44px;
+  height:44px;
+  background:#f7f7f9;
+  color:rgba(0,0,0,0.4);
+}
+.now-anchor.is-stack .now-anchor-bar-send{
+  width:44px;
+  height:44px;
+}
+.now-anchor .now-anchor-bar-mic{color:rgba(0,0,0,0.6)}
+.now-anchor.is-stack:not(.is-expanded) .now-anchor-chips{
+  padding-top:12px;
+  border-top:0.5px solid rgba(0,0,0,0.08);
 }
 
 .now-anchor-editor{
-  padding:12px;
-  border-radius:12px;
-  background:#fff;
-  box-shadow:0 0 12px rgba(0,0,0,0.04);
   animation:nowAnchorGrow .24s cubic-bezier(.2,0,0,1) both;
 }
 @keyframes nowAnchorGrow{
@@ -210,31 +267,6 @@
 }
 .now-anchor-listening-waves > span:nth-child(2n){animation-delay:.2s}
 .now-anchor-listening-waves > span:nth-child(3n){animation-delay:.4s}
-.now-anchor-voice{
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  height:40px;
-  padding:0 12px;
-  border:none;
-  border-radius:12px;
-  background:#f7f7f9;
-  font:inherit;
-  font-size:15px;
-  color:rgba(0,0,0,0.8);
-  cursor:pointer;
-  user-select:none;
-  touch-action:none;
-}
-.now-anchor-voice > svg{color:rgba(0,0,0,0.6)}
-.now-anchor-voice.is-listening{
-  background:rgba(255,77,136,0.08);
-  color:#ff4d88;
-}
-.now-anchor-voice.is-listening > svg{
-  color:#ff4d88;
-  animation:nowAnchorPulse 1s ease-in-out infinite;
-}
 @keyframes nowAnchorPulse{
   50%{opacity:.4}
 }
@@ -261,30 +293,34 @@
 .now-anchor-chips{
   display:flex;
   gap:12px;
-  margin-top:12px;
+  margin:12px -12px 0;
+  padding:0 12px;
   overflow-x:auto;
-  scroll-snap-type:x mandatory;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
 }
 .now-anchor-chips::-webkit-scrollbar{display:none}
 .now-anchor-chip{
   flex-shrink:0;
-  scroll-snap-align:start;
   display:inline-flex;
   align-items:center;
   gap:4px;
-  height:40px;
+  height:36px;
   padding:0 12px 0 8px;
-  border:0.5px solid rgba(0,0,0,0.08);
+  border:none;
   border-radius:80px;
-  background:#fff;
+  background:#f7f7f9;
   font:inherit;
   font-size:15px;
-  color:rgba(0,0,0,0.6);
+  color:rgba(0,0,0,0.8);
   cursor:pointer;
 }
 .now-anchor-chip:active{opacity:.75}
+.now-anchor-chip.is-period{background:rgba(255,77,136,0.06)}
+.now-anchor-chip.is-lavender{background:#f3f1fc}
+.now-anchor-chip.is-blue{background:#ebf4fc}
+.now-anchor-chip.is-yellow{background:#fff7e5}
+.now-anchor-chip.is-orange{background:#fff2ea}
 .now-anchor-chip-icon{
   width:24px;
   height:24px;
@@ -304,24 +340,6 @@
   font-size:14px;
   line-height:1.29;
   color:rgba(0,0,0,0.3);
-}
-
-.now-anchor-dots{
-  display:flex;
-  justify-content:center;
-  gap:4px;
-  padding-top:12px;
-}
-.now-anchor-dot{
-  width:4px;
-  height:4px;
-  border-radius:4px;
-  background:rgba(0,0,0,0.12);
-  transition:width .2s ease, background .2s ease;
-}
-.now-anchor-dot.is-active{
-  width:12px;
-  background:rgba(0,0,0,0.3);
 }
 
 .phone.is-now-anchor .dock-bar.is-path-dock{

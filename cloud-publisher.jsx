@@ -50,6 +50,40 @@ function DockSendIco({size=16}){
   );
 }
 
+function DockComposeHead(){
+  const [now, setNow] = React.useState(()=>new Date());
+  React.useEffect(()=>{
+    const timer = setInterval(()=>setNow(new Date()), 15000);
+    return ()=>clearInterval(timer);
+  }, []);
+  const pad = (n)=>String(n).padStart(2, '0');
+  return (
+    <div className="dock-compose-head">
+      <span className="dock-compose-head-dot" aria-hidden="true"/>
+      <span className="dock-compose-head-now">现在 {pad(now.getHours())}:{pad(now.getMinutes())}</span>
+      <span className="dock-compose-head-sep" aria-hidden="true"/>
+      <span className="dock-compose-head-sub">记录这一刻</span>
+    </div>
+  );
+}
+
+function DockPlusIco(){
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M12 4.5v15M4.5 12h15"/>
+    </svg>
+  );
+}
+
+function DockKbdLineIco(){
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="12" rx="2.5"/>
+      <path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M7 13.5h.01M17 13.5h.01M10 14.5h4"/>
+    </svg>
+  );
+}
+
 function DockMicIco({size=22}){
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -784,14 +818,16 @@ function DockPublisher({
 
   const isDockExpanded = !!dockSheet;
   const isQuickActive = quickOpen || !!quickSelected;
-  const isCapsulePill = pillVariant === 'capsule';
+  const isPlusPill = pillVariant === 'plus';
+  const isCapsulePill = pillVariant === 'capsule' || isPlusPill;
   const isComposeOpen = composeOpen === undefined ? inputFocused : !!composeOpen;
+  const capsulePlaceholder = isPlusPill && !isComposeOpen ? '记录此刻...' : '开始记录...';
   const canSend = !!draft.trim() || attachments.length > 0;
 
   React.useEffect(()=>{
     if(!isComposeOpen && tapDictateRef.current) stopRec();
   }, [isComposeOpen]);
-  const inputPlaceholder = isCapsulePill ? '记录此刻...' : (dockPlaceholder || DOCK_PLACEHOLDER);
+  const inputPlaceholder = isCapsulePill ? capsulePlaceholder : (dockPlaceholder || DOCK_PLACEHOLDER);
   const showFeedingQuick = Array.isArray(feedingQuickItems) && feedingQuickItems.length > 0;
   const FEEDING_COLS = 5;
   const FEEDING_MAX_ROWS = 3;
@@ -1128,7 +1164,8 @@ function DockPublisher({
                 ) : null}
               </div>
             ) : null}
-            <div className={'dock-input-row dock-input-pill'+(isCapsulePill ? ' is-capsule' : '')+(isCapsulePill && isComposeOpen && attachments.length ? ' has-attach' : '')}>
+            <div className={'dock-input-row dock-input-pill'+(isCapsulePill ? ' is-capsule' : '')+(isPlusPill ? ' is-plus' : '')+(isCapsulePill && isComposeOpen && inputMode==='text' ? ' is-compose' : '')+(isCapsulePill && isComposeOpen && attachments.length ? ' has-attach' : '')}>
+              {isCapsulePill && isComposeOpen && inputMode==='text' ? <DockComposeHead/> : null}
               {isCapsulePill && isComposeOpen && inputMode==='text' ? (
                 <button
                   type="button"
@@ -1142,6 +1179,19 @@ function DockPublisher({
                   aria-pressed={dictating}
                 >
                   <DockMicIco size={22}/>
+                </button>
+              ) : isPlusPill ? (
+                <button
+                  type="button"
+                  className="dock-plus-btn"
+                  onClick={()=>{
+                    notifyGuideDockInteract();
+                    if(onAttachPhoto) onAttachPhoto();
+                    else onPhoto?.();
+                  }}
+                  aria-label="添加图片"
+                >
+                  <DockCapsuleImageIco/>
                 </button>
               ) : (
                 <button
@@ -1179,14 +1229,14 @@ function DockPublisher({
                   <DockWavePlaceholder
                     show={inputMode === 'text' && !draft.trim() && !showScheme3Bubble && !dictating}
                     focused={inputFocused}
-                    text={isCapsulePill ? '记录此刻...' : undefined}
+                    text={isCapsulePill ? capsulePlaceholder : undefined}
                   />
                   {dictating && !isComposeOpen ? (
                     <div className="dock-field-dictating" aria-live="polite">
                       <span className="dock-mode-dictating-waves" aria-hidden="true">
                         {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
                       </span>
-                      <span>正在听...</span>
+                      <span>语音记录中</span>
                     </div>
                   ) : (
                     <textarea
@@ -1229,7 +1279,7 @@ function DockPublisher({
                   {(recording || demoPhase === 'recognizing') && (
                     <div className={'dock-voice-float'+(demoPhase === 'recognizing' ? ' is-recognizing' : '')}>
                       <span className="dock-voice-float-text">
-                        {demoPhase === 'recognizing' ? '识别中...' : '正在听...'}
+                        {demoPhase === 'recognizing' ? '识别中...' : '语音记录中'}
                       </span>
                       {demoPhase === 'recognizing' && (
                         <span className="dock-voice-float-spinner"/>
@@ -1251,7 +1301,7 @@ function DockPublisher({
                         <span className="dock-voice-waves" aria-hidden="true">
                           {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
                         </span>
-                        <span>松开 结束{recSec > 0 ? ' '+recSec+'s' : ''}</span>
+                        <span>松开记下{recSec > 0 ? ' '+recSec+'s' : ''}</span>
                       </>
                     ) : (
                       <span className="dock-voice-label">{isCapsulePill ? '按住说话' : '按住 语音记录'}</span>
@@ -1265,7 +1315,7 @@ function DockPublisher({
                   <span className="dock-mode-dictating-waves" aria-hidden="true">
                     {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
                   </span>
-                  <span>正在听，再点话筒结束</span>
+                  <span>语音记录中</span>
                 </div>
               ) : null}
 
@@ -1346,6 +1396,18 @@ function DockPublisher({
                     <DockSendIco size={20}/>
                   </button>
                 </>
+              ) : isPlusPill ? (
+                <button
+                  type="button"
+                  className="dock-capsule-photo dock-plus-mode"
+                  onClick={()=>{
+                    notifyGuideDockInteract();
+                    toggleMode();
+                  }}
+                  aria-label={inputMode==='text'?'切换语音':'切换键盘'}
+                >
+                  {inputMode==='text' ? <DockMicIco size={22}/> : <DockKbdLineIco/>}
+                </button>
               ) : isCapsulePill ? (
                 <button
                   type="button"

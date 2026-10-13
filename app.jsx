@@ -115,7 +115,7 @@ function BabyVoiceOverlay({session, success}){
           {session.active ? <span className="baby-voice-cursor"></span> : null}
         </div>
         <div className="baby-voice-dock">
-          <div className="baby-voice-hint">{session.cancel ? '松开取消' : '松开发送　　上滑取消'}</div>
+          <div className="baby-voice-hint">{session.cancel ? '松开取消' : '松开记下　　上滑取消'}</div>
           <div className="baby-voice-bar">
             {waveBars.map((bar, i)=>(
               <span
@@ -317,6 +317,7 @@ function BabyFeedingDiscoverCard({onClose}){
 
 function App(){
   const [t, setTweak] = window.useTweaks({...window.__TWEAK_DEFAULTS});
+  const isNowAnchorInput = t.timelineInput === 'now-anchor' || t.timelineInput === 'now-anchor-stack';
   const [emptyPreviewMode, setEmptyPreviewMode] = useState(null);
   const [emptyPreviewGuideStep, setEmptyPreviewGuideStep] = useState(0);
   const scene = window.getDemoScene(t.demoScene);
@@ -1673,10 +1674,10 @@ function App(){
   }, [nowComposeActive]);
 
   React.useEffect(()=>{
-    if(t.timelineInput !== 'now-anchor' || recordLifeMode !== '经期' || activeTab !== 'note'){
+    if(!isNowAnchorInput || recordLifeMode !== '经期' || activeTab !== 'note'){
       setNowComposeActive(false);
     }
-  }, [t.timelineInput, recordLifeMode, activeTab]);
+  }, [isNowAnchorInput, recordLifeMode, activeTab]);
 
   React.useEffect(()=>{
     setTimeline(blocks=>refreshBabyFeedingLatestMarks(blocks));
@@ -2748,7 +2749,7 @@ function App(){
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   });
   const streamTimeline = React.useMemo(()=>{
-    if(t.timelineInput !== 'now-anchor' || recordLifeMode !== '经期' || isSearchActive) return displayTimeline;
+    if(!isNowAnchorInput || recordLifeMode !== '经期' || isSearchActive) return displayTimeline;
     const sample = {
       kind:'record-group', id:'now-anchor-w-g',
       primary:{
@@ -2765,7 +2766,7 @@ function App(){
       if(items.some(item=>item.id === sample.id)) return block;
       return {...block, items:[sample, ...items], entries:undefined};
     });
-  }, [displayTimeline, t.timelineInput, recordLifeMode, isSearchActive, nowAnchorSampleTime]);
+  }, [displayTimeline, isNowAnchorInput, recordLifeMode, isSearchActive, nowAnchorSampleTime]);
   const searchResultCount = React.useMemo(()=>{
     if(!isSearchActive || !countTimelineSearchItems) return null;
     return countTimelineSearchItems(displayTimeline);
@@ -2815,11 +2816,20 @@ function App(){
           : <BabyFeedingQuickIcon type={item.id}/>,
       }))
     : null;
-  const periodDockQuickItems = showPeriodQuickStrip
+  const isPlusDockInput = t.timelineInput === 'plus-dock';
+  const periodFeelItem = {id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false};
+  const periodDockBaseItems = isPlusDockInput
     ? [
-        ...(periodFeelVisible ? [{id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false}] : []),
+        periodFeelItem,
+        ...['symptom', 'weight', 'mood', 'diet'].map(id=>PERIOD_DOCK_QUICK_ITEMS.find(item=>item.id === id)),
+        ...PERIOD_DOCK_QUICK_ITEMS.filter(item=>!['symptom', 'weight', 'mood', 'diet'].includes(item.id)),
+      ]
+    : [
+        ...(periodFeelVisible ? [periodFeelItem] : []),
         ...PERIOD_DOCK_QUICK_ITEMS,
-      ].map(item=>({
+      ];
+  const periodDockQuickItems = showPeriodQuickStrip
+    ? periodDockBaseItems.map(item=>({
         ...item,
         iconNode:item.id === 'custom'
           ? <CustomQuickIcon />
@@ -2829,11 +2839,13 @@ function App(){
       }))
     : null;
   const dockQuickItems = babyFeedingDockItems || periodDockQuickItems;
-  const nowAnchorActive = t.timelineInput === 'now-anchor' && !!periodDockQuickItems;
+  const nowAnchorActive = isNowAnchorInput && !!periodDockQuickItems;
   const NowAnchorComposer = window.NowAnchorComposer;
   const nowAnchorSlot = nowAnchorActive && NowAnchorComposer ? (
     <>
     <NowAnchorComposer
+      key={t.timelineInput}
+      variant={t.timelineInput === 'now-anchor-stack' ? 'stack' : 'inline'}
       quickItems={periodDockQuickItems}
       keyboardApiRef={nowKbApiRef}
       onExpandChange={setNowComposeActive}
@@ -3160,7 +3172,7 @@ function App(){
           hideQuickFab={showPeriodQuickStrip}
           feedingQuickItems={periodComposeActive || nowAnchorActive ? null : dockQuickItems}
           quickRequest={nowQuickRequest}
-          pillVariant={recordLifeMode === '经期' && t.timelineInput !== 'now-anchor' ? 'capsule' : 'default'}
+          pillVariant={recordLifeMode === '经期' && !isNowAnchorInput ? (isPlusDockInput ? 'plus' : 'capsule') : 'default'}
           feedingQuickLabel={showPeriodQuickStrip ? '经期快捷记录' : '宝宝喂养快捷记录'}
           onFeedingQuickSelect={showPeriodQuickStrip ? handlePeriodDockQuickSelect : handleBabyFeedingQuickSelect}
           onPeriodFeelSelect={()=>{
@@ -3287,7 +3299,9 @@ function App(){
             <div className="demo-tweak-dock-options">
               {[
                 { value:'default', label:'方案一：底部输入条' },
-                { value:'now-anchor', label:'方案二：今天下方「现在」记录点' },
+                { value:'plus-dock', label:'方案二：底部快捷 + 输入条' },
+                { value:'now-anchor', label:'方案三：「现在」单行卡片' },
+                { value:'now-anchor-stack', label:'方案四：「现在」分层卡片' },
               ].map(opt=>(
                 <button
                   key={opt.value}

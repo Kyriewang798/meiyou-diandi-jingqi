@@ -143,7 +143,7 @@ function RecordEmptyScreen({ onVoiceDone }) {
           onRelease={handleRelease}
         />
         <p className="record-empty-voice-hint">
-          {pressed ? '松开发送' : '按住说话  或  点击长录'}
+          {pressed ? '松开记下' : '按住说话  或  点击长录'}
         </p>
       </div>
     </div>
