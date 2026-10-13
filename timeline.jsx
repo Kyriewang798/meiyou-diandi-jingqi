@@ -138,7 +138,7 @@ function CycleStartMarker({block}){
   );
 }
 
-function TimelineStream({blocks, endRef, sisterPlayAnimation, sisterCycleDone, hideTodayGuide, onSisterCycleComplete, hideGapDivider, hideDayHeader, hideBabyFeeding, firstDropAnim, onFirstDropLand, onFirstDropComplete}){
+function TimelineStream({blocks, endRef, sisterPlayAnimation, sisterCycleDone, hideTodayGuide, onSisterCycleComplete, hideGapDivider, hideDayHeader, hideBabyFeeding, firstDropAnim, onFirstDropLand, onFirstDropComplete, tailSlot = null}){
   const visibleBlocks = hideBabyFeeding
     ? (blocks || []).map(block=>{
         if(block.type !== 'day') return block;
@@ -205,6 +205,7 @@ function TimelineStream({blocks, endRef, sisterPlayAnimation, sisterCycleDone, h
           }
           return null;
         })}
+        {tailSlot}
       </div>
       <div ref={endRef} className="tl-feed-end" aria-hidden="true"/>
     </div>

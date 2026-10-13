@@ -7,8 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>美柚 · 记录</title>
-<link rel="stylesheet" href="cloud.css?v=20261009-fake-kb-mask2">
-<link rel="stylesheet" href="timeline.css?v=20261012-cycle-pager-fixed">
+<link rel="stylesheet" href="cloud.css?v=20261013-mic">
+<link rel="stylesheet" href="timeline.css?v=20261013-attach">
 <link rel="stylesheet" href="calendar.css?v=20260701-float-notice-no-icon">
 <link rel="stylesheet" href="record-page.css?v=20260710-empty-preview2">
 <link rel="stylesheet" href="record-empty.css?v=20260602-v102">
@@ -17,11 +17,12 @@
 <link rel="stylesheet" href="voice-transcribe.css?v=20260602-v102">
 <link rel="stylesheet" href="camera-diet.css?v=20260801-beverage-ocr-v2">
 <link rel="stylesheet" href="diet-feedback.css?v=20260820-empty-note-gap-v3">
-<link rel="stylesheet" href="path-flyout.css?v=20260921-send-icon-v1">
+<link rel="stylesheet" href="path-flyout.css?v=20261013-stack2">
 <link rel="stylesheet" href="review-page.css?v=20260818-mood-trend-stat-v3">
 <link rel="stylesheet" href="review-share-flow.css?v=20260714-family-share-card">
 <link rel="stylesheet" href="me-page.css?v=20260714-partner-app-preview">
 <link rel="stylesheet" href="home-page.css?v=20260703-baby-voice-coach">
+<link rel="stylesheet" href="now-anchor.css?v=20261013-bar">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;letter-spacing:0}
@@ -1150,7 +1151,8 @@ html,body{
 
 <script>
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "demoScene": "note-quick-record"
+  "demoScene": "note-quick-record",
+  "timelineInput": "default"
 }/*EDITMODE-END*/;
 window.__TWEAK_DEFAULTS = TWEAK_DEFAULTS;
 window.__BUILD__ = '20260522-v101-dev';
@@ -1166,12 +1168,12 @@ window.__BUILD__ = '20260522-v101-dev';
 <script type="text/babel" src="components.jsx?v=20260811-tab-review-brand-v1"></script>
 <script type="text/babel" src="calendar-page.jsx?v=20260701-float-notice-copy-2"></script>
 <script type="text/babel" src="record-page.jsx?v=20260710-empty-preview2"></script>
-<script type="text/babel" src="timeline-sister-cards.jsx?v=20261012-cycle-pager-fixed2"></script>
+<script type="text/babel" src="timeline-sister-cards.jsx?v=20261013-attach"></script>
 <script type="text/babel" src="timeline-v3v2-cards.jsx?v=20260820-empty-note-gap-v3"></script>
 <script type="text/babel" src="mood-picker.jsx?v=20260629-mood-band"></script>
 <script type="text/babel" src="quick-pickers.jsx?v=20260629-analysis-title-unify"></script>
 <script type="text/babel" src="timeline-modules.jsx?v=20260915-day-meta-date"></script>
-<script type="text/babel" src="timeline.jsx?v=20260713-hide-period-feeding"></script>
+<script type="text/babel" src="timeline.jsx?v=20261012-now-anchor"></script>
 <script type="text/babel" src="record-empty.jsx?v=20260602-v102"></script>
 <script type="text/babel" src="record-blank.jsx?v=20260714-plan-carousel"></script>
 <script type="text/babel" src="record-blank-scheme3.jsx?v=20260602-v102"></script>
@@ -1182,7 +1184,7 @@ window.__BUILD__ = '20260522-v101-dev';
 <script type="text/babel" src="review-page.jsx?v=20260818-mood-trend-stat-v3"></script>
 <script type="text/babel" src="me-page.jsx?v=20260811-tab-review-brand-v1"></script>
 <script type="text/babel" src="home-page.jsx?v=20260706-feeding-entry"></script>
-<script type="text/babel" src="cloud-publisher.jsx?v=20261009-fake-kb"></script>
+<script type="text/babel" src="cloud-publisher.jsx?v=20261013-stack"></script>
 <script type="text/babel" src="voice-transcribe-recorder.jsx?v=20260602-v102"></script>
 <script type="text/babel" src="voice-transcribe-interludes.jsx?v=20260602-v102"></script>
 <script type="text/babel" src="voice-transcribe-async.jsx?v=20260602-v102"></script>
@@ -1194,7 +1196,8 @@ window.__BUILD__ = '20260522-v101-dev';
 <script type="text/babel" src="path-flyout.jsx?v=20260611"></script>
 <script type="text/babel" src="demo-scenes.jsx?v=20260703-baby-default"></script>
 <script type="text/babel" src="tweaks-panel.jsx?v=20260602-v102"></script>
-<script type="text/babel" src="app.jsx?v=20261009-fake-kb-collapse"></script>
+<script type="text/babel" src="now-anchor.jsx?v=20261013-bar"></script>
+<script type="text/babel" src="app.jsx?v=20261013-photo-plain"></script>
 
 <!-- ====== 隐藏重置按钮（?dev=1 时显示）====== -->
 <button id="resetDemo" style="
