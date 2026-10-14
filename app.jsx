@@ -115,7 +115,7 @@ function BabyVoiceOverlay({session, success}){
           {session.active ? <span className="baby-voice-cursor"></span> : null}
         </div>
         <div className="baby-voice-dock">
-          <div className="baby-voice-hint">{session.cancel ? '松开取消' : '松开记下　　上滑取消'}</div>
+          <div className="baby-voice-hint">{session.cancel ? '松开取消' : '松开发送　　上滑取消'}</div>
           <div className="baby-voice-bar">
             {waveBars.map((bar, i)=>(
               <span
@@ -317,7 +317,6 @@ function BabyFeedingDiscoverCard({onClose}){
 
 function App(){
   const [t, setTweak] = window.useTweaks({...window.__TWEAK_DEFAULTS});
-  const isNowAnchorInput = t.timelineInput === 'now-anchor' || t.timelineInput === 'now-anchor-stack';
   const [emptyPreviewMode, setEmptyPreviewMode] = useState(null);
   const [emptyPreviewGuideStep, setEmptyPreviewGuideStep] = useState(0);
   const scene = window.getDemoScene(t.demoScene);
@@ -361,11 +360,6 @@ function App(){
   const [draft, setDraft] = useState(initial.draft);
   const [dockForceTextKey, setDockForceTextKey] = useState(0);
   const [periodComposeActive, setPeriodComposeActive] = useState(false);
-  const [composePhotos, setComposePhotos] = useState([]);
-  const [composePanel, setComposePanel] = useState('kb');
-  const [nowQuickRequest, setNowQuickRequest] = useState(null);
-  const [nowComposeActive, setNowComposeActive] = useState(false);
-  const nowKbApiRef = React.useRef(null);
   const [timeline, setTimeline] = useState(initial.timeline);
   const [toasts, setToasts] = useState([]);
   const [showPhoto, setShowPhoto] = useState(false);
@@ -1576,53 +1570,25 @@ function App(){
   const dismissPeriodCompose = ()=>{
     if(!periodComposeActive) return;
     setPeriodComposeActive(false);
-    setComposePanel('kb');
     setDraft(prev=>trimDraftTail(prev));
   };
 
   const submitPeriodCompose = ()=>{
-    if(!draft.trim() && !composePhotos.length) return;
     setPeriodComposeActive(false);
-    setComposePanel('kb');
-    submitText(undefined, { attachPhotos: composePhotos });
-    setComposePhotos([]);
-  };
-
-  const openComposePhotos = ()=>{
-    if(recordLifeMode !== '经期') return;
-    if(periodComposeActive && composePanel === 'photos'){
-      setComposePanel('kb');
-      return;
-    }
-    setPeriodComposeActive(true);
-    setComposePanel('photos');
-  };
-
-  const toggleComposePhoto = (src)=>{
-    setComposePhotos(prev=>prev.includes(src)
-      ? prev.filter(p=>p !== src)
-      : (prev.length >= (window.DOCK_PHOTO_MAX || 9) ? prev : [...prev, src]));
+    submitText();
   };
 
   const reopenPeriodComposeFromInput = ()=>{
-    if(recordLifeMode !== '经期') return;
-    setComposePanel('kb');
-    if(periodComposeActive) return;
+    if(periodComposeActive || recordLifeMode !== '经期') return;
     setPeriodComposeActive(true);
   };
 
   const handlePhonePointerDown = (e)=>{
+    if(!periodComposeActive) return;
     const target = e.target;
     if(!(target instanceof Element)) return;
-    if(periodComposeActive){
-      if(target.closest('.dock-wrap, .dock-fake-keyboard, .dock-photo-panel, .demo-controls-stack, .stream-header, .tabbar')) return;
-      dismissPeriodCompose();
-      return;
-    }
-    if(nowComposeActive){
-      if(target.closest('.now-anchor-editor, .dock-fake-keyboard, .demo-controls-stack')) return;
-      nowKbApiRef.current?.collapse?.();
-    }
+    if(target.closest('.dock-wrap, .dock-fake-keyboard, .demo-controls-stack, .stream-header, .tabbar')) return;
+    dismissPeriodCompose();
   };
 
   React.useEffect(()=>{
@@ -1654,30 +1620,6 @@ function App(){
   React.useEffect(()=>{
     if(recordLifeMode !== '经期' || activeTab !== 'note') setPeriodComposeActive(false);
   }, [recordLifeMode, activeTab]);
-
-  React.useEffect(()=>{
-    if(!nowComposeActive) return undefined;
-    const liftAboveKeyboard = ()=>{
-      const stream = streamRef.current;
-      const anchor = document.querySelector('.now-anchor.is-expanded');
-      const kb = document.querySelector('.dock-fake-keyboard');
-      if(!stream || !anchor || !kb) return;
-      const delta = anchor.getBoundingClientRect().bottom - kb.getBoundingClientRect().top;
-      if(Math.abs(delta) > 2) stream.scrollBy({ top: delta, behavior:'smooth' });
-    };
-    const t1 = setTimeout(liftAboveKeyboard, 120);
-    const t2 = setTimeout(liftAboveKeyboard, 360);
-    return ()=>{
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [nowComposeActive]);
-
-  React.useEffect(()=>{
-    if(!isNowAnchorInput || recordLifeMode !== '经期' || activeTab !== 'note'){
-      setNowComposeActive(false);
-    }
-  }, [isNowAnchorInput, recordLifeMode, activeTab]);
 
   React.useEffect(()=>{
     setTimeline(blocks=>refreshBabyFeedingLatestMarks(blocks));
@@ -1794,35 +1736,7 @@ function App(){
 
   const submitText = (textOverride, opts={})=>{
     const text = (textOverride || draft).trim();
-    const attachPhotos = opts.attachPhotos || [];
-    if(!text && attachPhotos.length){
-      setDraft('');
-      markUserRecorded();
-      pushToTimeline({
-        id:'e-'+Date.now(),
-        kind:'rec',
-        time: window.formatNowTime(),
-        isNew: true,
-        tags:[],
-        tagLayout:'t5',
-        attachPhotos,
-      }, '');
-      return;
-    }
     if(!text) return;
-
-    // 文字 + 照片：只展示原文和照片，不出识别反馈 / 分析卡
-    if(attachPhotos.length){
-      setDraft('');
-      markUserRecorded();
-      const entry = buildTimelineEntry(text, window.extractKeywords(text), opts);
-      delete entry.aiNote;
-      entry.attachPhotos = attachPhotos;
-      const todayId = timeline.find(b=>b.type==='day' && b.isToday)?.id;
-      setTimeline(blocks=>window.appendTimelineEntry(blocks, entry, { dayId: todayId }));
-      setTimeout(()=>scrollTimelineToBottom('smooth'), 120);
-      return;
-    }
 
     // 月经来了 / 月经走了 → 同步记录卡 + 周期分析反馈
     const isPeriodStartText = /月经来了|来了姨妈|大姨妈来|来例假/.test(text)
@@ -1850,7 +1764,6 @@ function App(){
         periodSummaryLabel: periodLabel,
         analysisKind,
         recordSummary: true,
-        attachPhotos,
       };
       const sisterEntry = {
         kind:'sister-card',
@@ -1875,7 +1788,6 @@ function App(){
     const recordScenario = window.readCameraPermissionScenario?.() || 'unauthorized';
     const dietEntry = window.tryCreateDietTextFeedbackEntry?.(text, recordScenario, opts.voice);
     if (dietEntry) {
-      if(attachPhotos.length) dietEntry.attachPhotos = attachPhotos;
       setDraft('');
       markUserRecorded();
       const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
@@ -1891,7 +1803,6 @@ function App(){
 
     const weightEntry = window.tryCreateWeightTextEntry?.(text, opts);
     if (weightEntry) {
-      if(attachPhotos.length) weightEntry.attachPhotos = attachPhotos;
       setDraft('');
       markUserRecorded();
       const entryText = weightEntry.primary?.text || '';
@@ -1904,7 +1815,6 @@ function App(){
     setDraft('');
     markUserRecorded();
     const entry = buildTimelineEntry(text, hits, opts);
-    if(attachPhotos.length) entry.attachPhotos = attachPhotos;
     if(recordFeedback && tryStartFirstDrop(entry, text)) return;
     pushToTimeline(entry, text);
   };
@@ -2744,29 +2654,6 @@ function App(){
     if(!isSearchActive || !filterTimelineForSearch) return source;
     return filterTimelineForSearch(source, searchCriteria);
   }, [timeline, searchCriteria, isSearchActive, filterTimelineForSearch, recordLifeMode, babyFeedingEntryActive]);
-  const [nowAnchorSampleTime] = useState(()=>{
-    const d = new Date(Date.now() - 60 * 60000);
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  });
-  const streamTimeline = React.useMemo(()=>{
-    if(!isNowAnchorInput || recordLifeMode !== '经期' || isSearchActive) return displayTimeline;
-    const sample = {
-      kind:'record-group', id:'now-anchor-w-g',
-      primary:{
-        id:'now-anchor-w', time:nowAnchorSampleTime, kind:'weight',
-        text:'',
-        weightLabel:'体重',
-        weightValue:'53.6公斤',
-        tags:[],
-      },
-    };
-    return (displayTimeline || []).map(block=>{
-      if(block.type !== 'day' || !block.isToday) return block;
-      const items = block.items || block.entries || [];
-      if(items.some(item=>item.id === sample.id)) return block;
-      return {...block, items:[sample, ...items], entries:undefined};
-    });
-  }, [displayTimeline, isNowAnchorInput, recordLifeMode, isSearchActive, nowAnchorSampleTime]);
   const searchResultCount = React.useMemo(()=>{
     if(!isSearchActive || !countTimelineSearchItems) return null;
     return countTimelineSearchItems(displayTimeline);
@@ -2816,20 +2703,11 @@ function App(){
           : <BabyFeedingQuickIcon type={item.id}/>,
       }))
     : null;
-  const isPlusDockInput = t.timelineInput === 'plus-dock';
-  const periodFeelItem = {id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false};
-  const periodDockBaseItems = isPlusDockInput
-    ? [
-        periodFeelItem,
-        ...['symptom', 'weight', 'mood', 'diet'].map(id=>PERIOD_DOCK_QUICK_ITEMS.find(item=>item.id === id)),
-        ...PERIOD_DOCK_QUICK_ITEMS.filter(item=>!['symptom', 'weight', 'mood', 'diet'].includes(item.id)),
-      ]
-    : [
-        ...(periodFeelVisible ? [periodFeelItem] : []),
-        ...PERIOD_DOCK_QUICK_ITEMS,
-      ];
   const periodDockQuickItems = showPeriodQuickStrip
-    ? periodDockBaseItems.map(item=>({
+    ? [
+        ...(periodFeelVisible ? [{id:'period-feel', label:'经期感受', action:'period-feel', icon:'💧', pulse:periodFeelReady, drop:false}] : []),
+        ...PERIOD_DOCK_QUICK_ITEMS,
+      ].map(item=>({
         ...item,
         iconNode:item.id === 'custom'
           ? <CustomQuickIcon />
@@ -2839,31 +2717,6 @@ function App(){
       }))
     : null;
   const dockQuickItems = babyFeedingDockItems || periodDockQuickItems;
-  const nowAnchorActive = isNowAnchorInput && !!periodDockQuickItems;
-  const NowAnchorComposer = window.NowAnchorComposer;
-  const nowAnchorSlot = nowAnchorActive && NowAnchorComposer ? (
-    <>
-    <NowAnchorComposer
-      key={t.timelineInput}
-      variant={t.timelineInput === 'now-anchor-stack' ? 'stack' : 'inline'}
-      quickItems={periodDockQuickItems}
-      keyboardApiRef={nowKbApiRef}
-      onExpandChange={setNowComposeActive}
-      onQuickSelect={(item, el)=>{
-        if(['weight', 'symptom', 'mood', 'diet', 'beverage', 'period-feel'].includes(item.action)){
-          setNowQuickRequest({ item, el, key:Date.now() });
-          return;
-        }
-        handlePeriodDockQuickSelect(item);
-      }}
-      onSubmit={(text)=>{
-        submitText(text);
-        setTimeout(()=>scrollTimelineToBottom('smooth'), 120);
-      }}
-      onPhoto={()=>setShowPhoto(true)}
-    />
-    </>
-  ) : null;
 
   return (
     <>
@@ -2871,8 +2724,7 @@ function App(){
         className={'phone'
           + (homeDetailOpen ? ' is-home-detail-open' : '')
           + (showDockQuickStrip ? ' is-dock-quick-entry' : '')
-          + ((periodComposeActive || nowComposeActive) ? ' is-fake-kb-open' : '')
-          + (nowAnchorActive ? ' is-now-anchor' : '')}
+          + (periodComposeActive ? ' is-fake-kb-open' : '')}
         onPointerDown={handlePhonePointerDown}
       >
         <StatusBar isMember={isMember} onMemberChange={setIsMember} showMemberSwitch={showReview}/>
@@ -3129,7 +2981,7 @@ function App(){
             </div>
           ) : (
           <TimelineStream
-            blocks={streamTimeline}
+            blocks={displayTimeline}
             endRef={timelineEndRef}
             sisterPlayAnimation={sisterPlayAnimation}
             sisterCycleDone={sisterCycleDone}
@@ -3139,7 +2991,6 @@ function App(){
             firstDropAnim={recordFeedback ? firstDropAnim : null}
             onFirstDropLand={recordFeedback ? handleFirstDropLand : undefined}
             onFirstDropComplete={recordFeedback ? handleFirstDropComplete : undefined}
-            tailSlot={nowAnchorSlot}
           />
           )}
         </div>
@@ -3163,16 +3014,9 @@ function App(){
           defaultInputMode="text"
           forceTextModeKey={dockForceTextKey}
           onInputFocus={reopenPeriodComposeFromInput}
-          composeOpen={periodComposeActive}
-          attachments={composePhotos}
-          onAttachPhoto={openComposePhotos}
-          photoPanelOpen={periodComposeActive && composePanel === 'photos'}
-          onRemoveAttachment={(index)=>setComposePhotos(prev=>prev.filter((_, i)=>i !== index))}
           hideQuickFan={showBabyFeedingQuickStrip}
           hideQuickFab={showPeriodQuickStrip}
-          feedingQuickItems={periodComposeActive || nowAnchorActive ? null : dockQuickItems}
-          quickRequest={nowQuickRequest}
-          pillVariant={recordLifeMode === '经期' && !isNowAnchorInput ? (isPlusDockInput ? 'plus' : 'capsule') : 'default'}
+          feedingQuickItems={periodComposeActive ? null : dockQuickItems}
           feedingQuickLabel={showPeriodQuickStrip ? '经期快捷记录' : '宝宝喂养快捷记录'}
           onFeedingQuickSelect={showPeriodQuickStrip ? handlePeriodDockQuickSelect : handleBabyFeedingQuickSelect}
           onPeriodFeelSelect={()=>{
@@ -3265,24 +3109,11 @@ function App(){
         <BabyVoiceOverlay session={babyVoiceSession} success={babyVoiceSuccess}/>
       )}
       {periodComposeActive ? <div className="dock-compose-mask" aria-hidden="true"/> : null}
-      {periodComposeActive && composePanel === 'photos' && window.DockPhotoPanel ? (
-        <window.DockPhotoPanel
-          selected={composePhotos}
-          onToggle={toggleComposePhoto}
-          onShoot={(src)=>setComposePhotos(prev=>prev.includes(src) ? prev : [...prev, src])}
-        />
-      ) : periodComposeActive && window.DockFakeKeyboard ? (
+      {periodComposeActive && window.DockFakeKeyboard ? (
         <window.DockFakeKeyboard
           onInsert={handleFakeKbInsert}
           onBackspace={handleFakeKbBackspace}
           onReturn={submitPeriodCompose}
-        />
-      ) : null}
-      {nowComposeActive && !periodComposeActive && window.DockFakeKeyboard ? (
-        <window.DockFakeKeyboard
-          onInsert={(ch)=>nowKbApiRef.current?.insert?.(ch)}
-          onBackspace={()=>nowKbApiRef.current?.backspace?.()}
-          onReturn={()=>nowKbApiRef.current?.submit?.()}
         />
       ) : null}
       </div>
@@ -3294,27 +3125,6 @@ function App(){
             onChange={(v)=>setTweak('demoScene', v)}
             description={scene.description}
           />
-          <div className="demo-tweak-dock" role="toolbar" aria-label="方案切换">
-            <div className="demo-tweak-dock-label">Tweaks · 记录入口</div>
-            <div className="demo-tweak-dock-options">
-              {[
-                { value:'default', label:'方案一：底部输入条' },
-                { value:'plus-dock', label:'方案二：底部快捷 + 输入条' },
-                { value:'now-anchor', label:'方案三：「现在」单行卡片' },
-                { value:'now-anchor-stack', label:'方案四：「现在」分层卡片' },
-              ].map(opt=>(
-                <button
-                  key={opt.value}
-                  type="button"
-                  className={'demo-tweak-dock-btn'+((t.timelineInput || 'default') === opt.value ? ' active' : '')}
-                  aria-pressed={(t.timelineInput || 'default') === opt.value}
-                  onClick={()=>setTweak('timelineInput', opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
     </>

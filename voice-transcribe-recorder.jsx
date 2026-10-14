@@ -105,7 +105,7 @@ function VoiceTranscribeBar({
                 ))}
               </span>
               <span className="vt-hold-label is-recording">
-                {cancelHoverActive ? '松开取消' : <>松开记下<span className="vt-hold-sub">· 上滑取消</span></>}
+                {cancelHoverActive ? '松开取消' : <>松开&nbsp;结束<span className="vt-hold-sub">· 上滑取消</span></>}
               </span>
             </>
           ) : (

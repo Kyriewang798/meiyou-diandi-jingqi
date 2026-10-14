@@ -41,54 +41,11 @@ function UnifiedQuickIcon({type}){
   return <svg className="dock-unified-quick-icon" viewBox="0 0 64 64" width="44" height="44" aria-hidden="true"><defs><linearGradient id={'b-'+id} x1="24%" y1="4%" x2="78%" y2="96%"><stop stopColor={colors[0]}/><stop offset=".52" stopColor={colors[1]}/><stop offset="1" stopColor={colors[2]}/></linearGradient><linearGradient id={'g-'+id} x1="20%" y1="0%" x2="85%" y2="100%"><stop stopColor={colors[0]} stopOpacity=".55"/><stop offset="1" stopColor={colors[1]} stopOpacity=".38"/></linearGradient><radialGradient id={'h-'+id}><stop stopColor="#fff" stopOpacity=".95"/><stop offset="1" stopColor="#fff" stopOpacity="0"/></radialGradient></defs><circle cx="32" cy="32" r="32" fill="#fff"/><ellipse cx="32" cy="54" rx="15" ry="4.6" fill={colors[2]} opacity=".2"/>{body}</svg>;
 }
 
-/** 圆形发送图标（对勾） */
+/** 圆形发送图标（纸飞机 · 对齐美柚记录输入） */
 function DockSendIco({size=16}){
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12.5l4.5 4.5L19 7.5"/>
-    </svg>
-  );
-}
-
-function DockComposeHead(){
-  const [now, setNow] = React.useState(()=>new Date());
-  React.useEffect(()=>{
-    const timer = setInterval(()=>setNow(new Date()), 15000);
-    return ()=>clearInterval(timer);
-  }, []);
-  const pad = (n)=>String(n).padStart(2, '0');
-  return (
-    <div className="dock-compose-head">
-      <span className="dock-compose-head-dot" aria-hidden="true"/>
-      <span className="dock-compose-head-now">现在 {pad(now.getHours())}:{pad(now.getMinutes())}</span>
-      <span className="dock-compose-head-sep" aria-hidden="true"/>
-      <span className="dock-compose-head-sub">记录这一刻</span>
-    </div>
-  );
-}
-
-function DockPlusIco(){
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M12 4.5v15M4.5 12h15"/>
-    </svg>
-  );
-}
-
-function DockKbdLineIco(){
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="6" width="18" height="12" rx="2.5"/>
-      <path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M7 13.5h.01M17 13.5h.01M10 14.5h4"/>
-    </svg>
-  );
-}
-
-function DockMicIco({size=22}){
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="11" rx="3"/>
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="currentColor">
+      <path d="M4.1 11.15c-.62-.25-.6-.9.04-1.1L19.55 3.7c.62-.2 1.12.36.88.95L14.7 20.55c-.22.54-.9.58-1.18.06L10.7 14.4 4.1 11.15z"/>
     </svg>
   );
 }
@@ -168,7 +125,7 @@ const DEMO_VOICE_LINE = '昨天下午来了姨妈，来之前，上午就开始�
 
 const DOCK_PLACEHOLDER = '记录生活点滴';
 
-function DockWavePlaceholder({show, focused, text = DOCK_PLACEHOLDER}){
+function DockWavePlaceholder({show, focused}){
   if(!show) return null;
 
   return (
@@ -176,20 +133,11 @@ function DockWavePlaceholder({show, focused, text = DOCK_PLACEHOLDER}){
       className={'dock-float-ph'+(focused ? ' is-focused' : '')}
       aria-hidden="true"
     >
-      <span className="dock-float-ph-char is-idle">{text}</span>
+      <span className="dock-float-ph-char is-idle">{DOCK_PLACEHOLDER}</span>
     </span>
   );
 }
 
-function DockCapsuleImageIco(){
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-      <rect x="3.5" y="4.5" width="17" height="15" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6"/>
-      <circle cx="9" cy="10" r="1.7" fill="currentColor"/>
-      <path d="M4 17l5-4.5 3.5 3 3-2.5L20 17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-    </svg>
-  );
-}
 function QuickCardFan({
   open, selected, closingToMood, onFabTap, onSelectCard, onMoodPick, onSymptomPick, onDietPick, onClose,
   onSymptomSubmit, onWeightSubmit, onFoodSubmit, weightPickerKey, fabGuidePulse = false, hideFab = false,
@@ -457,8 +405,7 @@ function DockPublisher({
   onFoodConfirm, onDietCapture, onCameraRecord,
   onVoiceDone, onPhoto, onDockExpandedChange, onCameraActiveChange, activeTab, showScheme3Bubble,
   highlightScheme3Input, dockPlaceholder, defaultInputMode = 'voice',
-  forceTextModeKey = 0, onInputFocus, quickRequest = null, pillVariant = 'default',
-  composeOpen, attachments = [], onAttachPhoto, onRemoveAttachment, photoPanelOpen = false,
+  forceTextModeKey = 0, onInputFocus,
   demoPhase, isDemoRunning, hideQuickFan = false, hideQuickFab = false,
   feedingQuickItems = null, feedingQuickLabel = '快捷记录', onFeedingQuickSelect,
   onPeriodFeelSelect, onVoiceStart,
@@ -481,7 +428,6 @@ function DockPublisher({
   const [dockSheet, setDockSheet] = React.useState(null);
   const [recording, setRecording] = React.useState(false);
   const [recSec, setRecSec] = React.useState(0);
-  const [dictating, setDictating] = React.useState(false);
   const [inputFocused, setInputFocused] = React.useState(false);
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [cameraSourceRect, setCameraSourceRect] = React.useState(null);
@@ -490,11 +436,6 @@ function DockPublisher({
   const [feedingPage, setFeedingPage] = React.useState(0);
   const [periodFeelGuidePos, setPeriodFeelGuidePos] = React.useState(null);
   const recTimer = React.useRef(null);
-  const modeHoldTimer = React.useRef(null);
-  const modeHoldActive = React.useRef(false);
-  const fieldTapPending = React.useRef(false);
-  const dictatingRef = React.useRef(false);
-  const tapDictateRef = React.useRef(false);
   const prevTabRef = React.useRef(activeTab);
   const containerRef = React.useRef(null);
   const feedingDragStartY = React.useRef(null);
@@ -626,23 +567,6 @@ function DockPublisher({
 
   const startRec = ()=>{ setRecording(true); onVoiceStart?.(); };
   const stopRec = ()=>{
-    if(dictatingRef.current){
-      dictatingRef.current = false;
-      tapDictateRef.current = false;
-      setDictating(false);
-      setRecording(false);
-      const base = String(draft || '').replace(/\s+$/, '');
-      const next = base ? base + '，' + DEMO_VOICE_LINE : DEMO_VOICE_LINE;
-      onDraft(next);
-      setTimeout(()=>{
-        modeHoldActive.current = false;
-        const el = textAreaRef.current;
-        if(!el) return;
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 72) + 'px';
-      }, 40);
-      return;
-    }
     if(!recording) return;
     setRecording(false);
     onVoiceDone(DEMO_VOICE_LINE, Math.max(recSec, 3));
@@ -652,93 +576,6 @@ function DockPublisher({
     setInputMode(m=>m==='text' ? 'voice' : 'text');
     closeQuick();
   };
-
-  const clearModeHoldTimer = ()=>{
-    if(modeHoldTimer.current){
-      clearTimeout(modeHoldTimer.current);
-      modeHoldTimer.current = null;
-    }
-  };
-
-  const beginFieldHold = (e)=>{
-    if(!isCapsulePill || inputMode !== 'text' || isDemoRunning) return;
-    if(e.pointerType === 'mouse' && e.button !== 0) return;
-    // 已展开编辑（假键盘 / 蒙层）时交给正常输入，避免打断打字 / 选区
-    const composing = !!textAreaRef.current?.closest('.phone')?.classList.contains('is-fake-kb-open');
-    if(composing) return;
-    if(inputFocused) setInputFocused(false);
-    // 先挡住默认聚焦，否则一点就展开键盘，长按永远触发不了
-    e.preventDefault();
-    e.stopPropagation();
-    modeHoldActive.current = false;
-    fieldTapPending.current = true;
-    try{ textAreaRef.current?.blur(); }catch(_){}
-    clearModeHoldTimer();
-    modeHoldTimer.current = setTimeout(()=>{
-      modeHoldTimer.current = null;
-      modeHoldActive.current = true;
-      fieldTapPending.current = false;
-      dictatingRef.current = true;
-      setDictating(true);
-      setInputFocused(false);
-      dismissGuideForVoice();
-      startRec();
-    }, 350);
-  };
-
-  const toggleTapDictate = ()=>{
-    if(isDemoRunning) return;
-    if(dictatingRef.current){
-      stopRec();
-      return;
-    }
-    tapDictateRef.current = true;
-    dictatingRef.current = true;
-    setDictating(true);
-    dismissGuideForVoice();
-    startRec();
-  };
-
-  const endFieldHold = (opts={})=>{
-    if(tapDictateRef.current) return;
-    const wasPendingTap = fieldTapPending.current;
-    fieldTapPending.current = false;
-    clearModeHoldTimer();
-    if(dictatingRef.current){
-      stopRec();
-      return;
-    }
-    if(dictating || modeHoldActive.current) return;
-    // 手指滑出：取消本次按下，不展开
-    if(opts.asLeave) return;
-    // 短按抬手后再聚焦 / 展开
-    if(wasPendingTap && !modeHoldActive.current){
-      notifyGuideDockInteract();
-      setInputFocused(true);
-      const el = textAreaRef.current;
-      if(el){
-        el.focus();
-        const len = el.value.length;
-        try{ el.setSelectionRange(len, len); }catch(_){}
-      }
-      if(typeof onInputFocus === 'function') onInputFocus();
-    }
-  };
-
-  React.useEffect(()=>{
-    if(!dictating && !fieldTapPending.current) return undefined;
-    const onUp = ()=>endFieldHold();
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    return ()=>{
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-    };
-  }, [dictating]);
-
-  React.useEffect(()=>()=>{
-    clearModeHoldTimer();
-  }, []);
 
   const closeDockSheet = ()=> setDockSheet(null);
 
@@ -818,16 +655,7 @@ function DockPublisher({
 
   const isDockExpanded = !!dockSheet;
   const isQuickActive = quickOpen || !!quickSelected;
-  const isPlusPill = pillVariant === 'plus';
-  const isCapsulePill = pillVariant === 'capsule' || isPlusPill;
-  const isComposeOpen = composeOpen === undefined ? inputFocused : !!composeOpen;
-  const capsulePlaceholder = isPlusPill && !isComposeOpen ? '记录此刻...' : '开始记录...';
-  const canSend = !!draft.trim() || attachments.length > 0;
-
-  React.useEffect(()=>{
-    if(!isComposeOpen && tapDictateRef.current) stopRec();
-  }, [isComposeOpen]);
-  const inputPlaceholder = isCapsulePill ? capsulePlaceholder : (dockPlaceholder || DOCK_PLACEHOLDER);
+  const inputPlaceholder = dockPlaceholder || DOCK_PLACEHOLDER;
   const showFeedingQuick = Array.isArray(feedingQuickItems) && feedingQuickItems.length > 0;
   const FEEDING_COLS = 5;
   const FEEDING_MAX_ROWS = 3;
@@ -962,11 +790,6 @@ function DockPublisher({
     }
     onFeedingQuickSelect?.(item);
   };
-
-  React.useEffect(()=>{
-    if(!quickRequest?.item) return;
-    handleDockQuickItemSelect(quickRequest.item, quickRequest.el || null);
-  }, [quickRequest?.key]);
 
   return (
     <>
@@ -1164,114 +987,58 @@ function DockPublisher({
                 ) : null}
               </div>
             ) : null}
-            <div className={'dock-input-row dock-input-pill'+(isCapsulePill ? ' is-capsule' : '')+(isPlusPill ? ' is-plus' : '')+(isCapsulePill && isComposeOpen && inputMode==='text' ? ' is-compose' : '')+(isCapsulePill && isComposeOpen && attachments.length ? ' has-attach' : '')}>
-              {isCapsulePill && isComposeOpen && inputMode==='text' ? <DockComposeHead/> : null}
-              {isCapsulePill && isComposeOpen && inputMode==='text' ? (
-                <button
-                  type="button"
-                  className={'dock-mode-btn dock-mic-btn'+(dictating ? ' is-listening' : '')}
-                  onMouseDown={(e)=>e.preventDefault()}
-                  onClick={()=>{
-                    notifyGuideDockInteract();
-                    toggleTapDictate();
-                  }}
-                  aria-label={dictating ? '结束录音' : '语音输入'}
-                  aria-pressed={dictating}
-                >
-                  <DockMicIco size={22}/>
-                </button>
-              ) : isPlusPill ? (
-                <button
-                  type="button"
-                  className="dock-plus-btn"
-                  onClick={()=>{
-                    notifyGuideDockInteract();
-                    if(onAttachPhoto) onAttachPhoto();
-                    else onPhoto?.();
-                  }}
-                  aria-label="添加图片"
-                >
-                  <DockCapsuleImageIco/>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="dock-mode-btn"
-                  onClick={()=>{
-                    notifyGuideDockInteract();
-                    toggleMode();
-                  }}
-                  aria-label={inputMode==='text'?'切换语音':'切换键盘'}
-                >
-                  {inputMode==='text'
-                    ? <DockVoiceCircleIco size={26}/>
-                    : <DockKbdCircleIco size={26}/>}
-                </button>
-              )}
+            <div className="dock-input-row dock-input-pill">
+              <button
+                type="button"
+                className="dock-mode-btn"
+                onClick={()=>{
+                  notifyGuideDockInteract();
+                  toggleMode();
+                }}
+                aria-label={inputMode==='text'?'切换语音':'切换键盘'}
+              >
+                {inputMode==='text'
+                  ? <DockVoiceCircleIco size={26}/>
+                  : <DockKbdCircleIco size={26}/>}
+              </button>
 
               {inputMode==='text' ? (
-                <div
-                  className={'dock-text-field'
-                    +(inputFocused?' is-focused':'')
-                    +(highlightScheme3Input?' is-scheme3-highlight':'')
-                    +(dictating && !isComposeOpen?' is-dictating':'')
-                    +(isCapsulePill?' is-hold-dictate':'')}
-                  onPointerDown={beginFieldHold}
-                  onPointerUp={()=>endFieldHold()}
-                  onPointerLeave={()=>endFieldHold({ asLeave:true })}
-                  onPointerCancel={()=>endFieldHold({ asLeave:true })}
-                >
-                  {showScheme3Bubble && !draft.trim() && !inputFocused && !dictating ? (
+                <div className={'dock-text-field'
+                  +(inputFocused?' is-focused':'')
+                  +(highlightScheme3Input?' is-scheme3-highlight':'')}>
+                  {showScheme3Bubble && !draft.trim() && !inputFocused ? (
                     <span className="dock-scheme3-bubble" aria-hidden="true">
                       ✏️ 记下第一刻
                     </span>
                   ) : null}
                   <DockWavePlaceholder
-                    show={inputMode === 'text' && !draft.trim() && !showScheme3Bubble && !dictating}
+                    show={inputMode === 'text' && !draft.trim() && !showScheme3Bubble}
                     focused={inputFocused}
-                    text={isCapsulePill ? capsulePlaceholder : undefined}
                   />
-                  {dictating && !isComposeOpen ? (
-                    <div className="dock-field-dictating" aria-live="polite">
-                      <span className="dock-mode-dictating-waves" aria-hidden="true">
-                        {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
-                      </span>
-                      <span>语音记录中</span>
-                    </div>
-                  ) : (
-                    <textarea
-                      ref={textAreaRef}
-                      rows="1"
-                      placeholder=""
-                      aria-label={inputPlaceholder}
-                      value={draft}
-                      readOnly={isCapsulePill && !inputFocused && !textAreaRef.current?.closest('.phone')?.classList.contains('is-fake-kb-open')}
-                      onChange={(e)=>{
-                        onDraft(e.target.value);
-                        e.target.style.height='auto';
-                        e.target.style.height = Math.min(e.target.scrollHeight, 72)+'px';
-                      }}
-                      onFocus={(e)=>{
-                        if(modeHoldActive.current || dictatingRef.current || fieldTapPending.current){
-                          e.target.blur();
-                          return;
-                        }
-                        notifyGuideDockInteract();
-                        setInputFocused(true);
-                        if(typeof onInputFocus === 'function') onInputFocus();
-                      }}
-                      onBlur={()=>setInputFocused(false)}
-                      onClick={()=>{
-                        if(photoPanelOpen && typeof onInputFocus === 'function') onInputFocus();
-                      }}
-                      onKeyDown={(e)=>{
-                        if(e.key==='Enter' && !e.shiftKey && draft.trim()){
-                          e.preventDefault();
-                          onSend();
-                        }
-                      }}
-                    />
-                  )}
+                  <textarea
+                    ref={textAreaRef}
+                    rows="1"
+                    placeholder=""
+                    aria-label={inputPlaceholder}
+                    value={draft}
+                    onChange={(e)=>{
+                      onDraft(e.target.value);
+                      e.target.style.height='auto';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 72)+'px';
+                    }}
+                    onFocus={()=>{
+                      notifyGuideDockInteract();
+                      setInputFocused(true);
+                      if(typeof onInputFocus === 'function') onInputFocus();
+                    }}
+                    onBlur={()=>setInputFocused(false)}
+                    onKeyDown={(e)=>{
+                      if(e.key==='Enter' && !e.shiftKey && draft.trim()){
+                        e.preventDefault();
+                        onSend();
+                      }
+                    }}
+                  />
                 </div>
               ) : (
                 <div className={'dock-voice-wrap'+(recording?' is-recording':'')}>
@@ -1279,7 +1046,7 @@ function DockPublisher({
                   {(recording || demoPhase === 'recognizing') && (
                     <div className={'dock-voice-float'+(demoPhase === 'recognizing' ? ' is-recognizing' : '')}>
                       <span className="dock-voice-float-text">
-                        {demoPhase === 'recognizing' ? '识别中...' : '语音记录中'}
+                        {demoPhase === 'recognizing' ? '识别中...' : '正在听...'}
                       </span>
                       {demoPhase === 'recognizing' && (
                         <span className="dock-voice-float-spinner"/>
@@ -1301,125 +1068,18 @@ function DockPublisher({
                         <span className="dock-voice-waves" aria-hidden="true">
                           {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
                         </span>
-                        <span>松开记下{recSec > 0 ? ' '+recSec+'s' : ''}</span>
+                        <span>松开 结束{recSec > 0 ? ' '+recSec+'s' : ''}</span>
                       </>
                     ) : (
-                      <span className="dock-voice-label">{isCapsulePill ? '按住说话' : '按住 语音记录'}</span>
+                      <span className="dock-voice-label">按住 说话</span>
                     )}
                   </button>
                 </div>
               )}
 
-              {inputMode==='text' && isCapsulePill && isComposeOpen && dictating ? (
-                <div className="dock-compose-listening" aria-live="polite">
-                  <span className="dock-mode-dictating-waves" aria-hidden="true">
-                    {[4,8,12,8,6,10,7].map((h,j)=><span key={j} style={{height:h+'px'}}/>)}
-                  </span>
-                  <span>语音记录中</span>
-                </div>
-              ) : null}
-
-              {inputMode==='text' && isCapsulePill && isComposeOpen && attachments.length > 0 ? (
-                <div className="dock-attach-row">
-                  {attachments.map((src, i)=>(
-                    <div key={src + i} className="dock-attach-thumb">
-                      <img src={src} alt="已添加的图片" draggable={false}/>
-                      <button
-                        type="button"
-                        className="dock-attach-remove"
-                        onMouseDown={(e)=>e.preventDefault()}
-                        onClick={()=>onRemoveAttachment?.(i)}
-                        aria-label="移除图片"
-                      >
-                        <svg viewBox="0 0 12 12" width="8" height="8" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                          <path d="M3 3l6 6M9 3l-6 6"/>
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {inputMode==='text' && isCapsulePill && isComposeOpen ? (
-                <>
-                  <button
-                    type="button"
-                    className={'dock-capsule-photo'+(photoPanelOpen ? ' is-active' : '')}
-                    onMouseDown={(e)=>e.preventDefault()}
-                    onClick={()=>{
-                      notifyGuideDockInteract();
-                      if(onAttachPhoto) onAttachPhoto();
-                      else onPhoto?.();
-                    }}
-                    aria-label="添加图片"
-                  >
-                    <DockCapsuleImageIco/>
-                  </button>
-                  <button
-                    type="button"
-                    className="dock-send-btn"
-                    onMouseDown={(e)=>e.preventDefault()}
-                    onClick={onSend}
-                    disabled={!canSend}
-                    aria-label="发送"
-                  >
-                    <DockSendIco size={20}/>
-                  </button>
-                </>
-              ) : inputMode==='text' && canSend ? (
-                <>
-                  {isCapsulePill && attachments.length > 0 ? (
-                    <button
-                      type="button"
-                      className="dock-attach-mini"
-                      onClick={()=>{
-                        notifyGuideDockInteract();
-                        onAttachPhoto?.();
-                      }}
-                      aria-label={'已选 '+attachments.length+' 张照片'}
-                    >
-                      {attachments.slice(-3).map((src, i, list)=>(
-                        <img
-                          key={src}
-                          src={src}
-                          alt=""
-                          draggable={false}
-                          className={'dock-attach-mini-layer is-depth-'+(list.length - 1 - i)}
-                        />
-                      ))}
-                      {attachments.length > 1 ? (
-                        <span className="dock-attach-mini-count">{attachments.length}</span>
-                      ) : null}
-                    </button>
-                  ) : null}
-                  <button type="button" className="dock-send-btn" onClick={onSend} aria-label="发送">
-                    <DockSendIco size={20}/>
-                  </button>
-                </>
-              ) : isPlusPill ? (
-                <button
-                  type="button"
-                  className="dock-capsule-photo dock-plus-mode"
-                  onClick={()=>{
-                    notifyGuideDockInteract();
-                    toggleMode();
-                  }}
-                  aria-label={inputMode==='text'?'切换语音':'切换键盘'}
-                >
-                  {inputMode==='text' ? <DockMicIco size={22}/> : <DockKbdLineIco/>}
-                </button>
-              ) : isCapsulePill ? (
-                <button
-                  type="button"
-                  className="dock-capsule-photo"
-                  onClick={()=>{
-                    notifyGuideDockInteract();
-                    if(onAttachPhoto) onAttachPhoto();
-                    else onPhoto?.();
-                  }}
-                  aria-label="添加图片"
-                >
-                  <DockCapsuleImageIco/>
+              {inputMode==='text' && draft.trim() ? (
+                <button type="button" className="dock-send-btn" onClick={onSend} aria-label="发送">
+                  <DockSendIco size={15}/>
                 </button>
               ) : null}
             </div>
@@ -1493,68 +1153,4 @@ function DockFakeKeyboard({ onInsert, onBackspace, onReturn }){
   );
 }
 
-const DOCK_RECENT_PHOTOS = [
-  'assets/gallery/IMG_9140-a0794273-c982-414f-8516-52af2c4456e1.png',
-  'assets/gallery/IMG_9145_2-72cf62bb-2ea4-45fa-977a-78f80ac3da58.png',
-  'assets/gallery/IMG_9139-a36f2639-6b62-453c-bdc1-2d7cd67b4d28.png',
-  'assets/gallery/IMG_9144-803d342e-cc05-4834-943e-4c52e0bad0d3.png',
-  'assets/gallery/IMG_9128-7218d6e2-498b-4980-8a99-218909c9881d.png',
-  'assets/gallery/IMG_9137-a082d61f-1417-483d-9122-37c8ebcb2861.png',
-  'assets/gallery/IMG_9129-0b57a26b-182e-49cc-ad71-7b972274a436.png',
-  'assets/gallery/IMG_9130-49592824-80e2-4ef5-a0c4-d094130b01d4.png',
-  'assets/gallery/IMG_9127-d09a43af-ea30-4eea-b165-d501765c5244.png',
-];
-const DOCK_CAMERA_SHOT = 'assets/gallery/1779691515990-7a645e8f-02b5-44f1-8fe5-7c60f1f4cc40.png';
-const DOCK_PHOTO_MAX = 9;
-
-function DockPhotoPanel({ selected = [], onToggle, onShoot }){
-  const rootRef = React.useRef(null);
-  React.useLayoutEffect(()=>{
-    const el = rootRef.current;
-    const phone = el && el.closest('.phone');
-    if(!el || !phone) return undefined;
-    const sync = ()=>phone.style.setProperty('--dock-fake-kb-h', el.offsetHeight + 'px');
-    sync();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(sync) : null;
-    ro?.observe(el);
-    return ()=>{
-      ro?.disconnect();
-      phone.style.removeProperty('--dock-fake-kb-h');
-    };
-  }, []);
-  const keep = (e)=>e.preventDefault();
-  const full = selected.length >= DOCK_PHOTO_MAX;
-  return (
-    <div className="dock-photo-panel" ref={rootRef} role="group" aria-label="最近照片">
-      <div className="dock-photo-grid">
-        <button type="button" className="dock-photo-cell is-camera" onMouseDown={keep} onClick={()=>onShoot?.(DOCK_CAMERA_SHOT)} aria-label="拍照">
-          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-            <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.4-2h5.8l1.4 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/>
-            <circle cx="12" cy="12.8" r="3.4"/>
-          </svg>
-          <span>拍照</span>
-        </button>
-        {DOCK_RECENT_PHOTOS.map((src)=>{
-          const order = selected.indexOf(src);
-          const isOn = order >= 0;
-          return (
-            <button
-              key={src}
-              type="button"
-              className={'dock-photo-cell'+(isOn ? ' is-selected' : '')+(!isOn && full ? ' is-disabled' : '')}
-              onMouseDown={keep}
-              onClick={()=>{ if(isOn || !full) onToggle?.(src); }}
-              aria-pressed={isOn}
-              aria-label={isOn ? '取消选择照片' : '选择照片'}
-            >
-              <img src={src} alt="" draggable={false}/>
-              <span className="dock-photo-check" aria-hidden="true">{isOn ? order + 1 : ''}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-Object.assign(window, { DockFakeKeyboard, DockPhotoPanel, DOCK_PHOTO_MAX });
+Object.assign(window, { DockFakeKeyboard });

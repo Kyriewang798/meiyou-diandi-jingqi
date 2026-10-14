@@ -447,19 +447,6 @@ function RecordPhoto({photo}){
   );
 }
 
-function RecordAttachPhotos({photos}){
-  if(!photos || !photos.length) return null;
-  return (
-    <div className={'rec-attach-photos is-count-'+Math.min(photos.length, 3)}>
-      {photos.map((src, i)=>(
-        <div key={src + i} className="rec-attach-photo">
-          <img src={src} alt="记录照片" draggable={false}/>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function VoiceWave({playing, mini, compact}){
   const heights = compact
     ? COMPACT_WAVE_HEIGHTS
@@ -689,7 +676,6 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
       {isPeriodSync ? (
         <EditableRecordArea entryId={entry.id} entryKind={entryKind} editPayload={editPayload}>
           <PeriodRecordSummary entry={entry}/>
-          <RecordAttachPhotos photos={entry.attachPhotos}/>
         </EditableRecordArea>
       ) : (
         <EditableRecordArea entryId={entry.id} entryKind={entryKind} className="tl-t5-main">
@@ -715,7 +701,6 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
             )
           ) : null}
           <RecordPhoto photo={entry.photo}/>
-          <RecordAttachPhotos photos={entry.attachPhotos}/>
           {hasTags && (
             <div className="tl-t5-tags">
               <RecordedTags tags={tags} layout={tagLayout}/>
