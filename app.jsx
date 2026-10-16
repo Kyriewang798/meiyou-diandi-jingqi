@@ -62,7 +62,13 @@ function shouldShowAnalysis(hits, analysis){
 function buildTimelineEntry(text, hits, opts={}){
   const analysis = hits.length ? window.chooseAnalysis(hits) : null;
   const toneMap = { warn:'yellow', brand:'brand', good:'green' };
-  const tags = opts.tags || window.buildT5TagsFromText(text, hits);
+  const tags = [...(opts.tags || window.buildT5TagsFromText(text, hits) || [])];
+  const photoMoodRecord = !!(opts.photos?.length && /心情|情绪/.test(text));
+  if(photoMoodRecord && !tags.some(tag=>(tag.cat === 'mood' || /心情|情绪/.test(tag.label || '')))){
+    const isLowMood = /低落|烦|焦虑|难过|哭/.test(text);
+    const isGoodMood = /愉快|开心|高兴|心情.{0,3}(?:特别好|很好|不错|好)/.test(text);
+    tags.push({label:isLowMood ? '心情 低落' : isGoodMood ? '心情 愉快' : '心情 平静', cat:'mood'});
+  }
   const entry = {
     id:'e-'+Date.now(),
     kind: opts.voice ? 'voice-card' : 'rec',
@@ -77,11 +83,14 @@ function buildTimelineEntry(text, hits, opts={}){
   } else {
     entry.body = text;
   }
-  if(shouldShowAnalysis(hits, analysis)){
+  if(Array.isArray(opts.photos) && opts.photos.length){
+    entry.photos = opts.photos;
+  }
+  if(shouldShowAnalysis(hits, analysis) || photoMoodRecord){
     entry.aiNote = {
-      tone: toneMap[analysis.tone] || 'green',
-      icon: analysis.points?.[0]?.icon || '💡',
-      text: analysis.points?.map(p=>p.text).join(' ') || analysis.title,
+      tone: toneMap[analysis?.tone] || 'green',
+      icon: analysis?.points?.[0]?.icon || '💛',
+      text: analysis?.points?.map(p=>p.text).join(' ') || '已记录你的心情，点滴会持续整理近期变化。',
     };
   }
   if(opts.quickTag){
@@ -1573,9 +1582,9 @@ function App(){
     setDraft(prev=>trimDraftTail(prev));
   };
 
-  const submitPeriodCompose = ()=>{
+  const submitPeriodCompose = (photos)=>{
     setPeriodComposeActive(false);
-    submitText();
+    submitText(undefined, {photos});
   };
 
   const reopenPeriodComposeFromInput = ()=>{
@@ -1736,7 +1745,8 @@ function App(){
 
   const submitText = (textOverride, opts={})=>{
     const text = (textOverride || draft).trim();
-    if(!text) return;
+    const photos = Array.isArray(opts.photos) ? opts.photos : [];
+    if(!text && photos.length === 0) return;
 
     // 月经来了 / 月经走了 → 同步记录卡 + 周期分析反馈
     const isPeriodStartText = /月经来了|来了姨妈|大姨妈来|来例假/.test(text)
@@ -1786,7 +1796,7 @@ function App(){
     }
 
     const recordScenario = window.readCameraPermissionScenario?.() || 'unauthorized';
-    const dietEntry = window.tryCreateDietTextFeedbackEntry?.(text, recordScenario, opts.voice);
+    const dietEntry = photos.length ? null : window.tryCreateDietTextFeedbackEntry?.(text, recordScenario, opts.voice);
     if (dietEntry) {
       setDraft('');
       markUserRecorded();
@@ -1801,7 +1811,7 @@ function App(){
       return;
     }
 
-    const weightEntry = window.tryCreateWeightTextEntry?.(text, opts);
+    const weightEntry = photos.length ? null : window.tryCreateWeightTextEntry?.(text, opts);
     if (weightEntry) {
       setDraft('');
       markUserRecorded();
@@ -2883,7 +2893,7 @@ function App(){
         <DockPublisher
           draft={draft}
           onDraft={setDraft}
-          onSend={()=>submitText()}
+          onSend={(photos)=>submitText(undefined, {photos})}
           onQuickMark={submitQuickMark}
           onMoodConfirm={submitMoodRecord}
           onSymptomConfirm={submitSymptomRecord}

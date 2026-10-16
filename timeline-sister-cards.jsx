@@ -429,19 +429,48 @@ function AiNoteSection({aiNote, embedded, typewriter, onTypeComplete}){
   );
 }
 
-function RecordPhoto({photo}){
-  if(!photo) return null;
-  if(photo.src){
+// 记录里的视频：封面中间播放按钮 + 右下角时长。演示不真播放，点了没反应（也不进编辑页）
+function RecordVideoBadge({duration}){
+  if(duration == null) return null;
+  const s = Math.max(0, duration | 0);
+  const swallow = (event)=>event.stopPropagation();
+  return (
+    <span className="rec-img-video" role="button" tabIndex={0} aria-label="播放视频" onClick={swallow} onKeyDown={swallow}>
+      <span className="rec-img-video-play" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 001.5.86l10.6-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>
+      </span>
+      <span className="rec-img-video-badge">{Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}</span>
+    </span>
+  );
+}
+
+function RecordPhoto({photo, photos}){
+  const items = Array.isArray(photos) && photos.length ? photos : (photo ? [photo] : []);
+  if(!items.length) return null;
+  if(items.length > 1){
+    return (
+      <div className={'rec-img-grid count-'+(items.length > 4 ? 'many' : items.length)}>
+        {items.map((item, index)=>(
+          <span className="rec-img-cell" key={(item.src || 'photo')+index}>
+            <img src={item.src} alt={item.alt || `记录照片 ${index + 1}`}/>
+            <RecordVideoBadge duration={item.videoDuration}/>
+          </span>
+        ))}
+      </div>
+    );
+  }
+  if(items[0].src){
     return (
       <div className="rec-img">
-        <img className="rec-img-real" src={photo.src} alt={photo.alt || '记录照片'}/>
+        <img className="rec-img-real" src={items[0].src} alt={items[0].alt || '记录照片'}/>
+        <RecordVideoBadge duration={items[0].videoDuration}/>
       </div>
     );
   }
   return (
     <div className="rec-img">
-      <div className={'rec-img-ph '+(photo.tone || 'warm')}>
-        {photo.emoji || '🌸'}
+      <div className={'rec-img-ph '+(items[0].tone || 'warm')}>
+        {items[0].emoji || '🌸'}
       </div>
     </div>
   );
@@ -654,7 +683,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
   const analysisAnimateText = hasAnalysis && !entry.instantAnalysis && (
     !!animateAnalysis || (analysisProps.playAnimation > 0)
   );
-  const entryKind = (isPeriodSync || entry.kind === 'symptom') ? 'quick' : (entry.voice ? 'mixed' : entry.photo ? 'image' : entry.body ? 'text' : 'quick');
+  const entryKind = (isPeriodSync || entry.kind === 'symptom') ? 'quick' : (entry.voice ? 'mixed' : (entry.photo || entry.photos?.length) ? 'image' : entry.body ? 'text' : 'quick');
   const editPayload = isPeriodSync ? {
     kind: 'quick',
     time: entry.time,
@@ -700,7 +729,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
               <div className="tl-t5-body">{text}</div>
             )
           ) : null}
-          <RecordPhoto photo={entry.photo}/>
+          <RecordPhoto photo={entry.photo} photos={entry.photos}/>
           {hasTags && (
             <div className="tl-t5-tags">
               <RecordedTags tags={tags} layout={tagLayout}/>

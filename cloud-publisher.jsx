@@ -125,7 +125,7 @@ const DEMO_VOICE_LINE = '昨天下午来了姨妈，来之前，上午就开始�
 
 const DOCK_PLACEHOLDER = '记录生活点滴';
 
-function DockWavePlaceholder({show, focused}){
+function DockWavePlaceholder({show, focused, text = DOCK_PLACEHOLDER}){
   if(!show) return null;
 
   return (
@@ -133,7 +133,7 @@ function DockWavePlaceholder({show, focused}){
       className={'dock-float-ph'+(focused ? ' is-focused' : '')}
       aria-hidden="true"
     >
-      <span className="dock-float-ph-char is-idle">{DOCK_PLACEHOLDER}</span>
+      <span className="dock-float-ph-char is-idle">{text}</span>
     </span>
   );
 }
@@ -400,6 +400,9 @@ function WaterQuickSheet({onClose, onSave}){
   );
 }
 
+// 演示相册里哪些是视频（下标 → 时长秒）
+const GALLERY_VIDEO_DURATIONS = { 2: 12, 5: 38, 8: 65 };
+
 function DockPublisher({
   draft, onDraft, onSend, onQuickMark, onMoodConfirm, onSymptomConfirm, onWeightConfirm,
   onFoodConfirm, onDietCapture, onCameraRecord,
@@ -432,6 +435,19 @@ function DockPublisher({
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [cameraSourceRect, setCameraSourceRect] = React.useState(null);
   const [cameraPreferredMode, setCameraPreferredMode] = React.useState(null);
+  // 输入框相册：相机按钮 → 拍照 / 从相册选择 菜单 → 拍照页 / 全屏相册；已选照片最多 9 张
+  const PHOTO_LIMIT = 9;
+  const [photoMenuRect, setPhotoMenuRect] = React.useState(null);
+  const photoMenuOpen = !!photoMenuRect;
+  const gallerySnapshotRef = React.useRef(null);
+  const sheetDragStartY = React.useRef(null);
+  const [galleryFullScreen, setGalleryFullScreen] = React.useState(false);
+  const [recordCameraOpen, setRecordCameraOpen] = React.useState(false);
+  const [dockKeyboardOpen, setDockKeyboardOpen] = React.useState(false);
+  const [selectedPhotos, setSelectedPhotos] = React.useState([]);
+  // 键盘态点输入框外：输入框收回初始态（照片行隐藏、快捷栏回来），照片仍记着；再点输入框时恢复
+  const [photosCollapsed, setPhotosCollapsed] = React.useState(false);
+  const showPhotoRow = selectedPhotos.length > 0 && !photosCollapsed;
   const [feedingExpanded, setFeedingExpanded] = React.useState(false);
   const [feedingPage, setFeedingPage] = React.useState(0);
   const [periodFeelGuidePos, setPeriodFeelGuidePos] = React.useState(null);
@@ -442,6 +458,28 @@ function DockPublisher({
   const feedingSwipeRef = React.useRef({x:0, y:0, active:false, locked:null});
   const textAreaRef = React.useRef(null);
   const dockWrapRef = React.useRef(null);
+
+  const galleryPhotos = React.useMemo(()=>([
+    'IMG_9145_2-72cf62bb-2ea4-45fa-977a-78f80ac3da58.png',
+    'IMG_9137-a082d61f-1417-483d-9122-37c8ebcb2861.png',
+    'IMG_9128-7218d6e2-498b-4980-8a99-218909c9881d.png',
+    'IMG_9127-d09a43af-ea30-4eea-b165-d501765c5244.png',
+    'IMG_9140-a0794273-c982-414f-8516-52af2c4456e1.png',
+    'IMG_9129-0b57a26b-182e-49cc-ad71-7b972274a436.png',
+    'IMG_9130-49592824-80e2-4ef5-a0c4-d094130b01d4.png',
+    'IMG_9144-803d342e-cc05-4834-943e-4c52e0bad0d3.png',
+    'IMG_9139-a36f2639-6b62-453c-bdc1-2d7cd67b4d28.png',
+    '1779691515990-7a645e8f-02b5-44f1-8fe5-7c60f1f4cc40.png',
+  ]).map((file, index)=>{
+    // 相册里混有视频（演示用：用照片做封面，带时长）
+    const videoDuration = GALLERY_VIDEO_DURATIONS[index] ?? null;
+    return {
+      id:'gallery-'+index,
+      src:'assets/gallery/'+file,
+      alt:(videoDuration != null ? '相册视频 ' : '相册照片 ')+(index + 1),
+      videoDuration,
+    };
+  }), []);
 
   React.useEffect(()=>{
     if(containerRef.current){
@@ -577,6 +615,100 @@ function DockPublisher({
     closeQuick();
   };
 
+  const togglePhotoMenu = (buttonEl)=>{
+    if(photoMenuOpen){ setPhotoMenuRect(null); return; }
+    setInputMode('text');
+    setQuickOpen(false);
+    setQuickSelected(null);
+    setDockSheet(null);
+    document.activeElement?.blur?.();
+    const r = buttonEl.getBoundingClientRect();
+    const phoneRect = buttonEl.closest('.phone')?.getBoundingClientRect() || { left:0, right:window.innerWidth };
+    const MENU_W = 168;
+    const left = Math.max(phoneRect.left + 12, Math.min(r.left, phoneRect.right - 12 - MENU_W));
+    // 菜单浮在整个输入框上方，不遮挡输入区
+    const anchorTop = (buttonEl.closest('.dock-composer-stack') || buttonEl).getBoundingClientRect().top;
+    setPhotoMenuRect({ left, bottom: window.innerHeight - anchorTop });
+  };
+
+  const openPhotoCamera = ()=>{
+    setPhotoMenuRect(null);
+    setRecordCameraOpen(true);
+  };
+
+  const openPhotoAlbum = ()=>{
+    setPhotoMenuRect(null);
+    gallerySnapshotRef.current = selectedPhotos;
+    setGalleryFullScreen(true);
+  };
+
+  const cancelPhotoAlbum = ()=>{
+    // 取消：撤销本次在相册里的勾选；原来就有照片时回到「照片行 + 键盘」
+    const snapshot = gallerySnapshotRef.current;
+    if(snapshot) setSelectedPhotos(snapshot);
+    gallerySnapshotRef.current = null;
+    setGalleryFullScreen(false);
+    if(snapshot?.length) focusComposerAfterPhoto();
+  };
+
+  // 拍照 / 选图回到点滴页：光标落在输入框，键盘展开
+  const focusComposerAfterPhoto = ()=>{
+    setInputMode('text');
+    setPhotosCollapsed(false);
+    setDockKeyboardOpen(true);
+    setInputFocused(true);
+    setTimeout(()=>{
+      const el = textAreaRef.current;
+      if(!el) return;
+      el.focus({ preventScroll: true });
+      const len = el.value.length;
+      try{ el.setSelectionRange(len, len); }catch(_){}
+    }, 60);
+  };
+
+  const finishPhotoAlbum = ()=>{
+    gallerySnapshotRef.current = null;
+    setGalleryFullScreen(false);
+    if(selectedPhotos.length) focusComposerAfterPhoto();
+  };
+
+  const togglePhoto = (photo)=>{
+    setSelectedPhotos(current=>{
+      const exists = current.some(item=>item.id === photo.id);
+      if(exists) return current.filter(item=>item.id !== photo.id);
+      if(current.length >= PHOTO_LIMIT) return current;
+      return [...current, photo];
+    });
+  };
+
+  const sendGalleryRecord = ()=>{
+    if(!draft.trim() && selectedPhotos.length === 0) return;
+    // 键盘态下直接发送：发完再收起键盘，不再回到相册
+    document.activeElement?.blur?.();
+    onSend?.(selectedPhotos.map(({src, alt, videoDuration})=>({src, alt, videoDuration})));
+    setSelectedPhotos([]);
+    setPhotosCollapsed(false);
+    setPhotoMenuRect(null);
+    setGalleryFullScreen(false);
+    setDockKeyboardOpen(false);
+  };
+
+  const captureRecordPhoto = (capture = {})=>{
+    if(selectedPhotos.length >= PHOTO_LIMIT) return;
+    const source = galleryPhotos[0];
+    const captured = {
+      ...source,
+      id:'captured-'+Date.now(),
+      alt:capture.mode === 'video' ? '刚刚录制的视频' : '刚刚拍摄的照片',
+      videoDuration:capture.mode === 'video' ? capture.duration : null,
+    };
+    setSelectedPhotos(current=>[...current, captured].slice(0, PHOTO_LIMIT));
+    setRecordCameraOpen(false);
+    gallerySnapshotRef.current = null;
+    setGalleryFullScreen(false);
+    focusComposerAfterPhoto();
+  };
+
   const closeDockSheet = ()=> setDockSheet(null);
 
   const handleQuickSymptomSubmit = (symptoms)=>{
@@ -640,8 +772,8 @@ function DockPublisher({
   };
 
   React.useEffect(()=>{
-    onDockExpandedChange?.(!!dockSheet || !!quickSelected);
-  }, [dockSheet, quickSelected, onDockExpandedChange]);
+    onDockExpandedChange?.(!!dockSheet || !!quickSelected || photoMenuOpen || dockKeyboardOpen);
+  }, [dockSheet, quickSelected, photoMenuOpen, dockKeyboardOpen, onDockExpandedChange]);
 
   React.useEffect(()=>{
     if(!dockSheet) return undefined;
@@ -654,6 +786,11 @@ function DockPublisher({
   }, [dockSheet]);
 
   const isDockExpanded = !!dockSheet;
+  const hidePhotoQuickStrip = photoMenuOpen || dockKeyboardOpen || showPhotoRow;
+  React.useEffect(()=>{
+    // 快捷栏被相册流程隐藏时，顺手收起展开态，避免回来时面板高度跳动
+    if(hidePhotoQuickStrip && feedingExpanded) setFeedingExpanded(false);
+  }, [hidePhotoQuickStrip, feedingExpanded]);
   const isQuickActive = quickOpen || !!quickSelected;
   const inputPlaceholder = dockPlaceholder || DOCK_PLACEHOLDER;
   const showFeedingQuick = Array.isArray(feedingQuickItems) && feedingQuickItems.length > 0;
@@ -713,6 +850,36 @@ function DockPublisher({
 
   const MoodOverlay = window.MoodQuickOverlay || (()=>null);
   const SymptomOverlay = window.SymptomQuickOverlay || (()=>null);
+
+  // 仿 iOS 系统照片选择器：3 列、无拍照格，选中后右下角蓝色序号
+  const galleryGrid = ()=>(
+    <div className="ios-photo-grid">
+      {galleryPhotos.map(photo=>{
+        const selectedIndex = selectedPhotos.findIndex(item=>item.id === photo.id);
+        const limitReached = selectedPhotos.length >= PHOTO_LIMIT && selectedIndex < 0;
+        return (
+          <button
+            type="button"
+            key={photo.id}
+            className={'ios-photo-cell'+(selectedIndex >= 0 ? ' is-selected' : '')+(limitReached ? ' is-limit-reached' : '')}
+            onClick={()=>togglePhoto(photo)}
+            disabled={limitReached}
+            aria-label={(selectedIndex >= 0 ? '取消选择' : '选择')+photo.alt}
+            aria-pressed={selectedIndex >= 0}
+          >
+            <img src={photo.src} alt=""/>
+            {photo.videoDuration != null ? (
+              <span className="ios-photo-duration">
+                <svg width="14" height="10" viewBox="0 0 28 20" fill="currentColor" aria-hidden="true"><rect x="0" y="2" width="19" height="16" rx="3.5"/><path d="M21 8l7-4.5v13L21 12z"/></svg>
+                {formatMediaDuration(photo.videoDuration)}
+              </span>
+            ) : null}
+            {selectedIndex >= 0 ? <span className="ios-photo-badge">{selectedIndex + 1}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   const startFeedingPanelDrag = (clientY)=>{
     if(!showFeedingQuick) return;
@@ -793,7 +960,7 @@ function DockPublisher({
 
   return (
     <>
-      {!hideQuickFan && (
+      {!hideQuickFan && !hidePhotoQuickStrip && (
       <div className={'quick-float-wrap'+(isDockExpanded ? ' is-covered' : '')+(isQuickActive ? ' is-quick-active' : '')}>
         <QuickCardFan
           open={quickOpen}
@@ -844,6 +1011,70 @@ function DockPublisher({
         document.body
       )}
 
+      {photoMenuOpen && ReactDOM.createPortal(
+        <div className="dock-photo-menu-layer" onPointerDown={(e)=>{ if(e.target === e.currentTarget) setPhotoMenuRect(null); }}>
+          <div className="dock-photo-menu" role="menu" style={{left:photoMenuRect.left, bottom:photoMenuRect.bottom + 10}}>
+            <button type="button" role="menuitem" onClick={openPhotoCamera} disabled={selectedPhotos.length >= PHOTO_LIMIT}>
+              <I name="camera" size={20} strokeWidth={1.7}/>
+              <span>拍照</span>
+            </button>
+            <button type="button" role="menuitem" onClick={openPhotoAlbum}>
+              <I name="image" size={20} strokeWidth={1.7}/>
+              <span>从相册选择</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {galleryFullScreen && ReactDOM.createPortal(
+        <div className="ios-photo-sheet-layer" role="dialog" aria-modal="true" aria-label="照片">
+          <div className="ios-photo-sheet-backdrop" onClick={cancelPhotoAlbum} aria-hidden="true"/>
+          <div className="ios-photo-sheet">
+            <div
+              className="ios-photo-sheet-nav"
+              onPointerDown={(e)=>{ sheetDragStartY.current = e.clientY; }}
+              onPointerUp={(e)=>{
+                // 下拉标题栏收起，等同取消
+                if(sheetDragStartY.current != null && e.clientY - sheetDragStartY.current > 60) cancelPhotoAlbum();
+                sheetDragStartY.current = null;
+              }}
+              onPointerCancel={()=>{ sheetDragStartY.current = null; }}
+            >
+              <span/>
+              <strong>照片</strong>
+              <button type="button" className="ios-photo-sheet-done" onClick={finishPhotoAlbum}>完成</button>
+            </div>
+            <div className="ios-photo-sheet-body">{galleryGrid()}</div>
+            <div className="ios-photo-sheet-toolbar">
+              <span className="ios-photo-sheet-tool" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 20V4M4 8l4-4 4 4"/><path d="M16 4v16M12 16l4 4 4-4"/></svg>
+              </span>
+              <div className="ios-photo-sheet-status">
+                <strong>{selectedPhotos.length ? `已选择 ${selectedPhotos.length} 项` : '选择项目'}</strong>
+                <small>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></svg>
+                  包含位置
+                </small>
+              </div>
+              <span className="ios-photo-sheet-tool" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="18" height="7" rx="3.5"/><circle cx="7.5" cy="7.5" r="2" fill="currentColor"/><rect x="3" y="13" width="18" height="7" rx="3.5" fill="currentColor"/><circle cx="16.5" cy="16.5" r="2" fill="#fff" stroke="none"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {recordCameraOpen && ReactDOM.createPortal(
+        <RecordSystemCamera
+          previewSrc={galleryPhotos[0].src}
+          onClose={()=>setRecordCameraOpen(false)}
+          onCapture={captureRecordPhoto}
+        />,
+        document.body
+      )}
+
       {ReactDOM.createPortal(
         <SymptomOverlay
           open={symptomPickerOpen}
@@ -871,17 +1102,18 @@ function DockPublisher({
 
       <div
         ref={dockWrapRef}
-        className={'dock-wrap'+(isDockExpanded?' is-mood-expanded':'')+(showFeedingQuick?' is-feeding-dock':'')+(feedingExpanded?' is-feeding-expanded':'')+(periodFeelGuide?' has-period-feel-guide':'')}
+        className={'dock-wrap'+(isDockExpanded?' is-mood-expanded':'')+(showFeedingQuick?' is-feeding-dock':'')+(feedingExpanded?' is-feeding-expanded':'')+(periodFeelGuide?' has-period-feel-guide':'')+(dockKeyboardOpen?' is-gallery-open':'')}
       >
         <div
           className={'dock-panel'
             +(!dockSheet ? ' is-path-dock' : '')
             +(isDockExpanded?' is-mood-expanded':'')
             +(showFeedingQuick?' is-feeding-dock':'')
-            +(feedingExpanded?' is-feeding-expanded':'')}
-          onPointerDown={showFeedingQuick ? (e)=>startFeedingPanelDrag(e.clientY) : undefined}
-          onPointerUp={showFeedingQuick ? (e)=>finishFeedingPanelDrag(e.clientY) : undefined}
-          onPointerCancel={showFeedingQuick ? ()=>{ feedingDragStartY.current = null; } : undefined}
+            +(feedingExpanded?' is-feeding-expanded':'')
+            +(dockKeyboardOpen?' is-gallery-open':'')}
+          onPointerDown={showFeedingQuick && !hidePhotoQuickStrip ? (e)=>startFeedingPanelDrag(e.clientY) : undefined}
+          onPointerUp={showFeedingQuick && !hidePhotoQuickStrip ? (e)=>finishFeedingPanelDrag(e.clientY) : undefined}
+          onPointerCancel={showFeedingQuick && !hidePhotoQuickStrip ? ()=>{ feedingDragStartY.current = null; } : undefined}
         >
           {dockSheet === 'mood' ? (
             <DockMoodPicker
@@ -908,8 +1140,8 @@ function DockPublisher({
               }}
             />
           ) : (
-          <div className={'dock-bar is-path-dock'+(showFeedingQuick ? ' has-feeding-quick' : '')}>
-            {showFeedingQuick ? (
+          <div className={'dock-bar is-path-dock'+(showFeedingQuick ? ' has-feeding-quick' : '')+(dockKeyboardOpen ? ' has-record-gallery' : '')}>
+            {showFeedingQuick && !hidePhotoQuickStrip ? (
               <div className="dock-feeding-quick" aria-label={feedingQuickLabel}>
                 <button
                   type="button"
@@ -987,7 +1219,8 @@ function DockPublisher({
                 ) : null}
               </div>
             ) : null}
-            <div className="dock-input-row dock-input-pill">
+            <div className={'dock-composer-stack'+(showPhotoRow ? ' has-photo-content' : '')}>
+            <div className={'dock-input-row dock-input-pill'+(showPhotoRow ? ' has-photo-content' : '')}>
               <button
                 type="button"
                 className="dock-mode-btn"
@@ -1014,6 +1247,7 @@ function DockPublisher({
                   <DockWavePlaceholder
                     show={inputMode === 'text' && !draft.trim() && !showScheme3Bubble}
                     focused={inputFocused}
+                    text={dockKeyboardOpen ? '输入你想记录的' : DOCK_PLACEHOLDER}
                   />
                   <textarea
                     ref={textAreaRef}
@@ -1029,13 +1263,26 @@ function DockPublisher({
                     onFocus={()=>{
                       notifyGuideDockInteract();
                       setInputFocused(true);
-                      if(typeof onInputFocus === 'function') onInputFocus();
+                      // 已选照片时聚焦输入框：走照片流程（照片行 + 键盘），不进入经期输入模式
+                      if(selectedPhotos.length){
+                        setPhotoMenuRect(null);
+                        setPhotosCollapsed(false);
+                        setDockKeyboardOpen(true);
+                      } else if(typeof onInputFocus === 'function'){
+                        onInputFocus();
+                      }
                     }}
-                    onBlur={()=>setInputFocused(false)}
+                    onBlur={()=>{
+                      setInputFocused(false);
+                      if(dockKeyboardOpen){
+                        setDockKeyboardOpen(false);
+                        if(selectedPhotos.length) setPhotosCollapsed(true);
+                      }
+                    }}
                     onKeyDown={(e)=>{
-                      if(e.key==='Enter' && !e.shiftKey && draft.trim()){
+                      if(e.key==='Enter' && !e.shiftKey && (draft.trim() || selectedPhotos.length)){
                         e.preventDefault();
-                        onSend();
+                        sendGalleryRecord();
                       }
                     }}
                   />
@@ -1077,18 +1324,264 @@ function DockPublisher({
                 </div>
               )}
 
-              {inputMode==='text' && draft.trim() ? (
-                <button type="button" className="dock-send-btn" onClick={onSend} aria-label="发送">
+              {inputMode==='text' && draft.trim() && !showPhotoRow ? (
+                <button type="button" className="dock-send-btn" onMouseDown={(e)=>e.preventDefault()} onClick={sendGalleryRecord} aria-label="发送">
                   <DockSendIco size={15}/>
                 </button>
               ) : null}
+
+              {showPhotoRow ? (
+                <button type="button" className="dock-send-btn dock-photo-send-btn" onMouseDown={(e)=>e.preventDefault()} onClick={sendGalleryRecord} aria-label="发送">
+                  <DockSendIco size={15}/>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={'dock-camera-btn'+(photoMenuOpen ? ' is-active' : '')}
+                  aria-label="添加图片"
+                  aria-haspopup="menu"
+                  aria-expanded={photoMenuOpen}
+                  onMouseDown={(e)=>e.preventDefault()}
+                  onClick={(e)=>togglePhotoMenu(e.currentTarget)}
+                >
+                  <I name="camera" size={22} strokeWidth={1.7}/>
+                </button>
+              )}
             </div>
+            {showPhotoRow ? (
+              <div className="dock-photo-attachment-row">
+                <div className="dock-selected-photos" aria-label={`已选${selectedPhotos.length}张照片`}>
+                  {selectedPhotos.map(photo=>(
+                    <button type="button" key={photo.id} onMouseDown={(e)=>e.preventDefault()} onClick={()=>togglePhoto(photo)} aria-label="移除这张照片">
+                      <img src={photo.src} alt=""/>
+                      {photo.videoDuration != null ? (
+                        <em className="dock-selected-video-badge">▶ {formatMediaDuration(photo.videoDuration)}</em>
+                      ) : null}
+                      <span>×</span>
+                    </button>
+                  ))}
+                  {selectedPhotos.length < PHOTO_LIMIT ? (
+                    <button
+                      type="button"
+                      className={'dock-photo-add-btn'+(photoMenuOpen ? ' is-active' : '')}
+                      aria-label="继续添加图片"
+                      aria-haspopup="menu"
+                      aria-expanded={photoMenuOpen}
+                      onMouseDown={(e)=>e.preventDefault()}
+                      onClick={(e)=>togglePhotoMenu(e.currentTarget)}
+                    >
+                      <I name="plus" size={22} strokeWidth={1.6}/>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+            </div>
+
+            {dockKeyboardOpen ? (
+              <DockIosKeyboard
+                canSend={!!draft.trim() || selectedPhotos.length > 0}
+                onKey={(key)=>onDraft(draft + key)}
+                onBackspace={()=>onDraft(draft.slice(0, -1))}
+                onSend={sendGalleryRecord}
+              />
+            ) : null}
 
           </div>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+// 只保留拍照，不提供视频模式
+const RECORD_CAMERA_MODES = [
+  { id:'photo', label:'照片' },
+];
+
+// 相册 / 附件里的视频时长：iOS 式 m:ss
+function formatMediaDuration(sec){
+  const s = Math.max(0, sec | 0);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function formatCameraDuration(sec){
+  const s = Math.max(0, sec | 0);
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+// 记录页拍照：仿 iOS 系统相机（UIImagePicker）——左上闪光灯、4:3 取景、0.5/1× 焦距、
+// 仅「照片」模式，底部「取消 / 快门 / 翻转」；拍完进入「重拍 / 确定」
+function RecordSystemCamera({ previewSrc, onClose, onCapture }){
+  const [modeIndex, setModeIndex] = React.useState(0);
+  const [zoom, setZoom] = React.useState('1×');
+  const [isRecording, setIsRecording] = React.useState(false);
+  const [recordSec, setRecordSec] = React.useState(0);
+  // 拍完先停在「拍摄完成」预览，用户点确定才回到输入框
+  const [pendingCapture, setPendingCapture] = React.useState(null);
+  const swipeStart = React.useRef(null);
+  const mode = RECORD_CAMERA_MODES[modeIndex].id;
+
+  React.useEffect(()=>{
+    if(!isRecording) return undefined;
+    const timer = setInterval(()=>setRecordSec(sec=>sec + 1), 1000);
+    return ()=>clearInterval(timer);
+  }, [isRecording]);
+
+  const switchMode = (index)=>{
+    if(isRecording || pendingCapture) return;
+    setModeIndex(Math.max(0, Math.min(RECORD_CAMERA_MODES.length - 1, index)));
+  };
+
+  const onSwipeStart = (event)=>{
+    if(event.target.closest?.('button')) return;
+    swipeStart.current = event.clientX;
+  };
+  const onSwipeEnd = (event)=>{
+    if(swipeStart.current == null) return;
+    const dx = event.clientX - swipeStart.current;
+    swipeStart.current = null;
+    // 右滑看到左侧的「录像」，左滑回到「拍照」
+    if(dx > 36) switchMode(modeIndex - 1);
+    else if(dx < -36) switchMode(modeIndex + 1);
+  };
+
+  const handleShutter = ()=>{
+    if(mode === 'photo'){
+      setPendingCapture({ mode:'photo' });
+      return;
+    }
+    if(!isRecording){
+      setRecordSec(0);
+      setIsRecording(true);
+      return;
+    }
+    setIsRecording(false);
+    setPendingCapture({ mode:'video', duration:Math.max(1, recordSec) });
+  };
+
+  const retake = ()=>{
+    setPendingCapture(null);
+    setRecordSec(0);
+  };
+
+  return (
+    <div className={'record-camera-page is-system'+(isRecording ? ' is-recording' : '')+(pendingCapture ? ' is-reviewing' : '')} role="dialog" aria-modal="true" aria-label="相机">
+      <div className="record-camera-top">
+        <button type="button" className="record-camera-flash" aria-label="闪光灯：自动" disabled={!!pendingCapture || isRecording}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L5 13.5h6L9.8 22 19 10h-6.2z"/></svg>
+        </button>
+        {isRecording ? (
+          <span className="record-camera-timer"><i/>{formatCameraDuration(recordSec)}</span>
+        ) : <span/>}
+        <span/>
+      </div>
+
+      <div className="record-camera-viewfinder">
+        <img src={previewSrc} alt={pendingCapture ? '刚拍好的照片' : '相机取景画面'}/>
+        {pendingCapture ? (
+          <>
+            <span className="record-camera-shot-flash" aria-hidden="true"/>
+            {pendingCapture.mode === 'video' ? (
+              <span className="record-camera-review-video">▶ {formatCameraDuration(pendingCapture.duration)}</span>
+            ) : null}
+          </>
+        ) : (
+          <div className="record-camera-zoom" role="group" aria-label="焦距">
+            {['0.5','1×'].map(z=>(
+              <button key={z} type="button" className={zoom === z ? 'is-active' : ''} onClick={()=>setZoom(z)}>{z}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {pendingCapture ? (
+        <div className="record-camera-review-bar">
+          <button type="button" className="record-camera-retake" onClick={retake}>重拍</button>
+          <button type="button" className="record-camera-confirm" onClick={()=>onCapture(pendingCapture)}>确定</button>
+        </div>
+      ) : (
+        <div
+          className="record-camera-bottom"
+          onPointerDown={onSwipeStart}
+          onPointerUp={onSwipeEnd}
+          onPointerCancel={()=>{ swipeStart.current = null; }}
+        >
+          <div className={'record-camera-modes'+(isRecording ? ' is-hidden' : '')} role="tablist" aria-label="拍摄模式">
+            <div className="record-camera-modes-track" style={{transform:`translateX(${-(modeIndex * 56 + 28)}px)`}}>
+              {RECORD_CAMERA_MODES.map((m, index)=>(
+                <button
+                  key={m.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={index === modeIndex}
+                  className={index === modeIndex ? 'is-active' : ''}
+                  onClick={()=>switchMode(index)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="record-camera-controls">
+            <button type="button" className="record-camera-cancel" onClick={onClose} disabled={isRecording}>取消</button>
+            <button
+              type="button"
+              className={'record-camera-shutter is-'+mode+(isRecording ? ' is-recording' : '')}
+              onClick={handleShutter}
+              aria-label={mode === 'photo' ? '拍照' : (isRecording ? '停止录像' : '开始录像')}
+            >
+              <span/>
+            </button>
+            <button type="button" className="record-camera-flip" aria-label="切换摄像头" disabled={isRecording}>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.5 9.5A8 8 0 006 6.6L4.5 8"/><path d="M4.5 4v4h4"/><path d="M4.5 14.5A8 8 0 0018 17.4l1.5-1.4"/><path d="M19.5 20v-4h-4"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const DOCK_KB_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m'],
+];
+
+// 模拟系统键盘：按键 preventDefault，保持输入框焦点
+function DockIosKeyboard({ canSend, onKey, onBackspace, onSend }){
+  const keep = (e)=>e.preventDefault();
+  return (
+    <div className="record-dock-keyboard" aria-hidden="true">
+      <div className="ios-kb-rows">
+        {DOCK_KB_ROWS.map((row, rowIndex)=>(
+          <div key={rowIndex} className="ios-kb-row">
+            {rowIndex === 2 ? <span className="ios-kb-key ios-kb-key--wide ios-kb-key--ghost">⇧</span> : null}
+            {row.map(key=>(
+              <button key={key} type="button" className="ios-kb-key" onMouseDown={keep} onClick={()=>onKey(key)}>{key}</button>
+            ))}
+            {rowIndex === 2 ? (
+              <button type="button" className="ios-kb-key ios-kb-key--wide ios-kb-key--ghost" onMouseDown={keep} onClick={onBackspace} aria-label="删除">⌫</button>
+            ) : null}
+          </div>
+        ))}
+        <div className="ios-kb-row ios-kb-row--bottom">
+          <span className="ios-kb-key ios-kb-key--fn">123</span>
+          <span className="ios-kb-key ios-kb-key--fn">☺</span>
+          <button type="button" className="ios-kb-key ios-kb-key--space" onMouseDown={keep} onClick={()=>onKey(' ')}>拼音</button>
+          <button
+            type="button"
+            className={'ios-kb-key ios-kb-key--fn record-dock-kb-send'+(canSend ? ' is-ready' : '')}
+            onMouseDown={keep}
+            onClick={()=>{ if(canSend) onSend(); }}
+          >
+            发送
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

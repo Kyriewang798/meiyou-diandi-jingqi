@@ -2140,6 +2140,51 @@
   position:relative;
   transition:border-color 0.15s, background 0.15s;
 }
+.dock-composer-stack{width:100%;min-width:0}
+.dock-composer-stack.has-photo-content{
+  overflow:hidden;
+  border:0.5px solid rgba(0,0,0,0.04);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 4px 18px rgba(0,0,0,0.10);
+}
+.dock-composer-stack.has-photo-content .dock-input-pill{
+  min-height:48px;
+  height:48px;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+.dock-photo-attachment-row{
+  height:68px;
+  padding:4px 14px 10px;
+  border-top:0.5px solid rgba(0,0,0,0.06);
+  background:#fff;
+}
+.dock-selected-photos{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  padding:0;
+}
+.dock-selected-photos::-webkit-scrollbar{display:none}
+.dock-selected-photos button{
+  width:52px;height:52px;
+  padding:0;border:0;border-radius:8px;
+  position:relative;overflow:visible;flex:0 0 auto;
+  background:#ececef;
+}
+.dock-selected-photos img{
+  width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;
+}
+.dock-selected-photos span{
+  position:absolute;right:-4px;top:-5px;
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(38,38,42,.84);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;line-height:1;border:1.5px solid #fff;
+}
 .dock-text-field:focus-within,
 .dock-text-field.is-focused{
   background:var(--my-surface);
@@ -2394,6 +2439,109 @@
   margin-bottom:4px;
 }
 .dock-camera-btn:active{background:var(--my-bg)}
+.dock-camera-btn.is-active{color:var(--my-brand-red);background:var(--my-brand-soft)}
+
+/* 已选照片 + 键盘态的面板 */
+.dock-panel.is-gallery-open{
+  border-radius:18px 18px 0 0;
+  overflow:hidden;
+  box-shadow:0 -10px 36px rgba(26,22,35,.14);
+}
+.dock-bar.has-record-gallery{gap:6px;padding-bottom:0}
+.record-gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:0 3px 3px}
+.record-gallery-photo,.record-gallery-camera-tile{
+  aspect-ratio:1;border:0;padding:0;position:relative;overflow:hidden;background:#f2f2f5;
+  cursor:pointer;min-width:0;
+}
+.record-gallery-photo img{width:100%;height:100%;display:block;object-fit:cover}
+.record-gallery-photo.is-selected::after{
+  content:'';position:absolute;inset:0;border:2px solid var(--my-brand-red);pointer-events:none;
+}
+.record-gallery-photo.is-limit-reached,
+.record-gallery-camera-tile.is-limit-reached{
+  filter:grayscale(1);
+  opacity:.42;
+  cursor:default;
+}
+.record-gallery-check{
+  position:absolute;right:6px;top:6px;width:22px;height:22px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.95);background:rgba(30,30,34,.24);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.record-gallery-photo.is-selected .record-gallery-check{background:var(--my-brand-red);border-color:var(--my-brand-red)}
+.record-gallery-camera-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#555;font:inherit;font-size:12px}
+.record-gallery-camera-icon{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#323232;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+
+.record-gallery-fullscreen,.record-camera-page{
+  position:fixed;inset:0;margin:auto;width:100%;max-width:390px;height:100dvh;z-index:10020;
+  background:#fff;display:flex;flex-direction:column;
+}
+.record-gallery-full-nav{
+  height:88px;padding:44px 16px 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  border-bottom:.5px solid var(--my-line);background:rgba(255,255,255,.96);flex-shrink:0;
+}
+.record-gallery-full-nav button{min-width:44px;height:44px;border:0;background:transparent;font:inherit;font-size:15px;color:var(--my-text-secondary);text-align:left}
+.record-gallery-full-nav strong{font-size:17px;font-weight:600}
+.record-gallery-full-nav .is-done{text-align:right;color:var(--my-brand-red);font-weight:500}
+.record-gallery-full-body{flex:1;overflow-y:auto;background:#f2f2f5;padding-top:3px}
+.record-gallery-grid.is-fullscreen{padding-bottom:24px}
+
+.record-camera-page{background:#000;color:#fff;user-select:none}
+/* 系统相机样式：顶部 关闭 / 下拉 / 闪光灯，中间 4:3 取景，底部 模式 + 快门 */
+.record-camera-top{height:104px;padding:44px 14px 0;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;justify-items:center;flex-shrink:0}
+.record-camera-close,.record-camera-flash{width:44px;height:44px;border:0;background:transparent;color:#fff;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.record-camera-more{width:50px;height:30px;border-radius:15px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;color:#fff}
+.record-camera-timer{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:#ff3b30;font-size:15px;font-variant-numeric:tabular-nums;font-weight:500}
+.record-camera-timer i{width:7px;height:7px;border-radius:50%;background:#fff;animation:recordCameraBlink 1s steps(2) infinite}
+@keyframes recordCameraBlink{50%{opacity:0}}
+.record-camera-viewfinder{flex:0 0 auto;width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:#111}
+.record-camera-viewfinder img{width:100%;height:100%;object-fit:cover;display:block}
+.record-camera-zoom{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;padding:4px;border-radius:24px;background:rgba(0,0,0,.28)}
+.record-camera-zoom button{width:38px;height:38px;border:0;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;font:inherit;font-size:13px;cursor:pointer;padding:0}
+.record-camera-zoom button.is-active{color:#ffd60a;font-weight:600}
+.record-camera-bottom{flex:1;display:flex;flex-direction:column;justify-content:flex-start;padding-top:18px;touch-action:pan-y}
+.record-camera-modes{position:relative;height:28px;overflow:hidden;transition:opacity .2s}
+.record-camera-modes.is-hidden{opacity:0;pointer-events:none}
+.record-camera-modes-track{position:absolute;left:50%;top:0;display:flex;transition:transform .28s cubic-bezier(.2,0,0,1)}
+.record-camera-modes-track button{width:56px;height:28px;border:0;background:transparent;color:rgba(255,255,255,.85);font:inherit;font-size:15px;cursor:pointer;padding:0}
+.record-camera-modes-track button.is-active{color:#ffd60a;font-weight:500}
+.record-camera-controls{height:120px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;justify-items:center;padding-bottom:20px}
+.record-camera-album-shortcut{width:46px;height:46px;border:1.5px solid rgba(255,255,255,.85);border-radius:8px;padding:0;overflow:hidden;background:#222;transition:opacity .2s}
+.record-camera-album-shortcut img{width:100%;height:100%;object-fit:cover;display:block}
+.record-camera-shutter{width:78px;height:78px;border-radius:50%;border:4px solid #fff;background:transparent;padding:5px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.record-camera-shutter span{display:block;width:100%;height:100%;border-radius:50%;background:#fff;transition:all .22s cubic-bezier(.2,0,0,1)}
+.record-camera-shutter.is-video span{background:#ff3b30}
+.record-camera-shutter.is-video.is-recording span{width:30px;height:30px;border-radius:7px}
+.record-camera-flip{width:46px;height:46px;border:0;border-radius:50%;background:transparent;color:#fff;padding:0;display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+.record-camera-album-shortcut:disabled,.record-camera-flip:disabled{opacity:0}
+
+/* 拍摄完成：预览 + 重拍 / 确定 */
+.record-camera-flash:disabled{opacity:0}
+.record-camera-review-title{font-size:16px;font-weight:500}
+.record-camera-shot-flash{position:absolute;inset:0;background:#fff;pointer-events:none;animation:recordCameraShot .32s ease-out both}
+@keyframes recordCameraShot{from{opacity:.85}to{opacity:0}}
+.record-camera-review-video{position:absolute;left:12px;bottom:12px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,.5);font-size:13px;font-variant-numeric:tabular-nums}
+.record-camera-review-bar{flex:1;display:flex;align-items:center;justify-content:space-between;padding:0 28px 34px}
+.record-camera-retake{height:44px;padding:0 6px;border:0;background:transparent;color:#fff;font:inherit;font-size:17px;cursor:pointer}
+.record-camera-confirm{height:40px;min-width:88px;padding:0 22px;border:0;border-radius:20px;background:var(--my-brand-red);color:#fff;font:inherit;font-size:16px;font-weight:500;cursor:pointer}
+
+/* 已选附件里的视频角标 */
+.dock-selected-photos .dock-selected-video-badge{position:absolute;left:3px;bottom:3px;padding:0 3px;border-radius:3px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-style:normal;line-height:13px;pointer-events:none}
+
+/* 相册展开后聚焦输入框：相册换成键盘 */
+.record-dock-keyboard{align-self:stretch;width:auto;box-sizing:border-box;margin:0 -12px;padding:8px 3px 10px;background:#d1d5db;animation:recordDockKbIn .24s cubic-bezier(.2,0,0,1) both}
+.record-dock-keyboard .ios-kb-key{min-width:0;flex:1 1 0;max-width:34px;padding:0;font-size:20px;display:inline-flex;align-items:center;justify-content:center}
+.record-dock-keyboard .ios-kb-key--wide{max-width:44px;font-size:16px}
+.record-dock-keyboard .ios-kb-key--fn{flex:0 0 44px;max-width:none;font-size:14px}
+.record-dock-keyboard .ios-kb-key--space{flex:1 1 auto;max-width:none;font-size:15px}
+.record-dock-keyboard .record-dock-kb-send{flex:0 0 72px;color:rgba(0,0,0,.45)}
+.record-dock-keyboard .record-dock-kb-send.is-ready{background:var(--my-brand-red);color:#fff}
+@keyframes recordDockKbIn{from{opacity:.4;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+@media(max-width:374px){
+  .dock-input-row{gap:5px}
+}
 
 .fade-in{animation:fadeUp 0.28s cubic-bezier(0.2,0,0,1) both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
@@ -2868,3 +3016,94 @@
 .dock-fake-kb-key.is-fn{min-width:46px;font-size:15px;background:#adb3bc}
 .dock-fake-kb-key.is-space{flex:1;min-width:0;font-size:15px}
 .dock-fake-kb-key.is-return{min-width:72px;font-size:15px;font-weight:500}
+
+/* 相机按钮：拍照 / 选择图片 菜单（浮在输入框上方，右对齐相机按钮） */
+.dock-photo-menu-layer{position:fixed;inset:0;z-index:10010}
+.dock-photo-menu{
+  position:fixed;min-width:168px;padding:6px 0;border-radius:16px;background:#fff;
+  box-shadow:0 8px 28px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04);
+  animation:dockPhotoMenuIn .18s cubic-bezier(.2,0,0,1) both;transform-origin:left bottom;
+}
+.dock-photo-menu button{
+  width:100%;height:48px;padding:0 20px;border:0;background:transparent;
+  display:flex;align-items:center;gap:12px;color:#222;font:inherit;font-size:16px;cursor:pointer;text-align:left;
+}
+.dock-photo-menu button:active{background:var(--my-bg)}
+.dock-photo-menu button:disabled{opacity:.35;cursor:default}
+.dock-photo-menu svg{color:#333;flex-shrink:0}
+@keyframes dockPhotoMenuIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+
+/* 已选照片未满 9 张：照片行末尾的加号，点开同一个菜单 */
+.dock-selected-photos .dock-photo-add-btn{
+  border:1px dashed #d4d4da;background:#f7f7f9;color:#8a8a92;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.dock-selected-photos .dock-photo-add-btn:active,
+.dock-selected-photos .dock-photo-add-btn.is-active{background:var(--my-brand-soft);border-color:var(--my-brand-red);color:var(--my-brand-red)}
+
+/* 选择图片：仿 iOS 系统照片选择器半弹窗（标题「照片」+ 蓝色「完成」、3 列网格、底部「选择项目」栏） */
+.ios-photo-sheet-layer{position:fixed;inset:0;margin:auto;width:100%;max-width:390px;height:100dvh;z-index:10020;overflow:hidden}
+.ios-photo-sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4);animation:iosSheetFade .28s ease both}
+.ios-photo-sheet{
+  position:absolute;left:0;right:0;bottom:0;top:54px;display:flex;flex-direction:column;
+  background:#fff;border-radius:12px 12px 0 0;overflow:hidden;
+  font-family:-apple-system,"SF Pro Text","PingFang SC",sans-serif;
+  animation:iosSheetUp .34s cubic-bezier(.2,.8,.2,1) both;
+}
+.ios-photo-sheet-nav{
+  height:56px;flex-shrink:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 16px;
+  background:rgba(249,249,249,.94);border-bottom:.5px solid rgba(60,60,67,.18);touch-action:none;
+}
+.ios-photo-sheet-nav strong{font-size:17px;font-weight:600;color:#000}
+.ios-photo-sheet-done{justify-self:end;border:0;background:transparent;padding:0;font:inherit;font-size:17px;color:#007aff;cursor:pointer}
+.ios-photo-sheet-body{flex:1;overflow-y:auto;background:#fff}
+.ios-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.ios-photo-cell{position:relative;aspect-ratio:1;border:0;padding:0;overflow:hidden;background:#f2f2f7;cursor:pointer;min-width:0}
+.ios-photo-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.ios-photo-cell.is-selected::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.18);pointer-events:none}
+.ios-photo-cell.is-limit-reached{opacity:.4;cursor:default}
+.ios-photo-badge{
+  position:absolute;right:5px;bottom:5px;z-index:1;min-width:22px;height:22px;padding:0 5px;border-radius:11px;
+  background:#007aff;border:1.5px solid #fff;color:#fff;font-size:13px;font-weight:600;line-height:19px;text-align:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.ios-photo-sheet-toolbar{
+  flex-shrink:0;height:86px;padding:8px 18px 22px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;
+  background:rgba(249,249,249,.94);border-top:.5px solid rgba(60,60,67,.18);
+}
+.ios-photo-sheet-tool{color:#007aff;display:flex;align-items:center;justify-content:center}
+.ios-photo-sheet-status{text-align:center;line-height:1.25}
+.ios-photo-sheet-status strong{display:block;font-size:17px;font-weight:600;color:#000}
+.ios-photo-sheet-status small{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:rgba(60,60,67,.6)}
+@keyframes iosSheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes iosSheetFade{from{opacity:0}to{opacity:1}}
+
+/* 拍照页：仿 iOS 系统相机（覆盖上面的通用相机样式） */
+.record-camera-page.is-system{font-family:-apple-system,"SF Pro Text","PingFang SC",sans-serif}
+.record-camera-page.is-system .record-camera-top{height:104px;padding:44px 12px 0;grid-template-columns:56px 1fr 56px;justify-items:start}
+.record-camera-page.is-system .record-camera-top > :nth-child(2){justify-self:center}
+.record-camera-page.is-system .record-camera-flash{width:44px;height:44px}
+.record-camera-page.is-system .record-camera-flash:disabled{opacity:0}
+.record-camera-page.is-system .record-camera-zoom{bottom:16px;gap:8px;padding:5px;border-radius:26px;background:rgba(0,0,0,.24)}
+.record-camera-page.is-system .record-camera-zoom button{width:30px;height:30px;margin:4px 0;font-size:12px;font-weight:600;background:rgba(0,0,0,.45)}
+.record-camera-page.is-system .record-camera-zoom button.is-active{width:38px;height:38px;margin:0;font-size:14px;color:#ffd60a}
+.record-camera-page.is-system .record-camera-bottom{padding-top:22px}
+.record-camera-page.is-system .record-camera-modes-track button{font-size:15px;font-weight:500;letter-spacing:1px;color:#fff}
+.record-camera-page.is-system .record-camera-modes-track button.is-active{color:#ffd60a}
+.record-camera-page.is-system .record-camera-controls{height:128px;padding:0 6px 24px}
+.record-camera-cancel{justify-self:center;border:0;background:transparent;padding:8px;color:#fff;font:inherit;font-size:18px;cursor:pointer;transition:opacity .2s}
+.record-camera-cancel:disabled{opacity:0}
+.record-camera-page.is-system .record-camera-shutter{width:76px;height:76px;border-width:5px;padding:4px}
+.record-camera-page.is-system .record-camera-flip{width:52px;height:52px;background:rgba(255,255,255,.14)}
+.record-camera-page.is-system .record-camera-flip:disabled{opacity:0}
+/* 拍摄完成：iOS 式纯文字「重拍 / 确定」 */
+.record-camera-page.is-system .record-camera-review-bar{padding:0 22px 40px}
+.record-camera-page.is-system .record-camera-retake,
+.record-camera-page.is-system .record-camera-confirm{height:44px;min-width:0;padding:0 8px;border-radius:0;background:transparent;color:#fff;font-size:18px;font-weight:400}
+
+/* 相册里的视频：左下角摄像机图标 + 时长（与右下角选中序号错开） */
+.ios-photo-duration{
+  position:absolute;left:0;right:0;bottom:0;padding:14px 6px 4px;display:flex;align-items:center;gap:4px;
+  background:linear-gradient(transparent,rgba(0,0,0,.45));color:#fff;font-size:12px;font-weight:600;
+  font-variant-numeric:tabular-nums;pointer-events:none;
+}
