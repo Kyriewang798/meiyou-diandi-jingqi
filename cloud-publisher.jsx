@@ -369,6 +369,9 @@ function WaterQuickSheet({onClose, onSave}){
   );
 }
 
+// 演示相册里哪些是视频（下标 → 时长秒）
+const GALLERY_VIDEO_DURATIONS = { 2: 12, 5: 38, 8: 65 };
+
 function DockPublisher({
   draft, onDraft, onSend, onQuickMark, onMoodConfirm, onSymptomConfirm, onWeightConfirm,
   onFoodConfirm, onDietCapture, onCameraRecord,
@@ -400,11 +403,12 @@ function DockPublisher({
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [cameraSourceRect, setCameraSourceRect] = React.useState(null);
   const [cameraPreferredMode, setCameraPreferredMode] = React.useState(null);
-  // 输入框相册：相机按钮 → 拍照 / 选择图片 菜单 → 拍照页 / 全屏相册；已选照片最多 9 张
+  // 输入框相册：相机按钮 → 拍照 / 从相册选择 菜单 → 拍照页 / 全屏相册；已选照片最多 9 张
   const PHOTO_LIMIT = 9;
   const [photoMenuRect, setPhotoMenuRect] = React.useState(null);
   const photoMenuOpen = !!photoMenuRect;
   const gallerySnapshotRef = React.useRef(null);
+  const sheetDragStartY = React.useRef(null);
   const textAreaRef = React.useRef(null);
   const [galleryFullScreen, setGalleryFullScreen] = React.useState(false);
   const [recordCameraOpen, setRecordCameraOpen] = React.useState(false);
@@ -430,11 +434,16 @@ function DockPublisher({
     'IMG_9144-803d342e-cc05-4834-943e-4c52e0bad0d3.png',
     'IMG_9139-a36f2639-6b62-453c-bdc1-2d7cd67b4d28.png',
     '1779691515990-7a645e8f-02b5-44f1-8fe5-7c60f1f4cc40.png',
-  ]).map((file, index)=>({
-    id:'gallery-'+index,
-    src:'assets/gallery/'+file,
-    alt:'相册照片 '+(index + 1),
-  })), []);
+  ]).map((file, index)=>{
+    // 相册里混有视频（演示用：用照片做封面，带时长）
+    const videoDuration = GALLERY_VIDEO_DURATIONS[index] ?? null;
+    return {
+      id:'gallery-'+index,
+      src:'assets/gallery/'+file,
+      alt:(videoDuration != null ? '相册视频 ' : '相册照片 ')+(index + 1),
+      videoDuration,
+    };
+  }), []);
 
   React.useEffect(()=>{
     if(containerRef.current){
@@ -583,10 +592,12 @@ function DockPublisher({
   };
 
   const cancelPhotoAlbum = ()=>{
-    // 取消：撤销本次在相册里的勾选
-    if(gallerySnapshotRef.current) setSelectedPhotos(gallerySnapshotRef.current);
+    // 取消：撤销本次在相册里的勾选；原来就有照片时回到「照片行 + 键盘」
+    const snapshot = gallerySnapshotRef.current;
+    if(snapshot) setSelectedPhotos(snapshot);
     gallerySnapshotRef.current = null;
     setGalleryFullScreen(false);
+    if(snapshot?.length) focusComposerAfterPhoto();
   };
 
   // 拍照 / 选图回到点滴页：光标落在输入框，键盘展开
@@ -623,7 +634,7 @@ function DockPublisher({
     if(!draft.trim() && selectedPhotos.length === 0) return;
     // 键盘态下直接发送：发完再收起键盘，不再回到相册
     document.activeElement?.blur?.();
-    onSend?.(selectedPhotos.map(({src, alt})=>({src, alt})));
+    onSend?.(selectedPhotos.map(({src, alt, videoDuration})=>({src, alt, videoDuration})));
     setSelectedPhotos([]);
     setPhotosCollapsed(false);
     setPhotoMenuRect(null);
@@ -738,32 +749,30 @@ function DockPublisher({
   const MoodOverlay = window.MoodQuickOverlay || (()=>null);
   const SymptomOverlay = window.SymptomQuickOverlay || (()=>null);
 
-  const galleryGrid = (fullScreen = false)=>(
-    <div className={'record-gallery-grid'+(fullScreen ? ' is-fullscreen' : '')}>
-      <button
-        type="button"
-        className={'record-gallery-camera-tile'+(selectedPhotos.length >= PHOTO_LIMIT ? ' is-limit-reached' : '')}
-        onClick={()=>setRecordCameraOpen(true)}
-        disabled={selectedPhotos.length >= PHOTO_LIMIT}
-        aria-label="拍照"
-      >
-        <span className="record-gallery-camera-icon"><I name="camera" size={28} strokeWidth={1.8}/></span>
-        <span>拍照</span>
-      </button>
+  // 仿 iOS 系统照片选择器：3 列、无拍照格，选中后右下角蓝色序号
+  const galleryGrid = ()=>(
+    <div className="ios-photo-grid">
       {galleryPhotos.map(photo=>{
         const selectedIndex = selectedPhotos.findIndex(item=>item.id === photo.id);
+        const limitReached = selectedPhotos.length >= PHOTO_LIMIT && selectedIndex < 0;
         return (
           <button
             type="button"
             key={photo.id}
-            className={'record-gallery-photo'+(selectedIndex >= 0 ? ' is-selected' : '')+(selectedPhotos.length >= PHOTO_LIMIT && selectedIndex < 0 ? ' is-limit-reached' : '')}
+            className={'ios-photo-cell'+(selectedIndex >= 0 ? ' is-selected' : '')+(limitReached ? ' is-limit-reached' : '')}
             onClick={()=>togglePhoto(photo)}
-            disabled={selectedPhotos.length >= PHOTO_LIMIT && selectedIndex < 0}
+            disabled={limitReached}
             aria-label={(selectedIndex >= 0 ? '取消选择' : '选择')+photo.alt}
             aria-pressed={selectedIndex >= 0}
           >
             <img src={photo.src} alt=""/>
-            <span className="record-gallery-check">{selectedIndex >= 0 ? selectedIndex + 1 : ''}</span>
+            {photo.videoDuration != null ? (
+              <span className="ios-photo-duration">
+                <svg width="14" height="10" viewBox="0 0 28 20" fill="currentColor" aria-hidden="true"><rect x="0" y="2" width="19" height="16" rx="3.5"/><path d="M21 8l7-4.5v13L21 12z"/></svg>
+                {formatMediaDuration(photo.videoDuration)}
+              </span>
+            ) : null}
+            {selectedIndex >= 0 ? <span className="ios-photo-badge">{selectedIndex + 1}</span> : null}
           </button>
         );
       })}
@@ -875,7 +884,7 @@ function DockPublisher({
             </button>
             <button type="button" role="menuitem" onClick={openPhotoAlbum}>
               <I name="image" size={20} strokeWidth={1.7}/>
-              <span>选择图片</span>
+              <span>从相册选择</span>
             </button>
           </div>
         </div>,
@@ -883,15 +892,40 @@ function DockPublisher({
       )}
 
       {galleryFullScreen && ReactDOM.createPortal(
-        <div className="record-gallery-fullscreen" role="dialog" aria-modal="true" aria-label="相册">
-          <div className="record-gallery-full-nav">
-            <button type="button" onClick={cancelPhotoAlbum}>取消</button>
-            <strong>相册</strong>
-            <button type="button" className="is-done" onClick={finishPhotoAlbum}>
-              完成{selectedPhotos.length ? `(${selectedPhotos.length})` : ''}
-            </button>
+        <div className="ios-photo-sheet-layer" role="dialog" aria-modal="true" aria-label="照片">
+          <div className="ios-photo-sheet-backdrop" onClick={cancelPhotoAlbum} aria-hidden="true"/>
+          <div className="ios-photo-sheet">
+            <div
+              className="ios-photo-sheet-nav"
+              onPointerDown={(e)=>{ sheetDragStartY.current = e.clientY; }}
+              onPointerUp={(e)=>{
+                // 下拉标题栏收起，等同取消
+                if(sheetDragStartY.current != null && e.clientY - sheetDragStartY.current > 60) cancelPhotoAlbum();
+                sheetDragStartY.current = null;
+              }}
+              onPointerCancel={()=>{ sheetDragStartY.current = null; }}
+            >
+              <span/>
+              <strong>照片</strong>
+              <button type="button" className="ios-photo-sheet-done" onClick={finishPhotoAlbum}>完成</button>
+            </div>
+            <div className="ios-photo-sheet-body">{galleryGrid()}</div>
+            <div className="ios-photo-sheet-toolbar">
+              <span className="ios-photo-sheet-tool" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 20V4M4 8l4-4 4 4"/><path d="M16 4v16M12 16l4 4 4-4"/></svg>
+              </span>
+              <div className="ios-photo-sheet-status">
+                <strong>{selectedPhotos.length ? `已选择 ${selectedPhotos.length} 项` : '选择项目'}</strong>
+                <small>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></svg>
+                  包含位置
+                </small>
+              </div>
+              <span className="ios-photo-sheet-tool" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="18" height="7" rx="3.5"/><circle cx="7.5" cy="7.5" r="2" fill="currentColor"/><rect x="3" y="13" width="18" height="7" rx="3.5" fill="currentColor"/><circle cx="16.5" cy="16.5" r="2" fill="#fff" stroke="none"/></svg>
+              </span>
+            </div>
           </div>
-          <div className="record-gallery-full-body">{galleryGrid(true)}</div>
         </div>,
         document.body
       )}
@@ -899,9 +933,7 @@ function DockPublisher({
       {recordCameraOpen && ReactDOM.createPortal(
         <RecordSystemCamera
           previewSrc={galleryPhotos[0].src}
-          albumSrc={galleryPhotos[1].src}
           onClose={()=>setRecordCameraOpen(false)}
-          onOpenAlbum={()=>{setRecordCameraOpen(false);openPhotoAlbum();}}
           onCapture={captureRecordPhoto}
         />,
         document.body
@@ -1122,7 +1154,7 @@ function DockPublisher({
                     <button type="button" key={photo.id} onMouseDown={(e)=>e.preventDefault()} onClick={()=>togglePhoto(photo)} aria-label="移除这张照片">
                       <img src={photo.src} alt=""/>
                       {photo.videoDuration != null ? (
-                        <em className="dock-selected-video-badge">▶ {formatCameraDuration(photo.videoDuration)}</em>
+                        <em className="dock-selected-video-badge">▶ {formatMediaDuration(photo.videoDuration)}</em>
                       ) : null}
                       <span>×</span>
                     </button>
@@ -1162,20 +1194,27 @@ function DockPublisher({
   );
 }
 
+// 只保留拍照，不提供视频模式
 const RECORD_CAMERA_MODES = [
-  { id:'video', label:'录像' },
-  { id:'photo', label:'拍照' },
+  { id:'photo', label:'照片' },
 ];
+
+// 相册 / 附件里的视频时长：iOS 式 m:ss
+function formatMediaDuration(sec){
+  const s = Math.max(0, sec | 0);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
 
 function formatCameraDuration(sec){
   const s = Math.max(0, sec | 0);
   return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 }
 
-// 记录页拍照：仿系统相机（关闭 / 闪光灯、4:3 取景、焦距、录像|拍照 左右滑切换）
-function RecordSystemCamera({ previewSrc, albumSrc, onClose, onOpenAlbum, onCapture }){
-  const [modeIndex, setModeIndex] = React.useState(1);
-  const [zoom, setZoom] = React.useState('1x');
+// 记录页拍照：仿 iOS 系统相机（UIImagePicker）——左上闪光灯、4:3 取景、0.5/1× 焦距、
+// 仅「照片」模式，底部「取消 / 快门 / 翻转」；拍完进入「重拍 / 确定」
+function RecordSystemCamera({ previewSrc, onClose, onCapture }){
+  const [modeIndex, setModeIndex] = React.useState(0);
+  const [zoom, setZoom] = React.useState('1×');
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordSec, setRecordSec] = React.useState(0);
   // 拍完先停在「拍摄完成」预览，用户点确定才回到输入框
@@ -1229,21 +1268,13 @@ function RecordSystemCamera({ previewSrc, albumSrc, onClose, onOpenAlbum, onCapt
   return (
     <div className={'record-camera-page is-system'+(isRecording ? ' is-recording' : '')+(pendingCapture ? ' is-reviewing' : '')} role="dialog" aria-modal="true" aria-label="相机">
       <div className="record-camera-top">
-        <button type="button" className="record-camera-close" onClick={onClose} aria-label="关闭">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        <button type="button" className="record-camera-flash" aria-label="闪光灯：自动" disabled={!!pendingCapture || isRecording}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L5 13.5h6L9.8 22 19 10h-6.2z"/></svg>
         </button>
-        {pendingCapture ? (
-          <span className="record-camera-review-title">{pendingCapture.mode === 'video' ? '录像完成' : '拍摄完成'}</span>
-        ) : isRecording ? (
+        {isRecording ? (
           <span className="record-camera-timer"><i/>{formatCameraDuration(recordSec)}</span>
-        ) : (
-          <span className="record-camera-more" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        )}
-        <button type="button" className="record-camera-flash" aria-label="闪光灯：关闭" disabled={!!pendingCapture}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"><path d="M13 3L6 13h5l-1 8 7-10h-5l1-8z"/><path d="M4 4l16 16"/></svg>
-        </button>
+        ) : <span/>}
+        <span/>
       </div>
 
       <div className="record-camera-viewfinder">
@@ -1257,7 +1288,7 @@ function RecordSystemCamera({ previewSrc, albumSrc, onClose, onOpenAlbum, onCapt
           </>
         ) : (
           <div className="record-camera-zoom" role="group" aria-label="焦距">
-            {['0.6','1x','2'].map(z=>(
+            {['0.5','1×'].map(z=>(
               <button key={z} type="button" className={zoom === z ? 'is-active' : ''} onClick={()=>setZoom(z)}>{z}</button>
             ))}
           </div>
@@ -1293,9 +1324,7 @@ function RecordSystemCamera({ previewSrc, albumSrc, onClose, onOpenAlbum, onCapt
             </div>
           </div>
           <div className="record-camera-controls">
-            <button type="button" className="record-camera-album-shortcut" onClick={onOpenAlbum} aria-label="打开相册" disabled={isRecording}>
-              <img src={albumSrc} alt=""/>
-            </button>
+            <button type="button" className="record-camera-cancel" onClick={onClose} disabled={isRecording}>取消</button>
             <button
               type="button"
               className={'record-camera-shutter is-'+mode+(isRecording ? ' is-recording' : '')}
@@ -1305,7 +1334,7 @@ function RecordSystemCamera({ previewSrc, albumSrc, onClose, onOpenAlbum, onCapt
               <span/>
             </button>
             <button type="button" className="record-camera-flip" aria-label="切换摄像头" disabled={isRecording}>
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4h10a3 3 0 013 3v8"/><path d="M17 20H7a3 3 0 01-3-3V9"/><path d="M17.5 12.5L20 15l2.5-2.5"/><path d="M6.5 11.5L4 9l-2.5 2.5"/></svg>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.5 9.5A8 8 0 006 6.6L4.5 8"/><path d="M4.5 4v4h4"/><path d="M4.5 14.5A8 8 0 0018 17.4l1.5-1.4"/><path d="M19.5 20v-4h-4"/></svg>
             </button>
           </div>
         </div>
