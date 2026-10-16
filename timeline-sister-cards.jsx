@@ -428,19 +428,29 @@ function AiNoteSection({aiNote, embedded, typewriter, onTypeComplete}){
   );
 }
 
-function RecordPhoto({photo}){
-  if(!photo) return null;
-  if(photo.src){
+function RecordPhoto({photo, photos}){
+  const items = Array.isArray(photos) && photos.length ? photos : (photo ? [photo] : []);
+  if(!items.length) return null;
+  if(items.length > 1){
+    return (
+      <div className={'rec-img-grid count-'+(items.length > 4 ? 'many' : items.length)}>
+        {items.map((item, index)=>(
+          <img key={(item.src || 'photo')+index} src={item.src} alt={item.alt || `记录照片 ${index + 1}`}/>
+        ))}
+      </div>
+    );
+  }
+  if(items[0].src){
     return (
       <div className="rec-img">
-        <img className="rec-img-real" src={photo.src} alt={photo.alt || '记录照片'}/>
+        <img className="rec-img-real" src={items[0].src} alt={items[0].alt || '记录照片'}/>
       </div>
     );
   }
   return (
     <div className="rec-img">
-      <div className={'rec-img-ph '+(photo.tone || 'warm')}>
-        {photo.emoji || '🌸'}
+      <div className={'rec-img-ph '+(items[0].tone || 'warm')}>
+        {items[0].emoji || '🌸'}
       </div>
     </div>
   );
@@ -653,7 +663,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
   const analysisAnimateText = hasAnalysis && !entry.instantAnalysis && (
     !!animateAnalysis || (analysisProps.playAnimation > 0)
   );
-  const entryKind = (isPeriodSync || entry.kind === 'symptom') ? 'quick' : (entry.voice ? 'mixed' : entry.photo ? 'image' : entry.body ? 'text' : 'quick');
+  const entryKind = (isPeriodSync || entry.kind === 'symptom') ? 'quick' : (entry.voice ? 'mixed' : (entry.photo || entry.photos?.length) ? 'image' : entry.body ? 'text' : 'quick');
   const editPayload = isPeriodSync ? {
     kind: 'quick',
     time: entry.time,
@@ -699,7 +709,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
               <div className="tl-t5-body">{text}</div>
             )
           ) : null}
-          <RecordPhoto photo={entry.photo}/>
+          <RecordPhoto photo={entry.photo} photos={entry.photos}/>
           {hasTags && (
             <div className="tl-t5-tags">
               <RecordedTags tags={tags} layout={tagLayout}/>

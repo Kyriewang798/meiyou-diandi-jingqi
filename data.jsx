@@ -175,7 +175,9 @@ function buildT5TagsFromText(text, hits){
     } else if(h.kind === 'sleep'){
       push(/没睡|失眠|醒|偏少/.test(text) ? '睡眠偏少' : '睡眠', 'sleep', 'sleep');
     } else if(h.kind === 'mood'){
-      push(/低落|烦|焦虑|难过|哭/.test(text) ? '心情 低落' : '心情 平静', 'mood', 'mood');
+      const isLowMood = /低落|烦|焦虑|难过|哭/.test(text);
+      const isGoodMood = /愉快|开心|高兴|心情.{0,3}(?:特别好|很好|不错|好)/.test(text);
+      push(isLowMood ? '心情 低落' : isGoodMood ? '心情 愉快' : '心情 平静', 'mood', 'mood');
     } else if(h.kind === 'med'){
       push('用药', 'symptom', 'med');
     } else if(h.kind === 'weight'){
