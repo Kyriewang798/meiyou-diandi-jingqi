@@ -650,8 +650,382 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
   );
 }
 
+function WeightAssessEntry({onAssess}){
+  if(typeof onAssess !== 'function') return null;
+  return (
+    <button
+      type="button"
+      className="review-weight-assess-entry"
+      onClick={event=>{
+        event.stopPropagation();
+        onAssess();
+      }}
+    >
+      测评
+    </button>
+  );
+}
+
+function WeightManageCard({phase='none', onActivateGoal, onOpen}){
+  if(phase === 'goal') return null;
+  if(phase === 'plan'){
+    const handleKeyDown = event=>{
+      if(!onOpen) return;
+      if(event.key === 'Enter' || event.key === ' '){
+        event.preventDefault();
+        onOpen();
+      }
+    };
+    return (
+      <article
+        className="review-weight-manage-card is-active is-actionable"
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        onClick={onOpen}
+        onKeyDown={handleKeyDown}
+        aria-label="体重目标管理进行中，第63天，当前53.7公斤，目标52.0公斤"
+      >
+        <header className="review-weight-manage-active-head">
+          <span className="review-weight-manage-active-icon" aria-hidden="true"><ReviewDietTargetIcon/></span>
+          <h2>体重目标管理</h2>
+          <span className="review-weight-manage-status">已更新</span>
+          <span className="review-weight-manage-chevron" aria-hidden="true"><ReviewChevron/></span>
+        </header>
+        <div className="review-weight-manage-active">
+          <aside className="review-weight-manage-side">
+            <span>第</span>
+            <strong>63</strong>
+            <span>天 · 进行中</span>
+          </aside>
+          <div className="review-weight-manage-main">
+            <div className="review-weight-manage-current-row">
+              <p className="review-weight-manage-current">
+                <b>53.7</b>
+                <span>公斤</span>
+              </p>
+              <span className="review-weight-manage-delta">累计 -2.1公斤</span>
+            </div>
+            <div className="review-weight-manage-bar" aria-label="进度55%">
+              <span className="review-weight-manage-bar-fill" style={{width:'55%'}}/>
+              <span className="review-weight-manage-bar-tip" style={{left:'55%'}}>55%</span>
+            </div>
+            <div className="review-weight-manage-meta">
+              <span>初始 55.8</span>
+              <span>目标 52.0</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="review-weight-manage-card is-idle" aria-label="体重目标管理，未开启计划，示例数据">
+      <header className="review-weight-manage-idle-head">
+        <span className="review-weight-manage-active-icon" aria-hidden="true"><ReviewDietTargetIcon/></span>
+        <h2>体重目标管理</h2>
+        <span className="review-weight-manage-sample-badge">示例</span>
+      </header>
+      <div className="review-weight-manage-sample">
+        <div className="review-weight-manage-sample-body" aria-hidden="true">
+          <aside className="review-weight-manage-sample-side">
+            <span>第</span>
+            <strong>30</strong>
+            <span>天 · 进行中</span>
+          </aside>
+          <div className="review-weight-manage-sample-main">
+            <p className="review-weight-manage-sample-weight">
+              <b>57.6</b>
+              <span>公斤</span>
+            </p>
+            <div className="review-weight-manage-sample-bar" aria-label="进度48%">
+              <span className="review-weight-manage-sample-bar-fill" style={{width:'48%'}}/>
+            </div>
+            <div className="review-weight-manage-sample-meta">
+              <span>初始 60.0</span>
+              <span>48%</span>
+              <span>目标 55.0</span>
+            </div>
+          </div>
+        </div>
+        <div className="review-weight-manage-sample-mask" aria-hidden="true">
+          <span>示例数据</span>
+        </div>
+      </div>
+      <div className="review-weight-manage-idle-foot">
+        <p>制定目标，更有方向地管理体重</p>
+        <button
+          type="button"
+          className="review-weight-manage-goal-link"
+          onClick={()=>{
+            onActivateGoal?.();
+            onOpen?.();
+          }}
+        >
+          制定目标
+        </button>
+      </div>
+    </article>
+  );
+}
+
+const WEIGHT_ASSESS_AGE_OPTIONS = ['34岁及以下', '35-39岁', '40岁及以上'];
+
+function WeightAssessRuler({value, min, max, step=0.1, unit, onChange, markerLabel, markerValue}){
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+  const ticks = [];
+  for(let v = Math.ceil(min); v <= Math.floor(max); v += 1){
+    ticks.push(v);
+  }
+  return (
+    <div className="weight-assess-ruler">
+      <div className="weight-assess-ruler-value">
+        <b>{Number(value).toFixed(1)}</b>
+        <span>{unit}</span>
+      </div>
+      <div className="weight-assess-ruler-track-wrap">
+        <input
+          className="weight-assess-ruler-range"
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          aria-label={unit}
+          onChange={event=>onChange?.(Number(event.target.value))}
+        />
+        <div className="weight-assess-ruler-ticks" aria-hidden="true">
+          {ticks.filter((v, i)=>i % 5 === 0 || v === Math.round(min) || v === Math.round(max)).map(v=>(
+            <span key={v} style={{left: ((v - min) / (max - min)) * 100 + '%'}}>{v}</span>
+          ))}
+        </div>
+        {markerLabel != null && markerValue != null ? (
+          <span
+            className="weight-assess-ruler-marker"
+            style={{left: Math.max(0, Math.min(100, ((markerValue - min) / (max - min)) * 100)) + '%'}}
+          >
+            {markerLabel}
+          </span>
+        ) : null}
+        <i className="weight-assess-ruler-pointer" style={{left: pct + '%'}} aria-hidden="true"/>
+      </div>
+    </div>
+  );
+}
+
+function WeightAssessPage({open, onClose, onComplete}){
+  const [step, setStep] = React.useState(0);
+  const [age, setAge] = React.useState(WEIGHT_ASSESS_AGE_OPTIONS[0]);
+  const [heightCm, setHeightCm] = React.useState(160);
+  const [weightKg, setWeightKg] = React.useState(50.2);
+  const [targetKg, setTargetKg] = React.useState(47);
+  const [weeks, setWeeks] = React.useState(11);
+  const totalSteps = 6;
+  const progress = ((step + 1) / totalSteps) * 100;
+  const heightM = heightCm / 100;
+  const bmi = heightM > 0 ? Math.round((weightKg / (heightM * heightM)) * 10) / 10 : 0;
+  const weeklyLoss = Math.max(0.05, +((weightKg - targetKg) / Math.max(weeks, 1)).toFixed(2));
+
+  React.useEffect(()=>{
+    if(!open) return;
+    setStep(0);
+  }, [open]);
+
+  const goNext = ()=>{
+    if(step >= totalSteps - 1){
+      onComplete?.({ age, heightCm, weightKg, targetKg, weeks });
+      return;
+    }
+    setStep(v=>v + 1);
+  };
+  const goPrev = ()=>{
+    if(step <= 0){
+      onClose?.();
+      return;
+    }
+    setStep(v=>v - 1);
+  };
+
+  return (
+    <section
+      className={'review-cycle-detail is-fullscreen-detail weight-assess-page' + (open ? ' is-open' : '')}
+      aria-hidden={!open}
+      aria-label="体重测评"
+    >
+      <div className="weight-assess-nav">
+        <button type="button" className="weight-assess-back" aria-label="返回" onClick={goPrev}>
+          <ReviewBackIcon/>
+        </button>
+        <span className="weight-assess-nav-title">测评</span>
+      </div>
+      <div className="weight-assess-shell">
+        <p className="weight-assess-lead">完成测评，为你生成专属方案</p>
+        <div className="weight-assess-progress" role="progressbar" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={step + 1}>
+          <span style={{width: progress + '%'}}/>
+        </div>
+
+        {step === 0 ? (
+          <div className="weight-assess-panel">
+            <h2 className="weight-assess-question">目前属于以下哪个年龄段？</h2>
+            <div className="weight-assess-choices">
+              {WEIGHT_ASSESS_AGE_OPTIONS.map(item=>(
+                <button
+                  key={item}
+                  type="button"
+                  className={'weight-assess-choice' + (age === item ? ' is-active' : '')}
+                  onClick={()=>setAge(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {step === 1 ? (
+          <div className="weight-assess-panel">
+            <h2 className="weight-assess-question">请选择你的身高体重</h2>
+            <p className="weight-assess-sub">用于计算 BMI 与目标建议</p>
+            <WeightAssessRuler value={heightCm} min={140} max={185} step={0.5} unit="厘米" onChange={setHeightCm}/>
+            <WeightAssessRuler value={weightKg} min={35} max={90} step={0.1} unit="公斤" onChange={setWeightKg}/>
+          </div>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="weight-assess-panel">
+            <h2 className="weight-assess-question">你的体重是？</h2>
+            <p className="weight-assess-sub">精准体重数据将用于计算你的 BMI</p>
+            <WeightAssessRuler value={weightKg} min={35} max={90} step={0.1} unit="公斤" onChange={setWeightKg}/>
+            <div className="weight-assess-bmi-card">
+              <div className="weight-assess-bmi-head">
+                <span>你的 BMI</span>
+                <em>{bmi.toFixed(1)} {bmi < 18.5 ? '偏瘦' : bmi < 24 ? '理想' : bmi < 28 ? '偏胖' : '肥胖'}</em>
+              </div>
+              <div className="weight-assess-bmi-bar" aria-hidden="true">
+                <i style={{left: Math.max(4, Math.min(96, ((bmi - 14) / 20) * 100)) + '%'}}/>
+              </div>
+              <p>标准体重，进阶管理需注意提升代谢水平，可采取 16:8 饮食法，配合运动。</p>
+            </div>
+          </div>
+        ) : null}
+
+        {step === 3 ? (
+          <div className="weight-assess-panel">
+            <h2 className="weight-assess-question">你的目标体重是？</h2>
+            <WeightAssessRuler
+              value={targetKg}
+              min={35}
+              max={Math.max(36, weightKg)}
+              step={0.1}
+              unit="公斤"
+              onChange={setTargetKg}
+              markerLabel="最新体重"
+              markerValue={weightKg}
+            />
+          </div>
+        ) : null}
+
+        {step === 4 ? (
+          <div className="weight-assess-panel">
+            <h2 className="weight-assess-question">你希望多久达到目标体重？</h2>
+            <div className="weight-assess-week-picker" role="group" aria-label="计划周数">
+              {[8, 11, 16, 24].map(item=>(
+                <button
+                  key={item}
+                  type="button"
+                  className={'weight-assess-choice' + (weeks === item ? ' is-active' : '')}
+                  onClick={()=>setWeeks(item)}
+                >
+                  约 {item} 周
+                </button>
+              ))}
+            </div>
+            <div className="weight-assess-summary-card">
+              <p>需要约 <b>{weeks}</b> 周</p>
+              <p>每周减 <b>{weeklyLoss}</b> 公斤</p>
+              <span>适中模式：黄金减肥速度，适合绝大多数人，你也一定可以的！</span>
+            </div>
+          </div>
+        ) : null}
+
+        {step === 5 ? (
+          <div className="weight-assess-panel is-result">
+            <h2 className="weight-assess-question">你将达到的体重变化趋势</h2>
+            <div className="weight-assess-trend-card">
+              <svg viewBox="0 0 280 120" className="weight-assess-trend-svg" aria-hidden="true">
+                <path d="M20 28 C80 34 140 62 260 92" fill="none" stroke="#ff8a3d" strokeWidth="3" strokeLinecap="round"/>
+                <circle cx="20" cy="28" r="4" fill="#4f7cae"/>
+                <circle cx="260" cy="92" r="4" fill="#ff8a3d"/>
+              </svg>
+              <ul className="weight-assess-trend-meta">
+                <li><span>年龄</span><em>{age}</em></li>
+                <li><span>当前 BMI</span><em>{bmi.toFixed(1)}</em></li>
+                <li><span>代谢水平</span><em>适中</em></li>
+                <li><span>体重目标</span><em>{targetKg.toFixed(1)}公斤</em></li>
+                <li><span>减肥难度</span><em>适中</em></li>
+              </ul>
+            </div>
+            <div className="weight-assess-cheer">
+              <strong>太棒了！</strong>
+              <p>我们一起陪你达成体重管理目标</p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="weight-assess-foot">
+          {step > 0 && step < totalSteps - 1 ? (
+            <button type="button" className="weight-assess-prev" onClick={goPrev}>上一题</button>
+          ) : <span/>}
+          <button type="button" className="weight-assess-next" onClick={goNext}>
+            {step >= totalSteps - 1 ? '生成我的计划' : '下一步'}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WeightGoalDetailPage({open, onClose, onAssess}){
+  return (
+    <section
+      className={'review-cycle-detail is-fullscreen-detail review-weight-goal-detail' + (open ? ' is-open' : '')}
+      aria-hidden={!open}
+      aria-label="体重目标管理详情"
+    >
+      <div className="review-detail-nav">
+        <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
+          <ReviewBackIcon/>
+        </button>
+        <span className="review-detail-title">体重目标管理</span>
+        <WeightAssessEntry onAssess={onAssess}/>
+      </div>
+      <div className="review-detail-content review-weight-goal-detail-content">
+        <section className="review-weight-goal-skeleton-card" aria-label="目标进度占位">
+          <div className="review-weight-goal-skeleton-head">目标进度</div>
+          <div className="review-weight-goal-skeleton-panel is-hero"/>
+        </section>
+        <section className="review-weight-goal-skeleton-card" aria-label="体重趋势占位">
+          <div className="review-weight-goal-skeleton-head">体重趋势</div>
+          <div className="review-weight-goal-skeleton-panel is-chart"/>
+        </section>
+        <section className="review-weight-goal-skeleton-card" aria-label="计划建议占位">
+          <div className="review-weight-goal-skeleton-head">计划建议</div>
+          <div className="review-weight-goal-skeleton-lines">
+            <span/>
+            <span/>
+            <span className="is-short"/>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 function ReviewPeriodOverview({
   cycleUpdated,
+  weightManagePhase='none',
+  onWeightManageActivateGoal,
+  onOpenWeightGoal,
   onOpenCycle,
   onOpenWeight,
   onOpenMood,
@@ -659,6 +1033,7 @@ function ReviewPeriodOverview({
   onOpenBeverage,
   onOpenSkin,
   onOpenLove,
+  onOpenSymptom,
   onOpenStool,
 }){
   return (
@@ -675,6 +1050,11 @@ function ReviewPeriodOverview({
         unit="天"
         chart={<ReviewOverviewBars values={[30,32,25,30,27,22]} color="#ff6599" softColor="#ffb1cb"/>}
         onOpen={onOpenCycle}
+      />
+      <WeightManageCard
+        phase={weightManagePhase}
+        onActivateGoal={onWeightManageActivateGoal}
+        onOpen={onOpenWeightGoal}
       />
       <ReviewOverviewCard
         title="体重"
@@ -755,6 +1135,7 @@ function ReviewPeriodOverview({
         metricLabel="最常出现"
         value="乳房胀痛"
         chart={<ReviewOverviewBars values={[9,7,5,4,3]} color="#7aa8e8" softColor="#a9c7ef"/>}
+        onOpen={onOpenSymptom}
       />
       <ReviewOverviewCard
         title="便便"
@@ -2180,7 +2561,34 @@ function WeightReviewCard({onOpen}){
 }
 
 /** 折线图下方数据模块：BMI 指数 + 体重记录概览 */
-function WeightTrendSummary({range = 'd30'}){
+function WeightPlanGuideBanner({phase='none', onCreatePlan}){
+  if(phase === 'plan') return null;
+  const copy = phase === 'goal'
+    ? {
+        title: '距离「减肥」目标日还有 92 天',
+        subtitle: '测评一下，把目标拆成每周做得到的小步',
+      }
+    : {
+        title: '想更有方向地管理体重？',
+        subtitle: '设定目标，结合饮食、活动记录查看长期进展',
+      };
+  return (
+    <button
+      type="button"
+      className="review-weight-plan-guide is-lite"
+      onClick={onCreatePlan}
+      aria-label={copy.title}
+    >
+      <span className="review-weight-plan-guide-copy">
+        <strong>{copy.title}</strong>
+        <span>{copy.subtitle}</span>
+      </span>
+      <em className="review-weight-plan-guide-chevron" aria-hidden="true"><ReviewChevron/></em>
+    </button>
+  );
+}
+
+function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan}){
   const meta = WEIGHT_RANGE_META[range] || WEIGHT_RANGE_META.d30;
   const series = weightTrendSeries(range);
   const latestJin = series.values[series.values.length - 1] || WEIGHT_CARD_VALUES[WEIGHT_CARD_VALUES.length - 1];
@@ -2236,6 +2644,7 @@ function WeightTrendSummary({range = 'd30'}){
             </p>
           </div>
         </div>
+        <WeightPlanGuideBanner phase={planGuidePhase} onCreatePlan={onCreatePlan}/>
       </div>
     </div>
   );
@@ -2730,10 +3139,14 @@ function WeightCycleCombinedCard({onExpand, showCompare = true, showPhase = true
   );
 }
 
-function WeightDetailBody({range, onExpandPhase}){
+function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan}){
   return (
     <>
-      <WeightTrendSummary range={range}/>
+      <WeightTrendSummary
+        range={range}
+        planGuidePhase={planGuidePhase}
+        onCreatePlan={onCreatePlan}
+      />
       <div className="review-mood-detail-lower">
         {range === 'd30' ? (
           <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
@@ -2746,7 +3159,7 @@ function WeightDetailBody({range, onExpandPhase}){
   );
 }
 
-function WeightDetailPage({open, onClose}){
+function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan}){
   const [range, setRange] = React.useState('d30');
   const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
@@ -2795,7 +3208,12 @@ function WeightDetailPage({open, onClose}){
             ))}
           </div>
         </div>
-        <WeightDetailBody range={range} onExpandPhase={()=>setPhaseLandscapeOpen(true)}/>
+        <WeightDetailBody
+          range={range}
+          onExpandPhase={()=>setPhaseLandscapeOpen(true)}
+          planGuidePhase={planGuidePhase}
+          onCreatePlan={onCreatePlan}
+        />
       </div>
     </section>
     <WeightAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
@@ -8809,34 +9227,198 @@ function PeriodReviewCard(){
   );
 }
 
-function SymptomReviewChart(){
-  const symptoms = [
+const SYMPTOM_RANK_DATA = {
+  d30: [
     {label:'乳房胀痛', days:9, color:'#ff7da6'},
     {label:'疲惫', days:7, color:'#f0ad4e'},
     {label:'腰酸', days:5, color:'#78a6e4'},
     {label:'腹痛', days:4, color:'#9b84d7'},
     {label:'头痛', days:3, color:'#72b7ae'},
-  ];
-  const W = 340, H = 164, labelW = 62, right = 32, top = 8, rowH = 30;
+  ],
+  half: [
+    {label:'乳房胀痛', days:28, color:'#ff7da6'},
+    {label:'疲惫', days:22, color:'#f0ad4e'},
+    {label:'腰酸', days:18, color:'#78a6e4'},
+    {label:'腹痛', days:14, color:'#9b84d7'},
+    {label:'头痛', days:11, color:'#72b7ae'},
+    {label:'失眠', days:8, color:'#8e7bd9'},
+  ],
+  year: [
+    {label:'乳房胀痛', days:52, color:'#ff7da6'},
+    {label:'疲惫', days:41, color:'#f0ad4e'},
+    {label:'腰酸', days:33, color:'#78a6e4'},
+    {label:'腹痛', days:29, color:'#9b84d7'},
+    {label:'头痛', days:21, color:'#72b7ae'},
+    {label:'失眠', days:17, color:'#8e7bd9'},
+  ],
+  all: [
+    {label:'乳房胀痛', days:86, color:'#ff7da6'},
+    {label:'疲惫', days:70, color:'#f0ad4e'},
+    {label:'腰酸', days:58, color:'#78a6e4'},
+    {label:'腹痛', days:49, color:'#9b84d7'},
+    {label:'头痛', days:36, color:'#72b7ae'},
+    {label:'失眠', days:28, color:'#8e7bd9'},
+  ],
+};
+
+const SYMPTOM_RANGE_META = {
+  d30: {kinds:5, days:18, top:'乳房胀痛', label:'近30天'},
+  half: {kinds:6, days:64, top:'乳房胀痛', label:'近半年'},
+  year: {kinds:6, days:118, top:'乳房胀痛', label:'近1年'},
+  all: {kinds:6, days:196, top:'乳房胀痛', label:'全部'},
+};
+
+const SYMPTOM_PHASE_ROWS = [
+  {phase:'月经期', tip:'腹痛、腰酸更常见', items:[{name:'腹痛', pct:72},{name:'腰酸', pct:58},{name:'头痛', pct:34}]},
+  {phase:'卵泡期', tip:'整体较平稳', items:[{name:'疲惫', pct:28},{name:'头痛', pct:18},{name:'失眠', pct:12}]},
+  {phase:'排卵期', tip:'偶有轻微不适', items:[{name:'腹痛', pct:22},{name:'白带变化', pct:40},{name:'腰酸', pct:16}]},
+  {phase:'黄体期', tip:'乳房胀痛更突出', items:[{name:'乳房胀痛', pct:81},{name:'疲惫', pct:56},{name:'失眠', pct:38}]},
+];
+
+function SymptomReviewChart({symptoms, maxDays = 10, height = 164, ariaLabel = '症状出现天数排行'}){
+  const list = symptoms || SYMPTOM_RANK_DATA.d30;
+  const W = 340, H = height, labelW = 62, right = 36, top = 8, rowH = Math.max(26, (H - top - 4) / list.length);
   const chartW = W - labelW - right;
-  const maxDays = 10;
+  const ceil = Math.max(maxDays, ...list.map(item=>item.days));
   return (
-    <svg viewBox="0 0 340 164" preserveAspectRatio="xMidYMid meet" role="img" aria-label="近30天症状出现天数排行">
-      {symptoms.map((item, i)=>{
+    <svg viewBox={'0 0 340 ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label={ariaLabel}>
+      {list.map((item, i)=>{
         const y = top + i * rowH;
-        const width = chartW * item.days / maxDays;
+        const width = chartW * item.days / ceil;
         return <g key={item.label}>
           <text x={labelW - 8} y={y + 16} textAnchor="end" fontSize="11" fill="#66666c" fontFamily="PingFang SC">{item.label}</text>
           <rect x={labelW} y={y + 5} width={chartW} height="14" rx="7" fill="#f4f4f6"/>
           <rect x={labelW} y={y + 5} width={width} height="14" rx="7" fill={item.color}/>
-          <text x={labelW + width + 7} y={y + 16} fontSize="10" fontWeight="600" fill={item.color} fontFamily="PingFang SC">{item.days}天</text>
+          <text x={labelW + width + 7} y={y + 16} fontSize="10" fontWeight="500" fill={item.color} fontFamily="PingFang SC">{item.days}天</text>
         </g>;
       })}
     </svg>
   );
 }
 
-function SymptomReviewCard(){
+function SymptomTrendSummary({range = 'd30'}){
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
+  const symptoms = SYMPTOM_RANK_DATA[range] || SYMPTOM_RANK_DATA.d30;
+  const maxDays = Math.max(...symptoms.map(item=>item.days), 10);
+  return (
+    <div className="review-mood-trend-block review-symptom-trend-block">
+      <div className="review-mood-trend-head-main">
+        <div className="review-mood-trend-title review-mood-section-title">症状排行</div>
+        <div className="review-mood-trend-range">{meta.label}</div>
+      </div>
+      <div className="review-chart review-detail-chart review-symptom-rank-chart">
+        <SymptomReviewChart
+          symptoms={symptoms}
+          maxDays={maxDays}
+          height={Math.max(164, symptoms.length * 30 + 12)}
+          ariaLabel={meta.label + '症状出现天数排行'}
+        />
+      </div>
+      <p className="review-symptom-rank-note">按出现天数排序，同一天重复记录只计 1 天</p>
+      <div className="review-mood-trend-insight-row review-weight-stat-row review-symptom-stat-row">
+        <div className="review-mood-trend-record-card review-weight-stat-card">
+          <span className="review-mood-trend-record-card-title">记录症状</span>
+          <p><b>{meta.kinds}</b><em>种</em></p>
+        </div>
+        <div className="review-mood-trend-record-card review-weight-stat-card">
+          <span className="review-mood-trend-record-card-title">有症状</span>
+          <p><b>{meta.days}</b><em>天</em></p>
+        </div>
+        <div className="review-mood-trend-record-card review-weight-stat-card">
+          <span className="review-mood-trend-record-card-title">最常出现</span>
+          <p className="is-text"><b>{meta.top}</b></p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SymptomPhaseRelationCard(){
+  return (
+    <section className="review-symptom-phase-card" aria-label="症状与周期关系">
+      <div className="review-mood-trend-title review-mood-section-title">症状与周期</div>
+      <p className="review-symptom-phase-lead">黄体期乳房胀痛更集中，月经期腹痛/腰酸相对更高。</p>
+      <div className="review-symptom-phase-list">
+        {SYMPTOM_PHASE_ROWS.map(row=>(
+          <article key={row.phase} className="review-symptom-phase-item">
+            <header>
+              <strong>{row.phase}</strong>
+              <span>{row.tip}</span>
+            </header>
+            <div className="review-symptom-phase-tags">
+              {row.items.map(item=>(
+                <span key={item.name}>{item.name} {item.pct}%</span>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SymptomDetailBody({range}){
+  return (
+    <>
+      <SymptomTrendSummary range={range}/>
+      <div className="review-love-detail-lower">
+        <SymptomPhaseRelationCard/>
+        <section className="review-symptom-insight-card" aria-label="症状解读">
+          <strong>记录小提示</strong>
+          <p>近 30 天里，乳房胀痛多集中在经前 5-7 天。持续记录有助于分辨周期相关不适与偶发症状。</p>
+        </section>
+      </div>
+    </>
+  );
+}
+
+function SymptomDetailPage({open, onClose}){
+  const [range, setRange] = React.useState('d30');
+  const ranges = [
+    {key:'d30', label:'近30天'},
+    {key:'half', label:'近半年'},
+    {key:'year', label:'近1年'},
+    {key:'all', label:'全部'},
+  ];
+  React.useEffect(()=>{
+    if(open) setRange('d30');
+  }, [open]);
+  return (
+    <section
+      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '')}
+      aria-hidden={!open}
+      aria-label="症状详情"
+    >
+      <div className="review-detail-nav">
+        <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
+          <ReviewBackIcon/>
+        </button>
+        <span className="review-detail-title">症状</span>
+        <button type="button" className="review-detail-all-records">所有记录</button>
+      </div>
+      <div className="review-detail-content review-love-detail-content">
+        <div className="review-love-detail-top">
+          <div className="review-segment" role="tablist" aria-label="时间范围">
+            {ranges.map(item=>(
+              <button
+                key={item.key}
+                type="button"
+                className={range === item.key ? 'is-active' : ''}
+                aria-selected={range === item.key}
+                onClick={()=>setRange(item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <SymptomDetailBody range={range}/>
+      </div>
+    </section>
+  );
+}
+
+function SymptomReviewCard({onOpen}){
   return (
     <ReviewCard
       title="症状"
@@ -8852,6 +9434,7 @@ function SymptomReviewCard(){
         </>
       )}
       more="查看症状与周期的关系"
+      onOpen={onOpen}
     />
   );
 }
@@ -12911,17 +13494,20 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
   const [dietDistDetailOpen, setDietDistDetailOpen] = useState(false);
   const [moodDetailOpen, setMoodDetailOpen] = useState(false);
   const [weightDetailOpen, setWeightDetailOpen] = useState(false);
+  const [weightGoalDetailOpen, setWeightGoalDetailOpen] = useState(false);
+  const [weightAssessOpen, setWeightAssessOpen] = useState(false);
   const [stoolDetailOpen, setStoolDetailOpen] = useState(false);
   const [loveDetailOpen, setLoveDetailOpen] = useState(false);
   const [beverageDetailOpen, setBeverageDetailOpen] = useState(false);
   const [skinDetailOpen, setSkinDetailOpen] = useState(false);
+  const [symptomDetailOpen, setSymptomDetailOpen] = useState(false);
   const isPeriodMode = mode === '经期';
   const I = window.Icon;
   const ReviewSearchOverlay = window.ReviewSearchOverlay;
@@ -12938,6 +13524,12 @@ function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, on
     setWeightDetailOpen(true);
     onWeightDetailRequestHandled?.();
   }, [openWeightDetailRequest]);
+
+  React.useEffect(()=>{
+    if(openWeightGoalDetailRequest <= 0) return;
+    setWeightGoalDetailOpen(true);
+    onWeightGoalDetailRequestHandled?.();
+  }, [openWeightGoalDetailRequest]);
 
   React.useEffect(()=>{
     if(openDietDetailRequest <= 0) return;
@@ -12966,13 +13558,16 @@ function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, on
         <span className="review-nav-title">回顾</span>
       </div>
       <div className="review-content">
-        <p className="review-page-greeting">已记录 <b>350</b>天，共<b>{isPeriodMode ? 9 : 7}</b>项{isPeriodMode ? '回顾' : '可回顾'}</p>
+        <p className="review-page-greeting">已记录 <b>350</b>天，共<b>{isPeriodMode ? 10 : 7}</b>项{isPeriodMode ? '回顾' : '可回顾'}</p>
 
       {isPeriodMode ? (
         <>
         {isMember ? <PeriodHealthImageCard/> : null}
         <ReviewPeriodOverview
           cycleUpdated={cycleUpdated}
+          weightManagePhase={weightManagePhase}
+          onWeightManageActivateGoal={()=>onWeightManageChange?.('goal')}
+          onOpenWeightGoal={()=>setWeightGoalDetailOpen(true)}
           onOpenCycle={()=>{
             setCycleUpdated(false);
             setCycleDetailOpen(true);
@@ -12983,6 +13578,7 @@ function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, on
           onOpenBeverage={()=>setBeverageDetailOpen(true)}
           onOpenSkin={()=>setSkinDetailOpen(true)}
           onOpenLove={()=>setLoveDetailOpen(true)}
+          onOpenSymptom={()=>setSymptomDetailOpen(true)}
           onOpenStool={()=>setStoolDetailOpen(true)}
         />
         </>
@@ -13029,7 +13625,7 @@ function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, on
         />
       ) : null}
 
-      {isPeriodMode ? <SymptomReviewCard/> : null}
+      {isPeriodMode ? <SymptomReviewCard onOpen={()=>setSymptomDetailOpen(true)}/> : null}
 
       <MoodReviewCard
         onOpen={()=>setMoodDetailOpen(true)}
@@ -13071,15 +13667,39 @@ function ReviewPage({mode='经期', isMember=false, openCycleDetailRequest=0, on
       />
       <WeightDetailPage
         open={weightDetailOpen}
+        planGuidePhase={weightManagePhase}
+        onCreatePlan={()=>{
+          if(weightManagePhase === 'none') onWeightManageChange?.('goal');
+          else onWeightManageChange?.('plan');
+          setWeightGoalDetailOpen(true);
+        }}
         onClose={()=>{
           setWeightDetailOpen(false);
           onWeightDetailReturn?.();
+        }}
+      />
+      <WeightGoalDetailPage
+        open={weightGoalDetailOpen}
+        onAssess={()=>setWeightAssessOpen(true)}
+        onClose={()=>{
+          setWeightGoalDetailOpen(false);
+          onWeightGoalDetailReturn?.();
+        }}
+      />
+      <WeightAssessPage
+        open={weightAssessOpen}
+        onClose={()=>setWeightAssessOpen(false)}
+        onComplete={()=>{
+          setWeightAssessOpen(false);
+          onWeightManageChange?.('plan');
+          setWeightGoalDetailOpen(true);
         }}
       />
       <StoolDetailPage open={stoolDetailOpen} onClose={()=>setStoolDetailOpen(false)}/>
       <LoveDetailPage open={loveDetailOpen} onClose={()=>setLoveDetailOpen(false)}/>
       <BeverageDetailPage open={beverageDetailOpen} onClose={()=>setBeverageDetailOpen(false)}/>
       <SkinDetailPage open={skinDetailOpen} onClose={()=>setSkinDetailOpen(false)}/>
+      <SymptomDetailPage open={symptomDetailOpen} onClose={()=>setSymptomDetailOpen(false)}/>
     </main>
   );
 }

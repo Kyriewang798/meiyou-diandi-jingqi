@@ -132,12 +132,18 @@ function DockSymptomPicker({onConfirm, onCancel}){
 }
 
 function useWeightInput(){
-  const [value, setValue] = React.useState('');
-  const [unit, setUnit] = React.useState('kg');
+  // 进页默认：100. + 光标，单位斤
+  const [value, setValue] = React.useState('100.');
+  const [unit, setUnit] = React.useState('jin');
 
   const pressKey = (key)=>{
     if(key === '⌫'){
-      setValue(v=>v.slice(0, -1));
+      setValue(v=>{
+        let next = v.slice(0, -1);
+        // 删掉最后一位小数后若只剩「100.」，顺带去掉小数点，少点一次删除
+        if(next.endsWith('.')) next = next.slice(0, -1);
+        return next;
+      });
       return;
     }
     if(key === '.'){
@@ -147,44 +153,49 @@ function useWeightInput(){
     }
     setValue(v=>{
       if(!v || v === '0') return key;
+      // 已是完整整数（如 100）时，直接按数字补小数位，无需再点「.」
+      if(v && !v.includes('.') && v.length >= 3) return v + '.' + key;
       if(v.includes('.') && v.split('.')[1]?.length >= 2) return v;
-      if(!v.includes('.') && v.length >= 3) return v;
       return v + key;
     });
   };
 
   const selectUnit = (next)=>{
     if(next === unit) return;
-    const n = parseFloat(value);
-    if(Number.isFinite(n) && n > 0){
-      const converted = next === 'jin' ? (n * 2) : (n / 2);
-      setValue(String(+converted.toFixed(2)));
-    }
+    // 切换斤/公斤时保留当前输入数字，不做换算
     setUnit(next);
   };
 
   const num = parseFloat(value);
-  const canSubmit = Number.isFinite(num) && num > 0;
+  // 「100.」这类尾随小数点视为未完成输入，需补小数位后再确定
+  const canSubmit = Number.isFinite(num) && num > 0 && !String(value).endsWith('.');
   const display = value || '0';
+  const showCaret = true;
 
   return {
-    value, unit, pressKey, selectUnit, num, canSubmit, display,
+    value, unit, pressKey, selectUnit, num, canSubmit, display, showCaret,
     unitLabel: unit === 'kg' ? '公斤' : '斤',
     toggleUnitLabel: unit === 'kg' ? '切换为斤' : '切换为公斤',
-    isPlaceholder: !value || display === '0',
+    isPlaceholder: !value,
     toggleUnit: ()=>selectUnit(unit === 'kg' ? 'jin' : 'kg'),
   };
 }
 
-function WeightKeypadConfirmIcon(){
+function WeightKeypadDeleteIcon(){
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M5 12.5 9.5 17 19 7"/>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+      <path
+        d="M9.2 6.2h9.3A2.5 2.5 0 0 1 21 8.7v6.6a2.5 2.5 0 0 1-2.5 2.5H9.2L4.2 12l5-5.8z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M11.4 9.6l5 5M16.4 9.6l-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
   );
 }
 
-function QuickWeightPicker({ onSubmit }){
+function QuickWeightPicker({ onSubmit, onCancel }){
   const w = useWeightInput();
 
   const submit = ()=>{
@@ -193,56 +204,63 @@ function QuickWeightPicker({ onSubmit }){
   };
 
   return (
-    <div className="quick-weight-panel">
-      <div className="quick-weight-panel-top">
-        <div className="quick-weight-panel-display">
-          <span className={'quick-weight-panel-num'+(w.isPlaceholder ? ' is-placeholder' : '')}>{w.display}</span>
-          <span className="quick-weight-panel-unit">{w.unitLabel}</span>
-          <button type="button" className="quick-weight-unit-toggle" onClick={w.toggleUnit}>
-            {w.toggleUnitLabel}
+    <div className="weight-keypad-sheet" role="dialog" aria-modal="true" aria-label="体重">
+      <button type="button" className="weight-keypad-sheet-mask" aria-label="关闭" onClick={onCancel}/>
+      <div className="weight-keypad-sheet-panel">
+        <div className="weight-keypad-sheet-hd">
+          <button type="button" className="weight-keypad-sheet-cancel" onClick={onCancel}>取消</button>
+          <h2 className="weight-keypad-sheet-title">体重</h2>
+          <button
+            type="button"
+            className={'weight-keypad-sheet-confirm'+(w.canSubmit ? ' is-ready' : '')}
+            disabled={!w.canSubmit}
+            onClick={submit}
+          >
+            确定
           </button>
         </div>
-      </div>
-      <div className="quick-weight-panel-grid">
-        {['1','2','3','4','5','6','7','8','9'].map((key)=>(
-          <button
-            key={key}
-            type="button"
-            className="quick-weight-panel-key"
-            data-key={key}
-            onClick={()=>w.pressKey(key)}
-          >
-            {key}
+        <div className="weight-keypad-sheet-display">
+          <button type="button" className="weight-keypad-sheet-toggle" onClick={w.toggleUnit}>
+            {w.toggleUnitLabel}
           </button>
-        ))}
-        <button type="button" className="quick-weight-panel-key" data-key="dot" onClick={()=>w.pressKey('.')}>.</button>
-        <button type="button" className="quick-weight-panel-key" data-key="0" onClick={()=>w.pressKey('0')}>0</button>
-        <button
-          type="button"
-          className="quick-weight-panel-key is-delete"
-          data-key="delete"
-          onClick={()=>w.pressKey('⌫')}
-          aria-label="删除"
-        >
-          ×
-        </button>
-        <button
-          type="button"
-          className="quick-weight-panel-key is-confirm"
-          disabled={!w.canSubmit}
-          onClick={submit}
-          aria-label="记录"
-        >
-          <WeightKeypadConfirmIcon/>
-        </button>
+          <div className="weight-keypad-sheet-value">
+            <span className={'weight-keypad-sheet-num'+(w.isPlaceholder ? ' is-placeholder' : '')}>
+              {w.isPlaceholder ? '0' : w.display}
+              {w.showCaret ? <i className="weight-keypad-sheet-caret" aria-hidden="true"/> : null}
+            </span>
+            <span className="weight-keypad-sheet-unit">{w.unitLabel}</span>
+          </div>
+        </div>
+        <div className="weight-keypad-sheet-grid" role="group" aria-label="数字键盘">
+          {['1','2','3','4','5','6','7','8','9'].map((key)=>(
+            <button
+              key={key}
+              type="button"
+              className="weight-keypad-sheet-key"
+              onClick={()=>w.pressKey(key)}
+            >
+              {key}
+            </button>
+          ))}
+          <button type="button" className="weight-keypad-sheet-key" onClick={()=>w.pressKey('.')}>.</button>
+          <button type="button" className="weight-keypad-sheet-key" onClick={()=>w.pressKey('0')}>0</button>
+          <button
+            type="button"
+            className="weight-keypad-sheet-key is-delete"
+            onClick={()=>w.pressKey('⌫')}
+            aria-label="删除"
+          >
+            <WeightKeypadDeleteIcon/>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/** @deprecated 扇形内联已用 QuickWeightPicker，保留兼容旧 dock 引用 */
-function DockWeightPicker({onConfirm}){
-  return <QuickWeightPicker onSubmit={onConfirm}/>;
+/** @deprecated 已改为底部数字键盘弹层 */
+function DockWeightPicker({onConfirm, onCancel}){
+  return <QuickWeightPicker onSubmit={onConfirm} onCancel={onCancel}/>;
 }
 
 const SYMPTOM_NOTES = {

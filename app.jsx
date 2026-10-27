@@ -385,11 +385,14 @@ function App(){
   const [reviewCycleReturnTab, setReviewCycleReturnTab] = useState(null);
   const [reviewWeightOpenRequest, setReviewWeightOpenRequest] = useState(0);
   const [reviewWeightReturnTab, setReviewWeightReturnTab] = useState(null);
+  const [reviewWeightGoalOpenRequest, setReviewWeightGoalOpenRequest] = useState(0);
+  const [reviewWeightGoalReturnTab, setReviewWeightGoalReturnTab] = useState(null);
   const [reviewDietOpenRequest, setReviewDietOpenRequest] = useState(0);
   const [reviewDietReturnTab, setReviewDietReturnTab] = useState(null);
   const [reviewMoodOpenRequest, setReviewMoodOpenRequest] = useState(0);
   const [reviewMoodReturnTab, setReviewMoodReturnTab] = useState(null);
   const [isMember, setIsMember] = useState(false);
+  const [weightManagePhase, setWeightManagePhase] = useState('none');
   const [recordLifeMode, setRecordLifeMode] = useState('经期');
   const [reviewShareState, setReviewShareState] = useState(DEFAULT_REVIEW_SHARE_STATE);
   const [partnerPreviewOpen, setPartnerPreviewOpen] = useState(false);
@@ -442,6 +445,13 @@ function App(){
       setReviewWeightReturnTab('note');
       setActiveTab('cash');
     };
+    const handleOpenReviewWeightGoal = (event)=>{
+      if(event?.detail?.activatePlan) setWeightManagePhase('plan');
+      else if(event?.detail?.activateGoal) setWeightManagePhase((prev)=>prev === 'plan' ? 'plan' : 'goal');
+      setReviewWeightGoalOpenRequest(request=>request + 1);
+      setReviewWeightGoalReturnTab(event?.detail?.returnTab || 'note');
+      setActiveTab('cash');
+    };
     const handleOpenReviewDiet = ()=>{
       setReviewDietOpenRequest(request=>request + 1);
       setReviewDietReturnTab('note');
@@ -454,11 +464,13 @@ function App(){
     };
     window.addEventListener('openReviewCycleDetail', handleOpenReviewCycle);
     window.addEventListener('openReviewWeightDetail', handleOpenReviewWeight);
+    window.addEventListener('openReviewWeightGoalDetail', handleOpenReviewWeightGoal);
     window.addEventListener('openReviewDietDetail', handleOpenReviewDiet);
     window.addEventListener('openReviewMoodDetail', handleOpenReviewMood);
     return ()=>{
       window.removeEventListener('openReviewCycleDetail', handleOpenReviewCycle);
       window.removeEventListener('openReviewWeightDetail', handleOpenReviewWeight);
+      window.removeEventListener('openReviewWeightGoalDetail', handleOpenReviewWeightGoal);
       window.removeEventListener('openReviewDietDetail', handleOpenReviewDiet);
       window.removeEventListener('openReviewMoodDetail', handleOpenReviewMood);
     };
@@ -778,6 +790,8 @@ function App(){
       temp: 'temp',
       stool: 'stool',
       habit: 'habit',
+      plan: 'plan',
+      goal: 'goal',
     };
     const valueText = record.detail || record.value;
     return {
@@ -861,6 +875,8 @@ function App(){
           skin: 'skin',
           cosmetic: 'cosmetic',
           photo: 'photo',
+          plan: 'plan',
+          goal: 'goal',
         };
         const normalizeDietItems = (payload)=>{
           const items = Array.isArray(payload.dietItems) ? payload.dietItems : [];
@@ -2737,7 +2753,11 @@ function App(){
           + (periodComposeActive ? ' is-fake-kb-open' : '')}
         onPointerDown={handlePhonePointerDown}
       >
-        <StatusBar isMember={isMember} onMemberChange={setIsMember} showMemberSwitch={showReview}/>
+        <StatusBar
+          planPhase={weightManagePhase}
+          onPlanPhaseChange={setWeightManagePhase}
+          showPlanSwitch={showReview}
+        />
 
       {showHome && HomePage && (
         <HomePage
@@ -2799,6 +2819,8 @@ function App(){
           periodDetailValues={periodDetailDraft}
           periodDetailDemoEnabled={periodDetailRecordEnabled || periodEndRecordCompleted}
           onEmptyPreviewEnter={handleEmptyPreviewEnter}
+          weightManagePhase={weightManagePhase}
+          onWeightManagePhaseChange={setWeightManagePhase}
         />
       )}
 
@@ -2815,6 +2837,8 @@ function App(){
         <ReviewPage
           mode={recordLifeMode}
           isMember={isMember}
+          weightManagePhase={weightManagePhase}
+          onWeightManageChange={setWeightManagePhase}
           openCycleDetailRequest={reviewCycleOpenRequest}
           onCycleDetailRequestHandled={()=>setReviewCycleOpenRequest(0)}
           onCycleDetailReturn={()=>{
@@ -2829,6 +2853,14 @@ function App(){
             if(!reviewWeightReturnTab) return;
             const returnTab = reviewWeightReturnTab;
             setReviewWeightReturnTab(null);
+            setActiveTab(returnTab);
+          }}
+          openWeightGoalDetailRequest={reviewWeightGoalOpenRequest}
+          onWeightGoalDetailRequestHandled={()=>setReviewWeightGoalOpenRequest(0)}
+          onWeightGoalDetailReturn={()=>{
+            if(!reviewWeightGoalReturnTab) return;
+            const returnTab = reviewWeightGoalReturnTab;
+            setReviewWeightGoalReturnTab(null);
             setActiveTab(returnTab);
           }}
           openDietDetailRequest={reviewDietOpenRequest}
@@ -2960,7 +2992,7 @@ function App(){
                   <I name="search" size={20} stroke={1.7}/>
                 </button>
               </div>
-          <h1 className="stream-title">点滴</h1>
+          <h1 className="stream-title">记录</h1>
               <div className="stream-header-side"/>
             </>
           )}
@@ -3109,7 +3141,7 @@ function App(){
           active={activeTab}
           onChange={handleTabChange}
           noteUnread={noteTabUnread}
-          noteLabel="点滴"
+          noteLabel="记录"
           onNoteVoiceStart={recordLifeMode === '育儿' ? startBabyVoiceHold : undefined}
           onNoteVoiceMove={recordLifeMode === '育儿' ? moveBabyVoiceHold : undefined}
           onNoteVoiceEnd={recordLifeMode === '育儿' ? endBabyVoiceHold : undefined}

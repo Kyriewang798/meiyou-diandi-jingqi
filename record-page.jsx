@@ -40,34 +40,33 @@ const ICON_OVULATION = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMT
 
 const ICON_TODAY = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTQuNDcwMDMgMEM0LjgzNzAyIDAgNS4xNTQ0MSAwLjEzNzA2MSA1LjQzMDA3IDAuMzg3Nzk3QzcuMDIwNjUgMi4wMjMxNyA4LjI1OTc2IDQuMDAyNDUgOC45Mjk1MiA2LjI1MjgyQzkuMDc0NjIgNi43MzI3NiA4Ljk2NTYxIDcuMjE3MTMgOC44NzA5NSA3LjQwNTYzQzguNzI1NTIgNy42NjYxMiA4LjU3ODU0IDcuOTA0NzcgOC4wNTU5MyA4LjA5ODI0QzcuMzkyMDkgOC4zMTcxNSA1LjY0MDE1IDguNSA0LjQ3OTAyIDguNUMzLjMxNzg5IDguNSAxLjYyNTM2IDguMzQ3OTMgMC45Mzc0NTIgOC4wODg0M0MwLjQ4ODcyMyA3Ljg5ODQ3IDAuMjgwMjE1IDcuNjU1NjkgMC4xMzk0MzEgNy40MDU2M0MwLjAzNjY2MSA3LjIyMzA5IC0wLjA3OTQxOCA2LjcyNiAwLjA3NDYzNTUgNi4yNTI4MkMwLjc0NjczMSA0LjAxNzgxIDEuOTQ2NTMgMi4wMTM3NCAzLjUyODEgMC4zODc2NjVDMy43ODk3MiAwLjEzNzA2MSA0LjEwMzA0IDAgNC40NzAwMyAwWiIgZmlsbD0iI2ZmZDkxOSIgdHJhbnNmb3JtPSJtYXRyaXgoMCAxIC0xIDAgMTAuNSAxLjUpIi8+PC9zdmc+';
 
-const ICON_YELLOW_PLUS = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTYgMTFDNi45NjY1IDExIDcuNzUgMTAuMjE2NSA3Ljc1IDkuMjVWNy43NUg5LjI1QzEwLjIxNjUgNy43NSAxMSA2Ljk2NjUgMTEgNkMxMSA1LjAzMzUgMTAuMjE2NSA0LjI1IDkuMjUgNC4yNUg3Ljc1VjIuNzVDNy43NSAxLjc4MzUgNi45NjY1IDEgNiAxQzUuMDMzNSAxIDQuMjUgMS43ODM1IDQuMjUgMi43NVY0LjI1SDIuNzVDMS43ODM1IDQuMjUgMSA1LjAzMzUgMSA2QzEgNi45NjY1IDEuNzgzNSA3Ljc1IDIuNzUgNy43NUg0LjI1VjkuMjVDNC4yNSAxMC4yMTY1IDUuMDMzNSAxMSA2IDExWiIgZmlsbD0iI2ZmZDkxOSIvPjwvc3ZnPg==';
-const ICON_YELLOW_BOTTLE = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTQuOTY1NzMgMS41MjQzQzUuMTg0ODEgMS4xMTg5MyA1LjY1MzE0IDAuOTE2NDk1IDYuMDk4NTEgMS4wMzQ2NkM2LjU2NzQ2IDEuMTU5MDkgNi44Nzg3NSAxLjYwMzAzIDYuODM1OTMgMi4wODYzMUw2LjY2NzU1IDMuOTg2NEg4LjQ5OTk5QzkuNjcwMzcgMy45ODY0IDEwLjU5MDcgNC45ODY5NiAxMC40OTMgNi4xNTMyN0wxMC4yNDA3IDkuMTY2NzVDMTAuMTU0IDEwLjIwMyA5LjI4NzU3IDEwLjk5OTkgOC4yNDc2OSAxMC45OTk5SDMuMzY4OTFWMTFIMy4zNDkzNkgzLjI4NDA1VjEwLjk5ODFDMi4yOTEyNyAxMC45NTM3IDEuNSAxMC4xMzQ4IDEuNSA5LjEzMTA4VjYuNTA0ODlDMS41IDUuNTAxMTUgMi4yOTEyNyA0LjY4MjIzIDMuMjg0MDUgNC42Mzc4N1Y0LjYzNTg4TDMuMjg0MzYgNC42MzU1NEw0Ljk2NTczIDEuNTI0M1oiIGZpbGw9IiNmZmQ5MTkiLz48L3N2Zz4=';
 const ICON_YELLOW_BARS = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTUgMi41QzUgMS45NDc3MiA1LjQ0NzcyIDEuNSA2IDEuNUM2LjU1MjI4IDEuNSA3IDEuOTQ3NzIgNyAyLjVWOS41QzcgMTAuMDUyMyA2LjU1MjI4IDEwLjUgNiAxMC41QzUuNDQ3NzIgMTAuNSA1IDEwLjA1MjMgNSA5LjVWMi41WiIgZmlsbD0iI2ZmZDkxOSIvPjxwYXRoIGQ9Ik04LjI1IDQuNjI1QzguMjUgNC4wNzI3MiA4LjY5NzcyIDMuNjI1IDkuMjUgMy42MjVDOS44MDIyOCAzLjYyNSAxMC4yNSA0LjA3MjcyIDEwLjI1IDQuNjI1VjkuNUMxMC4yNSAxMC4wNTIzIDkuODAyMjggMTAuNSA5LjI1IDEwLjVDOC42OTc3MiAxMC41IDguMjUgMTAuMDUyMyA4LjI1IDkuNVY0LjYyNVoiIGZpbGw9IiNmZmQ5MTkiLz48cGF0aCBkPSJNMS43NSA1Ljg3NUMxLjc1IDUuMzIyNzIgMi4xOTc3MiA0Ljg3NSAyLjc1IDQuODc1QzMuMzAyMjggNC44NzUgMy43NSA1LjMyMjcyIDMuNzUgNS44NzVWOS41QzMuNzUgMTAuMDUyMyAzLjMwMjI4IDEwLjUgMi43NSAxMC41QzIuMTk3NzIgMTAuNSAxLjc1IDEwLjA1MjMgMS43NSA5LjVWNS44NzVaIiBmaWxsPSIjZmZkOTE5Ii8+PC9zdmc+';
-const ICON_YELLOW_LIKE = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTUuMiA1LjJWNy41SDMuNUMzLjIyMzkgNy41IDMgNy43MjQgMyA4VjEwLjVIMy41VjEwLjI1SDUuMlY1LjJaIiBmaWxsPSIjZmZkOTE5Ii8+PHBhdGggZD0iTTUuMiA1LjJDNi4xIDMuOCA3LjggMy4yIDkuMSA0LjFDMTAuMyA1IDkuOCA2LjggOC41IDcuNkw4LjIgOC4ySDUuMlY1LjJaIiBmaWxsPSIjZmZkOTE5Ii8+PC9zdmc+';
+const ICON_DISCHARGE_DROP = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTYgMS44QzcuNiA0IDkgNi4xIDkgOC4xQTkgMy4yIDAgMCAxIDYgMTEuMkE5IDMuMiAwIDAgMSAzIDguMUMzIDYuMSA0LjQgNCA2IDEuOHoiIGZpbGw9IiM5REQzRkYiLz48L3N2Zz4=';
+const ICON_FLAG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none"><path d="M3.2 1.2v9.6" stroke="#ff4d88" stroke-width="1.3" stroke-linecap="round"/><path d="M3.85 1.45h5.1l-1.35 1.95 1.35 1.95H3.85V1.45z" fill="#ff4d88"/></svg>');
+const ICON_GOAL_TARGET = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="1.5" y="1.5" width="21" height="21" rx="5.5" fill="#FFB078"/><circle cx="12" cy="12" r="4.6" stroke="#fff" stroke-width="1.4"/><circle cx="12" cy="12" r="1.7" fill="#fff"/><path d="M12 5.8v1.4M12 16.8v1.4M5.8 12h1.4M16.8 12h1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>');
 
 const YELLOW_MARK_ICONS = {
-  plus: ICON_YELLOW_PLUS,
-  bottle: ICON_YELLOW_BOTTLE,
   bars: ICON_YELLOW_BARS,
-  like: ICON_YELLOW_LIKE,
+  discharge: ICON_DISCHARGE_DROP,
+  flag: ICON_FLAG,
 };
 
 // business-record-calendar（kit-519 + 分散记录图标）
 const CALENDAR_DAYS = [
   null, null, null,
-  { n: 1, fertile: true, marks: ['plus'] },
-  { n: 2, fertile: true, heart: true, marks: ['plus', 'like', 'bars'] },
-  { n: 3, fertile: true, marks: ['like'] },
-  { n: 4, heart: true, marks: ['like', 'bars'] },
+  { n: 1, fertile: true, marks: ['bars'] },
+  { n: 2, fertile: true, heart: true, marks: ['bars', 'discharge'] },
+  { n: 3, fertile: true, marks: ['discharge'] },
+  { n: 4, heart: true, marks: ['bars'] },
   { n: 5, marks: ['bars'] },
-  { n: 6, heart: true, marks: ['plus'] },
-  { n: 7, marks: ['bottle', 'like'] },
-  { n: 8, marks: ['plus'] },
+  { n: 6, heart: true, marks: ['discharge'] },
+  { n: 7, marks: ['discharge'] },
+  { n: 8, marks: ['bars'] },
   { n: 9, heart: true, marks: ['bars'] },
-  { n: 10, marks: ['like', 'plus'] },
-  { n: 11, marks: ['bottle'] },
-  { n: 12, heart: true, marks: ['like'] },
-  { n: 13, marks: ['bars', 'plus'] },
+  { n: 10, marks: ['discharge'] },
+  { n: 11, marks: ['discharge'] },
+  { n: 12, heart: true },
+  { n: 13, marks: ['bars'] },
   { n: 14, period: true, today: true },
   { n: 15, period: true },
   { n: 16, period: true },
@@ -299,7 +298,26 @@ const MORPH_ITEMS = [
     iconSrc: 'assets/record-todo.png',
     recordType: 'add',
   },
+  {
+    id: 'goal',
+    label: '目标',
+    iconBg: '#fff5ec',
+    iconShape: 'is-circle',
+    iconSrc: ICON_GOAL_TARGET,
+    recordType: 'add',
+  },
 ];
+
+const CALENDAR_TAB_HIDDEN_IDS = new Set([
+  'symptom',
+  'diet',
+  'mood',
+  'temp',
+  'weight',
+  'diary',
+  'habit',
+  'stool',
+]);
 
 const SYM_ICON_C = 'var(--sym-picker-coral)';
 const SYM_ICON_CD = 'var(--sym-picker-coral-deep)';
@@ -1332,6 +1350,313 @@ function TempRecordSheet({ open, onCancel, onConfirm }) {
     return window.ReactDOM.createPortal(picker, portalTarget);
   }
   return picker;
+}
+
+const ADD_PLAN_QUICK_TAGS = ['生日', '纪念日', '打疫苗', '体检', '体重管理'];
+const ADD_PLAN_WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+function formatAddPlanDate(date){
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const week = ADD_PLAN_WEEKDAYS[date.getDay()];
+  return y + '年 ' + m + '月' + d + '日 ' + week;
+}
+
+function AddPlanSheet({ open, onCancel, onConfirm, initialDate }) {
+  const [portalTarget] = useState(() => document.querySelector('.phone'));
+  const [text, setText] = useState('');
+  const [calendarType, setCalendarType] = useState('solar');
+  const [repeatLabel] = useState('不重复');
+  const [remindLabel] = useState('不提醒');
+  const inputRef = useRef(null);
+  const dateText = formatAddPlanDate(initialDate || new Date(2026, 9, 28));
+  const canSubmit = text.trim().length > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    setText('');
+    setCalendarType('solar');
+    const timer = window.setTimeout(() => {
+      inputRef.current?.focus?.();
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    const phone = portalTarget;
+    if (!phone) return undefined;
+    if (open) phone.classList.add('is-period-picker-open');
+    else phone.classList.remove('is-period-picker-open');
+    return () => phone.classList.remove('is-period-picker-open');
+  }, [open, portalTarget]);
+
+  if (!open || !portalTarget) return null;
+
+  const sheet = (
+    <div className="add-plan-mask">
+      <div className="add-plan-sheet" role="dialog" aria-modal="true" aria-label="添加计划">
+        <header className="add-plan-bar">
+          <button type="button" className="add-plan-cancel" onClick={onCancel}>取消</button>
+          <h2 className="add-plan-title">添加计划</h2>
+          <button
+            type="button"
+            className="add-plan-done"
+            disabled={!canSubmit}
+            onClick={() => onConfirm?.({ text: text.trim(), calendarType, dateText, repeatLabel, remindLabel })}
+          >
+            确定
+          </button>
+        </header>
+        <div className="add-plan-body">
+          <div className="add-plan-input-card">
+            <textarea
+              ref={inputRef}
+              className="add-plan-input"
+              rows={3}
+              placeholder="请输入..."
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              enterKeyHint="done"
+              inputMode="text"
+            />
+            <div className="add-plan-tags" role="list">
+              {ADD_PLAN_QUICK_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className="add-plan-tag"
+                  onClick={() => setText((prev) => (prev ? prev : tag))}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="add-plan-section">
+            <div className="add-plan-rows">
+              <div className="add-plan-row is-static">
+                <span>日历选择</span>
+                <div className="add-plan-segment" role="tablist" aria-label="历法">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarType === 'solar'}
+                    className={calendarType === 'solar' ? 'is-active' : ''}
+                    onClick={() => setCalendarType('solar')}
+                  >
+                    公历
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarType === 'lunar'}
+                    className={calendarType === 'lunar' ? 'is-active' : ''}
+                    onClick={() => setCalendarType('lunar')}
+                  >
+                    农历
+                  </button>
+                </div>
+              </div>
+              <button type="button" className="add-plan-row">
+                <span>日期</span>
+                <em>{dateText}</em>
+              </button>
+              <button type="button" className="add-plan-row">
+                <span>重复</span>
+                <em>
+                  {repeatLabel}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </em>
+              </button>
+            </div>
+          </div>
+
+          <div className="add-plan-section">
+            <div className="add-plan-rows">
+              <button type="button" className="add-plan-row">
+                <span>提醒</span>
+                <em>
+                  {remindLabel}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </em>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (window.ReactDOM?.createPortal) {
+    return window.ReactDOM.createPortal(sheet, portalTarget);
+  }
+  return sheet;
+}
+
+const ADD_GOAL_QUICK_TAGS = ['减肥', '运动', '早睡', '戒奶茶'];
+
+function AddGoalSheet({ open, onCancel, onConfirm, startDate, targetDate }) {
+  const [portalTarget] = useState(() => document.querySelector('.phone'));
+  const [text, setText] = useState('');
+  const [activeTag, setActiveTag] = useState(null);
+  const [calendarType, setCalendarType] = useState('solar');
+  const [note, setNote] = useState('');
+  const [remindLabel] = useState('不提醒');
+  const inputRef = useRef(null);
+  const startText = formatAddPlanDate(startDate || new Date(2026, 9, 27));
+  const targetText = formatAddPlanDate(targetDate || new Date(2027, 0, 27));
+  const canSubmit = text.trim().length > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    setText('');
+    setActiveTag(null);
+    setCalendarType('solar');
+    setNote('');
+    const timer = window.setTimeout(() => {
+      inputRef.current?.focus?.();
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    const phone = portalTarget;
+    if (!phone) return undefined;
+    if (open) phone.classList.add('is-period-picker-open');
+    else phone.classList.remove('is-period-picker-open');
+    return () => phone.classList.remove('is-period-picker-open');
+  }, [open, portalTarget]);
+
+  if (!open || !portalTarget) return null;
+
+  const sheet = (
+    <div className="add-plan-mask">
+      <div className="add-plan-sheet" role="dialog" aria-modal="true" aria-label="添加目标">
+        <header className="add-plan-bar">
+          <button type="button" className="add-plan-cancel" onClick={onCancel}>取消</button>
+          <h2 className="add-plan-title">添加目标</h2>
+          <button
+            type="button"
+            className="add-plan-done"
+            disabled={!canSubmit}
+            onClick={() => onConfirm?.({
+              text: text.trim(),
+              calendarType,
+              startText,
+              targetText,
+              remindLabel,
+              note: note.trim(),
+            })}
+          >
+            确定
+          </button>
+        </header>
+        <div className="add-plan-body">
+          <div className="add-plan-input-card">
+            <textarea
+              ref={inputRef}
+              className="add-plan-input"
+              rows={2}
+              placeholder="请输入目标..."
+              value={text}
+              onChange={(event) => {
+                setText(event.target.value);
+                setActiveTag(null);
+              }}
+              enterKeyHint="done"
+              inputMode="text"
+            />
+            <div className="add-plan-tags" role="list">
+              {ADD_GOAL_QUICK_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={'add-plan-tag' + (activeTag === tag ? ' is-active' : '')}
+                  onClick={() => {
+                    setActiveTag(tag);
+                    setText(tag);
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="add-plan-section">
+            <div className="add-plan-rows">
+              <div className="add-plan-row is-static">
+                <span>日历选择</span>
+                <div className="add-plan-segment" role="tablist" aria-label="历法">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarType === 'solar'}
+                    className={calendarType === 'solar' ? 'is-active' : ''}
+                    onClick={() => setCalendarType('solar')}
+                  >
+                    公历
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={calendarType === 'lunar'}
+                    className={calendarType === 'lunar' ? 'is-active' : ''}
+                    onClick={() => setCalendarType('lunar')}
+                  >
+                    农历
+                  </button>
+                </div>
+              </div>
+              <button type="button" className="add-plan-row">
+                <span>开始日</span>
+                <em>
+                  {startText}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </em>
+              </button>
+              <button type="button" className="add-plan-row">
+                <span>目标日</span>
+                <em>
+                  {targetText}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </em>
+              </button>
+            </div>
+          </div>
+
+          <div className="add-plan-section">
+            <div className="add-plan-rows">
+              <button type="button" className="add-plan-row">
+                <span>提醒</span>
+                <em>
+                  {remindLabel}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </em>
+              </button>
+            </div>
+          </div>
+
+          <div className="add-plan-input-card">
+            <textarea
+              className="add-plan-input is-note"
+              rows={4}
+              placeholder="你的初衷、想法，或想对自己说的话..."
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (window.ReactDOM?.createPortal) {
+    return window.ReactDOM.createPortal(sheet, portalTarget);
+  }
+  return sheet;
 }
 
 function HealthRecordSheet({ open, type, onCancel, onConfirm }) {
@@ -2611,11 +2936,13 @@ function HealthMorphRecordPane({
     );
   }
 
-  if (['love', 'stool'].includes(item.id)) {
-    const currentValue = item.id === 'stool' && healthRecordValues?.[item.id] ? '1次' : healthRecordValues?.[item.id];
+  if (['love', 'stool', 'goal'].includes(item.id)) {
+    const currentValue = item.id === 'stool' && healthRecordValues?.[item.id]
+      ? '1次'
+      : healthRecordValues?.[item.id];
     return (
       <div className="list-period-detail-actions">
-        {currentValue ? <span className="list-period-detail-value">{currentValue}</span> : null}
+        {currentValue ? <span className="list-period-detail-value is-goal-text">{currentValue}</span> : null}
         <button
           type="button"
           className="list-add"
@@ -2799,10 +3126,15 @@ function HealthMorphList({
   healthRecordValues,
   onPlanEmptyPreview,
   showPlanEmptyPreviewLink = false,
+  futureOnlyPlan = false,
 }) {
+  const visibleItems = MORPH_ITEMS.filter((item) => {
+    if (futureOnlyPlan) return item.id === 'plan' || item.id === 'goal';
+    return !CALENDAR_TAB_HIDDEN_IDS.has(item.id);
+  });
   return (
     <div className="health-morph-list" aria-label="健康记录列表">
-      {MORPH_ITEMS.map((item, index) => (
+      {visibleItems.map((item, index) => (
         <HealthMorphRow
           key={item.id}
           item={item}
@@ -2954,7 +3286,7 @@ function KitCalendarDayButton({ day, selected, periodLit, periodFlow, periodStar
         <>
           <CalendarDayLabel day={day}/>
           <span className="calendar-day-icons" aria-hidden="true">
-            {day.marks.map((key) => (
+            {day.marks.filter((key) => YELLOW_MARK_ICONS[key]).map((key) => (
               <img key={key} className="calendar-icon" src={YELLOW_MARK_ICONS[key]} alt=""/>
             ))}
           </span>
@@ -3045,6 +3377,8 @@ function RecordPage({
   periodEndRecordReady = false,
   periodEndRecordCompleted = false,
   onEmptyPreviewEnter,
+  weightManagePhase = 'none',
+  onWeightManagePhaseChange,
 }) {
   const settledPeriodDays = React.useMemo(
     () => periodEndRecordCompleted ? [...PERIOD_DAYS, ...PERIOD_END_DAYS] : PERIOD_DAYS,
@@ -3071,6 +3405,9 @@ function RecordPage({
   const [singlePickerType, setSinglePickerType] = useState(null);
   const [healthSheetType, setHealthSheetType] = useState(null);
   const [healthRecordValues, setHealthRecordValues] = useState({});
+  const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [goalSheetOpen, setGoalSheetOpen] = useState(false);
+  const [goalByDay, setGoalByDay] = useState({});
   const [emptyPreviewOpen, setEmptyPreviewOpen] = useState(false);
   const dragAreaRef = useRef(null);
   const gridRef = useRef(null);
@@ -3218,9 +3555,54 @@ function RecordPage({
   };
 
   const openHealthRecordSheet = (type) => {
+    if (type === 'plan') {
+      setPlanSheetOpen(true);
+      return;
+    }
+    if (type === 'goal') {
+      setGoalSheetOpen(true);
+      return;
+    }
     if (['love', 'discharge', 'temp', 'stool'].includes(type)) {
       setHealthSheetType(type);
     }
+  };
+
+  const confirmAddPlan = (payload) => {
+    setPlanSheetOpen(false);
+    if (!payload?.text) return;
+    onHealthRecordSubmit?.({
+      type: 'plan',
+      label: '计划',
+      value: payload.text,
+      detail: payload.text,
+      dateText: payload.dateText,
+      repeatLabel: payload.repeatLabel,
+      remindLabel: payload.remindLabel,
+    });
+  };
+
+  const confirmAddGoal = (payload) => {
+    setGoalSheetOpen(false);
+    if (!payload?.text) return;
+    const displayText = payload.text === '减肥' ? '减肥到 45公斤' : payload.text;
+    setGoalByDay((prev) => ({ ...prev, [selectedDay]: displayText }));
+    setHealthRecordValues((prev) => ({
+      ...prev,
+      goal: displayText,
+    }));
+    if(weightManagePhase === 'none') onWeightManagePhaseChange?.('goal');
+    onHealthRecordSubmit?.({
+      type: 'goal',
+      label: '目标',
+      value: displayText,
+      detail: displayText,
+      startText: payload.startText,
+      targetText: payload.targetText,
+      remindLabel: payload.remindLabel,
+      note: payload.note,
+      day: selectedDay,
+    });
   };
 
   const confirmHealthRecord = (payload) => {
@@ -3357,10 +3739,19 @@ function RecordPage({
                     && periodYes
                     && periodFlowPhase === 'settled'
                   );
+                  const dayMarks = displayDay?.marks ? [...displayDay.marks] : [];
+                  if (displayDay?.n && goalByDay[displayDay.n] && !dayMarks.includes('flag')) {
+                    dayMarks.push('flag');
+                  }
                   return (
                     <CalendarDayButton
                       key={i}
-                      day={displayDay ? { ...displayDay, periodFlow, periodStartSettled } : displayDay}
+                      day={displayDay ? {
+                        ...displayDay,
+                        marks: dayMarks.length ? dayMarks : displayDay.marks,
+                        periodFlow,
+                        periodStartSettled,
+                      } : displayDay}
                       selected={displayDay && displayDay.n === selectedDay}
                       periodLit={displayDay && litDays.includes(displayDay.n)}
                       onSelect={handleDaySelect}
@@ -3387,6 +3778,27 @@ function RecordPage({
         </div>
 
         <div className="record-page-content">
+          {(Object.keys(goalByDay).length > 0 || weightManagePhase === 'goal') && weightManagePhase !== 'plan' ? (
+            <button
+              type="button"
+              className="record-weight-plan-guide"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('openReviewWeightGoalDetail', {
+                  detail: { returnTab: 'cal', activatePlan: true },
+                }));
+              }}
+              aria-label="定制我的体重计划"
+            >
+              <span className="record-weight-plan-guide-icon" aria-hidden="true">
+                <img src={ICON_GOAL_TARGET} alt=""/>
+              </span>
+              <span className="record-weight-plan-guide-copy">
+                <strong>定制我的体重计划</strong>
+                <span>1 分钟生成你的专属减重计划</span>
+              </span>
+              <em className="record-weight-plan-guide-cta">去测评</em>
+            </button>
+          ) : null}
           <HealthMorphList
             periodYes={periodYes}
             periodEndMode={periodEndRecordReady}
@@ -3402,9 +3814,13 @@ function RecordPage({
             periodDetailDemoEnabled={periodDetailDemoEnabled}
             periodDetailValues={periodDetailValues}
             symptomValues={selectedSymptoms}
-            healthRecordValues={healthRecordValues}
-            showPlanEmptyPreviewLink={activeModeLabel === '经期'}
+            healthRecordValues={{
+              ...healthRecordValues,
+              goal: goalByDay[selectedDay] || null,
+            }}
+            showPlanEmptyPreviewLink={false}
             onPlanEmptyPreview={() => setEmptyPreviewOpen(true)}
+            futureOnlyPlan={selectedDay > (periodEndRecordReady ? 21 : 14)}
           />
         </div>
       </div>
@@ -3488,6 +3904,19 @@ function RecordPage({
         type={healthSheetType}
         onCancel={() => setHealthSheetType(null)}
         onConfirm={confirmHealthRecord}
+      />
+      <AddPlanSheet
+        open={planSheetOpen}
+        initialDate={new Date(2026, 9, 28)}
+        onCancel={() => setPlanSheetOpen(false)}
+        onConfirm={confirmAddPlan}
+      />
+      <AddGoalSheet
+        open={goalSheetOpen}
+        startDate={new Date(2026, 9, 27)}
+        targetDate={new Date(2027, 0, 27)}
+        onCancel={() => setGoalSheetOpen(false)}
+        onConfirm={confirmAddGoal}
       />
       <MoodRecordSheet
         open={moodSheetOpen}

@@ -139,12 +139,11 @@ function DockWavePlaceholder({show, focused, text = DOCK_PLACEHOLDER}){
 }
 
 function QuickCardFan({
-  open, selected, closingToMood, onFabTap, onSelectCard, onMoodPick, onSymptomPick, onDietPick, onClose,
-  onSymptomSubmit, onWeightSubmit, onFoodSubmit, weightPickerKey, fabGuidePulse = false, hideFab = false,
+  open, selected, closingToMood, onFabTap, onSelectCard, onMoodPick, onSymptomPick, onDietPick, onWeightPick, onClose,
+  onSymptomSubmit, onFoodSubmit, fabGuidePulse = false, hideFab = false,
 }){
   const QuickCardIcon = window.QuickCardIcon;
   const QuickSymptomPicker = window.QuickSymptomPicker;
-  const QuickWeightPicker = window.QuickWeightPicker;
   const QuickFoodPicker = window.QuickFoodPicker;
   const [closing, setClosing] = React.useState(false);
   const wasOpenRef = React.useRef(false);
@@ -213,11 +212,15 @@ function QuickCardFan({
                   e.preventDefault();
                   e.stopPropagation();
                   onSymptomPick?.();
+                } else if(card.id === 'weight'){
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onWeightPick?.();
                 }
               }}
               onClick={()=>{
                 if(!open || selected) return;
-                if(card.id !== 'mood' && card.id !== 'diet' && card.id !== 'symptom') onSelectCard(card.id);
+                if(card.id !== 'mood' && card.id !== 'diet' && card.id !== 'symptom' && card.id !== 'weight') onSelectCard(card.id);
               }}
               aria-label={card.label}
               tabIndex={open && !selected ? 0 : -1}
@@ -229,21 +232,17 @@ function QuickCardFan({
             </button>
 
             <div className="quick-card-fan-panel" aria-hidden={!isSel}>
-              {card.id !== 'weight' ? (
-                <div className="quick-card-fan-panel-hd">
-                  <span className="quick-card-fan-panel-title">{card.title}</span>
-                  <button type="button" className="quick-card-fan-panel-close" onClick={onClose} aria-label="关闭">
-                    ×
-                  </button>
-                </div>
-              ) : null}
-              <div className={'quick-card-fan-panel-body'+(card.id === 'weight' ? ' is-weight' : '')}>
+              <div className="quick-card-fan-panel-hd">
+                <span className="quick-card-fan-panel-title">{card.title}</span>
+                <button type="button" className="quick-card-fan-panel-close" onClick={onClose} aria-label="关闭">
+                  ×
+                </button>
+              </div>
+              <div className="quick-card-fan-panel-body">
                 {card.id === 'symptom' ? (
                   <QuickSymptomPicker onSubmit={onSymptomSubmit}/>
                 ) : card.id === 'diet' ? (
                   <QuickFoodPicker onSubmit={onFoodSubmit}/>
-                ) : card.id === 'weight' ? (
-                  <QuickWeightPicker key={weightPickerKey} onSubmit={onWeightSubmit}/>
                 ) : null}
               </div>
             </div>
@@ -514,6 +513,7 @@ function DockPublisher({
       setDockSheet(null);
       setMoodPickerOpen(false);
       setSymptomPickerOpen(false);
+      setWeightPickerOpen(false);
       setClosingToMood(false);
     }
     prevTabRef.current = activeTab;
@@ -526,15 +526,29 @@ function DockPublisher({
   }, [showScheme3Bubble]);
 
   const [weightPickerKey, setWeightPickerKey] = React.useState(0);
+  const [weightPickerOpen, setWeightPickerOpen] = React.useState(false);
+  const QuickWeightPicker = window.QuickWeightPicker;
 
   const handleSelectQuickCard = (id)=>{
-    if(id === 'weight') setWeightPickerKey(k=>k + 1);
     setQuickSelected(id);
   };
 
   const closeQuick = ()=>{
     setQuickSelected(null);
     setQuickOpen(false);
+    setClosingToMood(false);
+  };
+
+  const handleWeightFanTap = ()=>{
+    setWeightPickerKey(k=>k + 1);
+    setWeightPickerOpen(true);
+    setClosingToMood(true);
+    setQuickOpen(false);
+    window.setTimeout(()=> setClosingToMood(false), 260);
+  };
+
+  const closeWeightPicker = ()=>{
+    setWeightPickerOpen(false);
     setClosingToMood(false);
   };
 
@@ -717,6 +731,8 @@ function DockPublisher({
   };
 
   const handleQuickWeightSubmit = (payload)=>{
+    setWeightPickerOpen(false);
+    setClosingToMood(false);
     closeQuick();
     onWeightConfirm?.(payload);
   };
@@ -772,8 +788,8 @@ function DockPublisher({
   };
 
   React.useEffect(()=>{
-    onDockExpandedChange?.(!!dockSheet || !!quickSelected || photoMenuOpen || dockKeyboardOpen);
-  }, [dockSheet, quickSelected, photoMenuOpen, dockKeyboardOpen, onDockExpandedChange]);
+    onDockExpandedChange?.(!!dockSheet || !!quickSelected || photoMenuOpen || dockKeyboardOpen || weightPickerOpen);
+  }, [dockSheet, quickSelected, photoMenuOpen, dockKeyboardOpen, weightPickerOpen, onDockExpandedChange]);
 
   React.useEffect(()=>{
     if(!dockSheet) return undefined;
@@ -934,9 +950,7 @@ function DockPublisher({
       return;
     }
     if(item?.action === 'weight'){
-      setWeightPickerKey(k=>k + 1);
-      setQuickOpen(false);
-      setQuickSelected('weight');
+      handleWeightFanTap();
       return;
     }
     if(item?.action === 'symptom'){
@@ -971,15 +985,23 @@ function DockPublisher({
           onMoodPick={handleMoodFanTap}
           onSymptomPick={handleSymptomFanTap}
           onDietPick={handleDietFanTap}
+          onWeightPick={handleWeightFanTap}
           onClose={closeQuick}
           onSymptomSubmit={handleQuickSymptomSubmit}
-          onWeightSubmit={handleQuickWeightSubmit}
           onFoodSubmit={handleQuickFoodSubmit}
-          weightPickerKey={weightPickerKey}
           fabGuidePulse={fabGuidePulse}
           hideFab={hideQuickFab}
         />
       </div>
+      )}
+
+      {weightPickerOpen && QuickWeightPicker && ReactDOM.createPortal(
+        <QuickWeightPicker
+          key={weightPickerKey}
+          onSubmit={handleQuickWeightSubmit}
+          onCancel={closeWeightPicker}
+        />,
+        document.querySelector('.phone') || document.body
       )}
 
       {CameraTransition && (

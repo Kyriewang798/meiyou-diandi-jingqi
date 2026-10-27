@@ -496,6 +496,73 @@
   background: #f2f2f5;
 }
 
+.record-page-root .record-weight-plan-guide{
+  width: calc(100% - 24px);
+  margin: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #fff0f5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.record-page-root .record-weight-plan-guide-icon{
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.record-page-root .record-weight-plan-guide-icon img{
+  width: 36px;
+  height: 36px;
+  display: block;
+  object-fit: contain;
+}
+.record-page-root .record-weight-plan-guide-copy{
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.record-page-root .record-weight-plan-guide-copy strong{
+  display: block;
+  font-size: 15px;
+  line-height: 1.29;
+  font-weight: 500;
+  color: rgba(0,0,0,.8);
+}
+.record-page-root .record-weight-plan-guide-copy > span{
+  display: block;
+  font-size: 12px;
+  line-height: 1.29;
+  font-weight: 400;
+  color: rgba(0,0,0,.6);
+}
+.record-page-root .record-weight-plan-guide-cta{
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 80px;
+  background: #ff4d88;
+  color: #fff;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 28px;
+  font-weight: 500;
+}
+.record-page-root .record-weight-plan-guide:active{
+  opacity: .88;
+}
+
 .record-page-root .calendar-weekdays {
   height: 20px;
   display: grid;
@@ -4591,4 +4658,199 @@
   font-weight: 500;
   color: rgba(0, 0, 0, 0.8);
   cursor: pointer;
+}
+
+.phone .add-plan-mask{
+  position:absolute;
+  inset:0;
+  z-index:150;
+  background:transparent;
+  font-family:'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+.phone .add-plan-sheet{
+  position:absolute;
+  inset:0;
+  z-index:151;
+  display:flex;
+  flex-direction:column;
+  background:#f2f2f5;
+  animation:prpSheetUp .3s cubic-bezier(.2,0,0,1);
+}
+.phone .add-plan-bar{
+  height:44px;
+  flex:0 0 44px;
+  display:grid;
+  grid-template-columns:72px 1fr 72px;
+  align-items:center;
+  padding:0 12px;
+  background:#f2f2f5;
+}
+.phone .add-plan-cancel,
+.phone .add-plan-done{
+  border:0;
+  background:transparent;
+  padding:6px 0;
+  font-family:inherit;
+  font-size:16px;
+  line-height:1.3;
+  cursor:pointer;
+}
+.phone .add-plan-cancel{
+  justify-self:start;
+  color:#323232;
+}
+.phone .add-plan-done{
+  justify-self:end;
+  color:#ff4d88;
+  font-weight:500;
+}
+.phone .add-plan-done:disabled{
+  color:#c8c8cc;
+  cursor:default;
+}
+.phone .add-plan-title{
+  margin:0;
+  text-align:center;
+  font-size:18px;
+  line-height:1.3;
+  font-weight:500;
+  color:#323232;
+}
+.phone .add-plan-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:4px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.phone .add-plan-input-card,
+.phone .add-plan-section{
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+.phone .add-plan-input-card{
+  padding:12px;
+}
+.phone .add-plan-input{
+  width:100%;
+  min-height:72px;
+  border:0;
+  resize:none;
+  outline:none;
+  background:transparent;
+  font-family:inherit;
+  font-size:17px;
+  line-height:1.47;
+  color:rgba(0,0,0,.8);
+}
+.phone .add-plan-input::placeholder{
+  color:rgba(0,0,0,.28);
+}
+.phone .add-plan-tags{
+  margin-top:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.phone .add-plan-tag{
+  height:28px;
+  padding:0 12px;
+  border:1px solid transparent;
+  border-radius:80px;
+  background:#f2f2f5;
+  color:rgba(0,0,0,.8);
+  font-family:inherit;
+  font-size:14px;
+  line-height:26px;
+  cursor:pointer;
+}
+.phone .add-plan-tag.is-active{
+  border-color:#ff4d88;
+  background:rgba(255,77,136,.08);
+  color:#ff4d88;
+}
+.phone .add-plan-input.is-note{
+  min-height:96px;
+  font-size:15px;
+  line-height:1.47;
+  color:rgba(0,0,0,.8);
+}
+.record-page-root .list-period-detail-value.is-goal-text{
+  max-width:140px;
+}
+.phone .add-plan-segment{
+  display:inline-flex;
+  padding:2px;
+  border-radius:8px;
+  background:#f2f2f5;
+}
+.phone .add-plan-segment button{
+  min-width:48px;
+  height:26px;
+  padding:0 10px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:rgba(0,0,0,.6);
+  font-family:inherit;
+  font-size:13px;
+  line-height:26px;
+  cursor:pointer;
+}
+.phone .add-plan-segment button.is-active{
+  background:#fff;
+  color:#ff4d88;
+  font-weight:500;
+  box-shadow:0 0 0 .5px rgba(0,0,0,.04);
+}
+.phone .add-plan-rows{
+  display:flex;
+  flex-direction:column;
+}
+.phone .add-plan-row{
+  min-height:48px;
+  padding:0 14px;
+  border:0;
+  border-top:.5px solid rgba(0,0,0,.06);
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-family:inherit;
+  cursor:pointer;
+  text-align:left;
+}
+.phone .add-plan-row:first-child{
+  border-top:0;
+}
+.phone .add-plan-row.is-static{
+  cursor:default;
+}
+.phone .add-plan-row > span{
+  font-size:17px;
+  line-height:24px;
+  color:rgba(0,0,0,.8);
+}
+.phone .add-plan-row em{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  font-style:normal;
+  font-size:15px;
+  line-height:21px;
+  color:rgba(0,0,0,.45);
+}
+.phone .add-plan-row em svg{
+  width:16px;
+  height:16px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
 }

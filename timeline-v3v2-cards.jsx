@@ -25,6 +25,7 @@ const RECORD_ICON_SRC = {
   habit: 'assets/record-habit.png',
   stool: 'assets/record-stool.png',
   plan: 'assets/record-todo.png',
+  goal: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="1.5" y="1.5" width="21" height="21" rx="5.5" fill="#FFB078"/><circle cx="12" cy="12" r="4.6" stroke="#fff" stroke-width="1.4"/><circle cx="12" cy="12" r="1.7" fill="#fff"/><path d="M12 5.8v1.4M12 16.8v1.4M5.8 12h1.4M16.8 12h1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>'),
   diet: 'assets/record-diet.png',
   water: 'assets/baby-feeding-icons/water.png',
   beverage: 'assets/record-beverage.svg',
@@ -808,7 +809,7 @@ function TimelineReviewEntry({label, eventName}){
 }
 
 function WeightTrendReviewEntry(){
-  return <TimelineReviewEntry label="查看近30天体重变化趋势" eventName="openReviewWeightDetail"/>;
+  return <TimelineReviewEntry label="制定目标，更有方向地管理体重" eventName="openReviewWeightGoalDetail"/>;
 }
 
 function DietCalorieReviewEntry(){

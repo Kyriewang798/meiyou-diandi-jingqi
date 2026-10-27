@@ -1,9 +1,22 @@
 // ============ Status bar ============
-function StatusBar({isMember=false, onMemberChange, showMemberSwitch=false}){
+function StatusBar({
+  isMember=false,
+  onMemberChange,
+  showMemberSwitch=false,
+  planPhase='none',
+  onPlanPhaseChange,
+  showPlanSwitch=false,
+}){
   return (
     <div className="statusbar">
       <span>9:41</span>
-      {showMemberSwitch ? (
+      {showPlanSwitch ? (
+        <div className="demo-member-switch is-plan-phase" role="group" aria-label="体重管理状态演示切换">
+          <button type="button" className={planPhase === 'none' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('none')}>无目标</button>
+          <button type="button" className={planPhase === 'goal' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('goal')}>有目标</button>
+          <button type="button" className={planPhase === 'plan' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('plan')}>有计划</button>
+        </div>
+      ) : showMemberSwitch ? (
         <div className="demo-member-switch" role="group" aria-label="会员演示切换">
           <button type="button" className={!isMember ? 'is-active' : ''} onClick={()=>onMemberChange?.(false)}>非会员</button>
           <button type="button" className={isMember ? 'is-active' : ''} onClick={()=>onMemberChange?.(true)}>会员</button>
@@ -222,12 +235,12 @@ function CycleReport({item}){
 }
 
 // ============ Tab bar ============
-// Order: 美柚 / 记录 / 点滴(center) / 回顾 / 我
+// Order: 美柚 / 日历 / 记录(center) / 回顾 / 我
 function TabBar({
   active='note',
   onChange,
   noteUnread=false,
-  noteLabel='点滴',
+  noteLabel='记录',
   onNoteVoiceStart,
   onNoteVoiceMove,
   onNoteVoiceEnd,
@@ -277,7 +290,7 @@ function TabBar({
     : tabIcons.review;
   const tabs = [
     {id:'home', label:'美柚', custom:icon('home')},
-    {id:'cal', label:'记录', custom:icon('cal')},
+    {id:'cal', label:'日历', custom:icon('cal')},
     {id:'note', label:noteLabel, custom:(
       <img className="tab-icon-img tab-icon-img--native" src={noteSrc} alt="" aria-hidden="true" />
     ), notif: noteUnread},
