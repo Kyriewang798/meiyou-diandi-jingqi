@@ -720,6 +720,49 @@
 .review-overview-icon.is-love{color:#ff4d88}
 .review-overview-icon.is-love svg{fill:currentColor;stroke:none}
 .review-overview-icon.is-symptom{color:#6f9fdc}
+.review-overview-card.is-symptom-l1 .review-overview-metric strong{
+  white-space:normal;
+}
+.review-overview-card.is-symptom-l1 .review-overview-trend-label{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.review-overview-card.is-symptom-l1 .review-overview-chart{
+  height:48px;
+  overflow:hidden;
+}
+.review-symptom-overview-rank{
+  width:100%;
+  height:48px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.review-symptom-overview-rank-row{
+  display:grid;
+  grid-template-columns:28px minmax(0, 1fr);
+  align-items:center;
+  column-gap:6px;
+}
+.review-symptom-overview-rank-label{
+  font-size:11px;
+  line-height:1;
+  color:#66666c;
+  white-space:nowrap;
+}
+.review-symptom-overview-rank-track{
+  height:10px;
+  border-radius:80px;
+  background:rgba(122,168,232,0.16);
+  overflow:hidden;
+}
+.review-symptom-overview-rank-track > i{
+  display:block;
+  height:100%;
+  border-radius:80px;
+  background:#7aa8e8;
+}
 .review-overview-icon.is-stool{color:#a87543}
 .review-overview-status{
   margin-left:auto;
@@ -795,7 +838,7 @@
 }
 .review-overview-trend-label{
   height:26px;
-  margin:0 0 3px;
+  margin:0 0 10px;
   padding:0 11px;
   border-radius:10px;
   display:inline-flex;
@@ -9174,8 +9217,35 @@
   flex:0 0 auto;
 }
 .review-mood-traj-legend i.is-mood{background:#F2B8C4}
+.review-mood-traj-legend i.is-symptom,
+.review-mood-traj-legend i.is-symptom-dot,
+.review-cycle-landscape-legend .review-mood-traj-legend-item i.is-symptom,
+.review-cycle-landscape-legend .review-mood-traj-legend-item i.is-symptom-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#5b8fd9;
+}
+.review-symptom-traj-legend{
+  gap:10px 12px;
+}
+.review-symptom-traj .review-mood-traj-canvas{
+  overflow:visible;
+}
+.review-symptom-traj .review-mood-traj-canvas > svg{
+  overflow:visible;
+}
 .review-mood-traj-legend i.is-e2{background:#FF7AA8}
 .review-mood-traj-legend i.is-p4{background:#E8A040}
+.review-symptom-traj-yaxis{
+  flex:0 0 34px;
+  width:34px;
+}
+.review-symptom-traj-yaxis span{
+  color:rgba(0,0,0,0.55);
+  font-weight:400;
+  font-size:11px;
+}
 .review-love-mini-card .review-love-insight{
   margin-top:12px;
 }
@@ -11043,29 +11113,22 @@
 }
 .review-symptom-rank-chart{
   margin-top:4px;
+  aspect-ratio:auto !important;
+  height:auto !important;
 }
 .review-symptom-rank-chart > svg{
   display:block;
   width:100%;
-  height:auto;
+  height:auto !important;
 }
-.review-symptom-rank-note{
-  margin:4px 0 0;
-  font-size:12px;
-  line-height:1.29;
-  color:rgba(0,0,0,0.4);
+.review-symptom-trend-block .review-mood-stat-card.review-mood-trend-record-card p b,
+.review-symptom-trend-block .review-mood-stat-card.is-freq p.review-mood-freq-words b{
+  color:#5b8fd9;
 }
-.review-symptom-stat-row{
-  margin-top:12px;
-}
-.review-symptom-stat-row .review-weight-stat-card p.is-text{
+.review-symptom-trend-block .review-mood-stat-card.is-freq p.review-mood-freq-words b{
   font-size:15px;
   font-weight:500;
-  line-height:1.2;
-}
-.review-symptom-stat-row .review-weight-stat-card p.is-text b{
-  font-size:15px;
-  font-weight:500;
+  line-height:22px;
 }
 .review-symptom-phase-card,
 .review-symptom-insight-card{
@@ -11124,6 +11187,12 @@
   font-size:12px;
   line-height:1;
 }
+.review-symptom-rank-chart .review-symptom-overview-rank-track{
+  background:rgba(122,168,232,0.16);
+}
+.review-symptom-rank-chart .review-symptom-overview-rank-track > i{
+  background:#7aa8e8;
+}
 .review-symptom-insight-card strong{
   display:block;
   margin-bottom:4px;
@@ -11137,4 +11206,10 @@
   font-size:14px;
   line-height:1.47;
   color:rgba(0,0,0,0.6);
+}
+.review-symptom-all-records-page{
+  z-index:170;
+}
+.review-mood-all-records-text.is-empty{
+  color:rgba(0,0,0,0.38);
 }
