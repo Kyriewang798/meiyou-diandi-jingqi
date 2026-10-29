@@ -669,99 +669,109 @@ function WeightAssessEntry({onAssess}){
   );
 }
 
+function WeightManageProgressBody(){
+  const totLost = weightGoalTotLost();
+  const progress = weightGoalTotPct();
+  const weekNo = WEIGHT_GOAL_CURRENT_WEEK + 1;
+  const markerLeft = Math.max(8, Math.min(86, progress));
+  const remainDots = [30, 55, 78].filter(pos=>pos > markerLeft + 8);
+  return (
+    <div className="review-overview-body is-weight-manage">
+      <div className="review-overview-metric">
+        <span>累计减重</span>
+        <strong>
+          {totLost.toFixed(1)}
+          <small>公斤</small>
+        </strong>
+      </div>
+      <div className="review-overview-trend is-weight-manage">
+        <div className="review-overview-trend-label">
+          <span>第{weekNo}周</span>
+          <b>/ {WEIGHT_GOAL_EST_WEEKS}周</b>
+        </div>
+        <div className="review-weight-manage-track" aria-hidden="true">
+          <div className="review-weight-manage-track-rail">
+            <i className="review-weight-manage-track-fill" style={{width:progress + '%'}}/>
+            {remainDots.map(pos=>(
+              <span key={pos} className="review-weight-manage-track-dot" style={{left:pos + '%'}}/>
+            ))}
+            <span className="review-weight-manage-track-marker" style={{left:markerLeft + '%'}}>
+              <span className="review-weight-manage-track-flag">⚑</span>
+              <span className="review-weight-manage-track-knob"/>
+            </span>
+            <span className="review-weight-manage-track-goal">🏁</span>
+          </div>
+          <div className="review-weight-manage-track-labels">
+            <span className="is-start">{WEIGHT_GOAL_START.toFixed(1)}</span>
+            <span className="is-end">{WEIGHT_GOAL_WEIGHT_TARGET}</span>
+            <span className="is-now" style={{left:markerLeft + '%'}}>{WEIGHT_GOAL_CUR.toFixed(1)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WeightManageCard({phase='none', onActivateGoal, onOpen}){
-  if(phase === 'goal') return null;
-  if(phase === 'plan'){
-    const handleKeyDown = event=>{
-      if(!onOpen) return;
-      if(event.key === 'Enter' || event.key === ' '){
-        event.preventDefault();
-        onOpen();
-      }
-    };
+  // 无目标 / 仅有目标未开计划：一级页展示示例卡；有计划才展示真实进度卡
+  const isPlan = phase === 'plan';
+  const handleKeyDown = event=>{
+    if(!onOpen) return;
+    if(event.key === 'Enter' || event.key === ' '){
+      event.preventDefault();
+      onOpen();
+    }
+  };
+  const totLost = weightGoalTotLost();
+  if(isPlan){
     return (
       <article
-        className="review-weight-manage-card is-active is-actionable"
+        className="review-overview-card review-weight-manage-card is-active is-actionable"
         role={onOpen ? 'button' : undefined}
         tabIndex={onOpen ? 0 : undefined}
         onClick={onOpen}
         onKeyDown={handleKeyDown}
-        aria-label="体重目标管理进行中，第63天，当前53.7公斤，目标52.0公斤"
+        aria-label={'体重管理，累计减重' + totLost + '公斤'}
       >
-        <header className="review-weight-manage-active-head">
-          <span className="review-weight-manage-active-icon" aria-hidden="true"><ReviewDietTargetIcon/></span>
-          <h2>体重目标管理</h2>
-          <span className="review-weight-manage-status">已更新</span>
-          <span className="review-weight-manage-chevron" aria-hidden="true"><ReviewChevron/></span>
+        <header className="review-overview-head">
+          <span className="review-overview-icon is-weight-manage" aria-hidden="true"><ReviewDietTargetIcon/></span>
+          <h2>体重管理</h2>
+          <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
         </header>
-        <div className="review-weight-manage-active">
-          <aside className="review-weight-manage-side">
-            <span>第</span>
-            <strong>63</strong>
-            <span>天 · 进行中</span>
-          </aside>
-          <div className="review-weight-manage-main">
-            <div className="review-weight-manage-current-row">
-              <p className="review-weight-manage-current">
-                <b>53.7</b>
-                <span>公斤</span>
-              </p>
-              <span className="review-weight-manage-delta">累计 -2.1公斤</span>
-            </div>
-            <div className="review-weight-manage-bar" aria-label="进度55%">
-              <span className="review-weight-manage-bar-fill" style={{width:'55%'}}/>
-              <span className="review-weight-manage-bar-tip" style={{left:'55%'}}>55%</span>
-            </div>
-            <div className="review-weight-manage-meta">
-              <span>初始 55.8</span>
-              <span>目标 52.0</span>
-            </div>
-          </div>
-        </div>
+        <WeightManageProgressBody/>
       </article>
     );
   }
 
   return (
-    <article className="review-weight-manage-card is-idle" aria-label="体重目标管理，未开启计划，示例数据">
-      <header className="review-weight-manage-idle-head">
-        <span className="review-weight-manage-active-icon" aria-hidden="true"><ReviewDietTargetIcon/></span>
-        <h2>体重目标管理</h2>
-        <span className="review-weight-manage-sample-badge">示例</span>
+    <article
+      className="review-overview-card review-weight-manage-card is-idle is-actionable"
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      aria-label="体重管理，未开启计划，示例数据，点击查看示例"
+    >
+      <header className="review-overview-head">
+        <span className="review-overview-icon is-weight-manage" aria-hidden="true"><ReviewDietTargetIcon/></span>
+        <h2>体重管理</h2>
+        <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
       </header>
-      <div className="review-weight-manage-sample">
+      <div className="review-weight-manage-sample is-combo">
         <div className="review-weight-manage-sample-body" aria-hidden="true">
-          <aside className="review-weight-manage-sample-side">
-            <span>第</span>
-            <strong>30</strong>
-            <span>天 · 进行中</span>
-          </aside>
-          <div className="review-weight-manage-sample-main">
-            <p className="review-weight-manage-sample-weight">
-              <b>57.6</b>
-              <span>公斤</span>
-            </p>
-            <div className="review-weight-manage-sample-bar" aria-label="进度48%">
-              <span className="review-weight-manage-sample-bar-fill" style={{width:'48%'}}/>
-            </div>
-            <div className="review-weight-manage-sample-meta">
-              <span>初始 60.0</span>
-              <span>48%</span>
-              <span>目标 55.0</span>
-            </div>
-          </div>
+          <WeightManageProgressBody/>
         </div>
         <div className="review-weight-manage-sample-mask" aria-hidden="true">
           <span>示例数据</span>
         </div>
       </div>
       <div className="review-weight-manage-idle-foot">
-        <p>制定目标，更有方向地管理体重</p>
+        <p>1 分钟测评，定适合你的目标</p>
         <button
           type="button"
           className="review-weight-manage-goal-link"
-          onClick={()=>{
-            onActivateGoal?.();
+          onClick={(event)=>{
+            event.stopPropagation();
             onOpen?.();
           }}
         >
@@ -988,39 +998,1511 @@ function WeightAssessPage({open, onClose, onComplete}){
   );
 }
 
-function WeightGoalDetailPage({open, onClose, onAssess}){
+const WEIGHT_GOAL_WEEK_PLAN_TASKS = [
+  {
+    id:'walk',
+    emoji:'🏃',
+    bg:'#EAF8F1',
+    fg:'#3FB385',
+    title:'运动 30 分钟',
+    tip:'晚饭后快走 30 分钟，可拆成两次',
+    count:'本周 4/5',
+    done:false,
+  },
+  {
+    id:'weight',
+    emoji:'⚖️',
+    bg:'#F4F0FF',
+    fg:'#8E74E6',
+    title:'称体重',
+    tip:'早起空腹、排便后称，更能看清趋势',
+    count:'本周 7/7',
+    done:true,
+  },
+  {
+    id:'diet',
+    emoji:'🥣',
+    bg:'#FFF3EA',
+    fg:'#F08A4B',
+    title:'拍下三餐',
+    tip:'拍下就好，不用精确算热量',
+    count:'本周 5/7',
+    done:true,
+  },
+];
+
+const WEIGHT_GOAL_KCAL_TARGET = 1800;
+const WEIGHT_GOAL_KCAL_LOW = 1620;
+const WEIGHT_GOAL_KCAL_HIGH = 1980;
+const WEIGHT_GOAL_KCAL_MAX = 2400;
+const WEIGHT_GOAL_WEIGHT_TARGET = 45;
+const WEIGHT_GOAL_FOOD_PALETTE = {
+  oat:['#E9D8B4','#F7E8C6','#B65A4A'],
+  egg:['#FFF6D6','#F6C443','#FFF'],
+  salad:['#7CB342','#A5D36B','#F28B50'],
+  rice:['#FFFFFF','#F2F0EA','#6FA544'],
+  shrimp:['#F59160','#FBB48A','#7CB342'],
+  beef:['#8C4B2E','#B3693F','#EAD7A0'],
+  corn:['#F7CF45','#F2B632','#5E9E3E'],
+  noodle:['#F3E2B5','#E8B85A','#C24E3A'],
+  fruit:['#F28B50','#E94B5B','#F7CF45'],
+  fish:['#F3EDE2','#D9876B','#7CB342'],
+  tofu:['#FBF3DC','#B8803C','#6FA544'],
+  hotpot:['#D9452E','#F08A4B','#7CB342'],
+};
+const WEIGHT_GOAL_STATUS = {
+  low:{label:'偏低', color:'#62CF9E', soft:'#E6F7EE', text:'#2E9E70'},
+  ok:{label:'合适', color:'#62CF9E', soft:'#E6F7EE', text:'#2E9E70'},
+  over:{label:'超量', color:'#EF6F83', soft:'#FDECEF', text:'#D2465E'},
+  na:{label:'记录不全', color:'#A9E4C8', soft:'#EEF8F2', text:'#5FA884'},
+  none:{label:'未记录', color:'#EDEBEF', soft:'#F7F6F8', text:'#AAAAAA'},
+};
+const WEIGHT_GOAL_STATUS_ORDER = ['low','ok','over','na','none'];
+const WEIGHT_GOAL_PLAN_WEEKS = 4;
+const WEIGHT_GOAL_CUR = 48.6;
+const WEIGHT_GOAL_START = 49.7;
+const WEIGHT_GOAL_WEEK_TARGETS = [0.4, 0.3, 0.3, 0.4];
+const WEIGHT_GOAL_REMAIN_WEEKS = 14;
+const WEIGHT_GOAL_EST_WEEKS = 18;
+const WEIGHT_GOAL_RANGE_LABEL = {
+  w1:'第1周', w2:'第2周', w3:'第3周', w4:'第4周', all:'累计',
+};
+const WEIGHT_GOAL_UNIT_NAME = {
+  w1:'天', w2:'天', w3:'天', w4:'天', all:'周',
+};
+const WEIGHT_GOAL_WEEK_KEYS = {w1:0, w2:1, w3:2, w4:3};
+const WEIGHT_GOAL_CURRENT_WEEK = WEIGHT_GOAL_PLAN_WEEKS - 1;
+function weightGoalIsWeekTab(range){
+  return Object.prototype.hasOwnProperty.call(WEIGHT_GOAL_WEEK_KEYS, range);
+}
+function weightGoalIsAllTab(range){
+  return range === 'all';
+}
+function weightGoalTotLost(){
+  return Number((WEIGHT_GOAL_START - WEIGHT_GOAL_CUR).toFixed(1));
+}
+function weightGoalTotPct(){
+  const span = WEIGHT_GOAL_START - WEIGHT_GOAL_WEIGHT_TARGET;
+  if(span <= 0) return 0;
+  return Math.round((weightGoalTotLost() / span) * 100);
+}
+
+const WEIGHT_GOAL_BREAKFAST = ['oat','egg','corn','noodle'];
+const WEIGHT_GOAL_LUNCH = ['rice','shrimp','beef','fish','noodle','hotpot'];
+const WEIGHT_GOAL_DINNER = ['salad','tofu','fish','rice','shrimp'];
+const WEIGHT_GOAL_EXERCISES = [['快走',30,130],['瑜伽',40,120],['力量',30,180],['跑步',30,260],['骑行',40,200]];
+const WEIGHT_GOAL_WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+function weightGoalPad(n){ return String(n).padStart(2, '0'); }
+
+const WEIGHT_GOAL_ALL_DAYS = (()=>{
+  let seed = 20260526;
+  const rnd = ()=>{
+    seed |= 0;
+    seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  const pick = list=>list[Math.floor(rnd() * list.length)];
+  const rint = (a, b)=>Math.round(a + rnd() * (b - a));
+  const START = Date.UTC(2024, 11, 1);
+  const TODAY = Date.UTC(2026, 4, 26);
+  const count = (TODAY - START) / 864e5 + 1;
+  const days = [];
+  for(let i = 0; i < count; i++){
+    const dt = new Date(START + i * 864e5);
+    const wd = dt.getUTCDay();
+    const weekend = wd === 0 || wd === 6;
+    const k0 = count - 28;
+    const base = i < k0
+      ? 52.6 - 3.0 * (i / k0) + 0.25 * Math.sin(i / 9)
+      : 49.6 - (i - k0) / (count - 1 - k0) * 1.0;
+    const wt = rnd() < 0.12 ? null : Number((base + (rnd() - 0.5) * 0.4).toFixed(1));
+    let meals = [
+      [pick(WEIGHT_GOAL_BREAKFAST), rint(300, 450)],
+      [pick(WEIGHT_GOAL_LUNCH), rint(560, weekend ? 950 : 800)],
+      [pick(WEIGHT_GOAL_DINNER), rint(440, weekend ? 780 : 680)],
+    ];
+    const roll = rnd();
+    if(roll < 0.04) meals = [null, null, null];
+    else if(roll < 0.16){
+      meals[2] = null;
+      if(rnd() < 0.4) meals[1] = null;
+    }
+    const sn = meals[0] && rnd() < 0.5 ? ['fruit', rint(90, 250)] : null;
+    const ex = rnd() < 0.6 ? pick(WEIGHT_GOAL_EXERCISES) : null;
+    days.push({
+      ts:START + i * 864e5,
+      y:dt.getUTCFullYear(),
+      m:dt.getUTCMonth() + 1,
+      dd:dt.getUTCDate(),
+      d:weightGoalPad(dt.getUTCMonth() + 1) + '-' + weightGoalPad(dt.getUTCDate()),
+      w:WEIGHT_GOAL_WEEKDAYS[wd],
+      wd,
+      wt,
+      meals,
+      sn,
+      ex,
+      tg:[],
+    });
+  }
+  const fix = [
+    {wt:49.6, meals:[['oat',380],['shrimp',620],['salad',520]], sn:['fruit',230], ex:['快走',30,130]},
+    {wt:49.4, meals:[['egg',320], null, null], sn:null, ex:null},
+    {wt:49.1, meals:[['corn',350],['rice',640],['fish',560]], sn:['fruit',140], ex:['快走',30,130]},
+    {wt:49.3, meals:[['noodle',420],['beef',780],['salad',480]], sn:['fruit',140], ex:['力量',30,180]},
+    {wt:49.1, meals:[['oat',360],['hotpot',1020], null], sn:null, ex:['快走',20,90]},
+    {wt:48.8, meals:[['egg',410],['shrimp',760],['tofu',690]], sn:['fruit',190], ex:['瑜伽',40,120]},
+    {wt:48.6, meals:[['corn',340],['rice',600],['salad',520]], sn:['fruit',250], ex:['快走',30,130]},
+  ];
+  fix.forEach((item, index)=>Object.assign(days[count - 7 + index], item));
+  const periodStart = (Date.UTC(2026, 4, 19) - START) / 864e5;
+  days.forEach((day, index)=>{
+    if(((index - periodStart) % 29 + 29) % 29 < 5) day.tg.push('经期');
+    day.idx = index;
+    day.n = day.meals.filter(Boolean).length;
+    day.in = day.meals.reduce((sum, meal)=>sum + (meal ? meal[1] : 0), 0) + (day.sn ? day.sn[1] : 0);
+    day.burn = day.ex ? day.ex[2] : 0;
+    day.st = day.n === 0
+      ? 'none'
+      : (day.n < 3 ? 'na' : (day.in < WEIGHT_GOAL_KCAL_LOW ? 'low' : (day.in > WEIGHT_GOAL_KCAL_HIGH ? 'over' : 'ok')));
+  });
+  days[count - 1].today = true;
+  return days;
+})();
+
+function weightGoalAgg(days, label, sub, key){
+  const complete = days.filter(day=>day.n === 3);
+  const recorded = days.filter(day=>day.n > 0);
+  const weights = days.filter(day=>day.wt != null);
+  const unit = {days, label, sub, key, single:days.length === 1};
+  unit.wt = weights.length ? weights[weights.length - 1].wt.toFixed(1) : null;
+  unit.wt0 = weights.length ? weights[0].wt.toFixed(1) : null;
+  unit.in = complete.length
+    ? Math.round(complete.reduce((sum, day)=>sum + day.in, 0) / complete.length)
+    : (recorded.length ? Math.round(recorded.reduce((sum, day)=>sum + day.in, 0) / recorded.length) : 0);
+  unit.burnT = days.reduce((sum, day)=>sum + day.burn, 0);
+  unit.burn = Math.round(unit.burnT / Math.max(days.length, 1));
+  unit.exD = days.filter(day=>day.ex).length;
+  unit.cnt = {};
+  WEIGHT_GOAL_STATUS_ORDER.forEach(status=>{
+    unit.cnt[status] = days.filter(day=>day.st === status).length;
+  });
+  if(unit.single){
+    unit.st = days[0].st;
+    unit.in = days[0].in;
+    unit.burn = days[0].burn;
+  }else{
+    unit.st = !complete.length
+      ? (recorded.length ? 'na' : 'none')
+      : (unit.in < WEIGHT_GOAL_KCAL_LOW ? 'low' : (unit.in > WEIGHT_GOAL_KCAL_HIGH ? 'over' : 'ok'));
+  }
+  unit.period = days.some(day=>day.tg.includes('经期'));
+  return unit;
+}
+
+function weightGoalPlanDays(){
+  const totalDays = WEIGHT_GOAL_PLAN_WEEKS * 7;
+  return WEIGHT_GOAL_ALL_DAYS.slice(Math.max(0, WEIGHT_GOAL_ALL_DAYS.length - totalDays));
+}
+
+function weightGoalWeekStats(){
+  const planDays = weightGoalPlanDays();
+  let prev = null;
+  return Array.from({length:WEIGHT_GOAL_PLAN_WEEKS}, (_, weekIndex)=>{
+    const days = planDays.slice(weekIndex * 7, weekIndex * 7 + 7);
+    const weights = days.filter(day=>day.wt != null).map(day=>day.wt);
+    const from = prev != null ? prev : (weights[0] ?? WEIGHT_GOAL_START);
+    const to = weights.length ? weights[weights.length - 1] : from;
+    prev = to;
+    const lost = Number((from - to).toFixed(1));
+    const goal = WEIGHT_GOAL_WEEK_TARGETS[weekIndex] || 0.3;
+    return {
+      weekIndex,
+      weekNo:weekIndex + 1,
+      goal,
+      from,
+      to,
+      lost,
+      met:lost >= goal,
+      isCurrent:weekIndex === WEIGHT_GOAL_CURRENT_WEEK,
+    };
+  });
+}
+
+const WEIGHT_GOAL_WEEK_STATS = weightGoalWeekStats();
+
+function weightGoalUnits(range){
+  const planDays = weightGoalPlanDays();
+  const toDayUnits = days=>days.map(day=>weightGoalAgg([day], day.today ? '今天' : day.d, day.w, day.d));
+  if(weightGoalIsAllTab(range)){
+    return Array.from({length:WEIGHT_GOAL_PLAN_WEEKS}, (_, weekIndex)=>{
+      const days = planDays.slice(weekIndex * 7, weekIndex * 7 + 7);
+      const label = weekIndex === WEIGHT_GOAL_CURRENT_WEEK ? '本周' : ('第' + (weekIndex + 1) + '周');
+      const sub = days[0].d + ' – ' + days[days.length - 1].d;
+      return weightGoalAgg(days, label, sub, 'w' + weekIndex);
+    });
+  }
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
+  const start = weekIndex * 7;
+  return toDayUnits(planDays.slice(start, start + 7));
+}
+
+function weightGoalFmtDelta(value){
+  if(value == null) return '';
+  if(value > 0) return '↑' + value;
+  if(value < 0) return '↓' + (-value);
+  return '持平';
+}
+
+function weightGoalRingClass(status){
+  return status === 'over' ? 'over' : (status === 'none' ? 'none' : 'ok');
+}
+
+function weightGoalMealsOf(unit, count){
+  const out = [];
+  for(let i = unit.days.length - 1; i >= 0 && out.length < count; i--){
+    const day = unit.days[i];
+    [[day.sn, '加餐'], [day.meals[2], '晚餐'], [day.meals[1], '午餐'], [day.meals[0], '早餐']].forEach(([meal, label], index)=>{
+      if(meal && out.length < count && (index !== 0 || unit.days.length === 1)){
+        out.push({meal, label, day, index});
+      }
+    });
+  }
+  return out;
+}
+
+function WeightGoalFoodPlate({foodKey, seed}){
+  const palette = WEIGHT_GOAL_FOOD_PALETTE[foodKey] || WEIGHT_GOAL_FOOD_PALETTE.salad;
+  let seedValue = seed * 9301 + 49297;
+  const rnd = ()=>{
+    seedValue = (seedValue * 9301 + 49297) % 233280;
+    return seedValue / 233280;
+  };
+  const spots = [[38, 40], [62, 42], [50, 64]];
+  const gradientId = 'wg-plate-' + seed;
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id={gradientId}>
+          <stop offset="0" stopColor="#fff"/>
+          <stop offset="1" stopColor="#EDE8E2"/>
+        </radialGradient>
+      </defs>
+      <rect width="100" height="100" fill="#D9CBB8"/>
+      <circle cx="50" cy="52" r="44" fill="#000" opacity=".08"/>
+      <circle cx="50" cy="50" r="43" fill={'url(#' + gradientId + ')'}/>
+      <circle cx="50" cy="50" r="34" fill="#F7F4EF"/>
+      {spots.map((center, index)=>{
+        const rx = 14 + rnd() * 4;
+        const ry = 11 + rnd() * 4;
+        const rotate = rnd() * 60;
+        const dots = Array.from({length:5}, ()=>({
+          cx:center[0] - 8 + rnd() * 16,
+          cy:center[1] - 6 + rnd() * 12,
+          r:1.5 + rnd() * 2.5,
+        }));
+        return (
+          <g key={index}>
+            <ellipse
+              cx={center[0]}
+              cy={center[1]}
+              rx={rx}
+              ry={ry}
+              fill={palette[index]}
+              transform={'rotate(' + rotate + ' ' + center[0] + ' ' + center[1] + ')'}
+            />
+            {dots.map((dot, dotIndex)=>(
+              <circle key={dotIndex} cx={dot.cx} cy={dot.cy} r={dot.r} fill={palette[(index + 1) % 3]} opacity=".75"/>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function WeightGoalFlameBadge({size=15, ring=false}){
+  return (
+    <span className={'review-weight-goal-flame-badge' + (ring ? ' is-ring' : '')} style={{width:size, height:size}}>
+      <svg viewBox="0 0 24 24" width={size * 0.7} height={size * 0.7} aria-hidden="true">
+        <path d="M12 2.5c.9 2.9-1 4.4-1 6.8 0 1.3.9 2.3 2.1 2.3 1.5 0 2.3-1.3 2.1-2.8 1.9 1.5 3.3 3.8 3.3 6.3 0 3.6-2.9 6.1-6.5 6.1s-6.5-2.5-6.5-6.1c0-4.2 4-6 6.5-12.6z" fill="currentColor"/>
+      </svg>
+    </span>
+  );
+}
+
+function WeightGoalStatusRing({unit, size=36, strokeRatio=0.15}){
+  const status = weightGoalRingClass(unit.st);
+  const stroke = size * strokeRatio;
+  const radius = (size - stroke) / 2;
+  const half = size / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = Math.min(unit.in / WEIGHT_GOAL_KCAL_TARGET, 1);
+  const notch = status === 'over';
+  const length = status === 'none'
+    ? 0
+    : (notch ? circumference - stroke * 0.9 : (pct >= 1 ? circumference : circumference * Math.max(pct, 0.04)));
+  return (
+    <svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size} style={{transform:'rotate(-90deg)', display:'block'}} aria-hidden="true">
+      <circle cx={half} cy={half} r={radius} fill="none" stroke="#F1F0F2" strokeWidth={stroke}/>
+      {status !== 'none' ? (
+        <circle
+          cx={half}
+          cy={half}
+          r={radius}
+          fill="none"
+          stroke={status === 'over' ? 'url(#wg-g-over)' : 'url(#wg-g-ok)'}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={length + ' ' + circumference}
+          strokeDashoffset={notch ? -stroke * 0.45 : 0}
+        />
+      ) : null}
+    </svg>
+  );
+}
+
+function WeightGoalRing2({unit, size=36, center=null}){
+  const hasExercise = Boolean(unit.days[0] && unit.days[0].ex);
+  return (
+    <div className="review-weight-goal-ring2" style={{width:size, height:size}}>
+      <WeightGoalStatusRing unit={unit} size={size} strokeRatio={size > 60 ? 0.11 : 0.15}/>
+      <div className="review-weight-goal-ring2-center">{center}</div>
+      {hasExercise && size >= 60 ? (
+        <div className="review-weight-goal-ring2-badge">
+          <WeightGoalFlameBadge size={Math.round(size * 0.26)} ring/>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WeightGoalPlanSectionIcon(){
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>;
+}
+
+function WeightGoalTrendSectionIcon(){
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6M4 18h16"/><path d="M7 9.5l3.2 3.2 3-2.6L17.5 15"/><path d="M15.2 15h2.3v-2.3"/></svg>;
+}
+
+function WeightGoalInsightSectionIcon(){
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 15c-1.8-1.2-3-3.2-3-5.4A5.8 5.8 0 0 1 12 3.8 5.8 5.8 0 0 1 18.8 9.6c0 2.2-1.2 4.2-3 5.4H8.2z"/></svg>;
+}
+
+function WeightGoalSectionHead({iconClass, icon, title, subtitle, extra}){
+  return (
+    <header className={'review-weight-goal-card-head' + (subtitle ? ' has-subtitle' : '')}>
+      <div className="review-weight-goal-card-title">
+        <span className={'review-card-icon ' + iconClass} aria-hidden="true">{icon}</span>
+        <div className="review-weight-goal-card-title-text">
+          <h3>{title}</h3>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+      </div>
+      {extra || null}
+    </header>
+  );
+}
+
+function WeightGoalWeekCheckIcon(){
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="8" cy="8" r="7.2" fill="rgba(255,255,255,.22)" stroke="#fff" strokeWidth="1.2"/>
+      <path d="M4.8 8.1l2.1 2.1 4.3-4.3" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function WeightGoalCheckinDietIcon(){
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <ellipse cx="16" cy="22" rx="11" ry="4.5" fill="#F3D9A8"/>
+      <path d="M7 18c1.2-6.2 4.2-10 9-10s7.8 3.8 9 10" fill="#FFE7B8"/>
+      <path d="M10.5 17.5c1.4-3.8 3.2-5.8 5.5-5.8s4.1 2 5.5 5.8" fill="#F6B24A"/>
+      <ellipse cx="16" cy="18.2" rx="8.4" ry="2.4" fill="#E8A23A"/>
+      <path d="M12 12.2c1.2-2.4 2.6-3.6 4-3.6 1.1 0 2 .7 2.8 1.8" fill="none" stroke="#7CB342" strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="16.2" cy="8.2" r="1.5" fill="#8BC34A"/>
+    </svg>
+  );
+}
+
+function WeightGoalCheckinWeightIcon(){
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="6" y="8" width="20" height="16" rx="4" fill="#BFE8E2"/>
+      <rect x="9" y="11" width="14" height="8" rx="2" fill="#fff"/>
+      <path d="M16 13.2v4.2" stroke="#5BB8AE" strokeWidth="1.6" strokeLinecap="round"/>
+      <circle cx="16" cy="13.2" r="1.4" fill="#5BB8AE"/>
+      <path d="M11.5 21.5h9" stroke="#7AC7BF" strokeWidth="1.6" strokeLinecap="round"/>
+      <rect x="13.5" y="22.5" width="5" height="2.5" rx="1.2" fill="#8AD0C8"/>
+    </svg>
+  );
+}
+
+function WeightGoalCheckinWalkIcon(){
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="18.2" cy="7.2" r="2.5" fill="#3CBF8A"/>
+      <path d="M17 11.2l-2.6 4.8 3.4 1.3 2.2 6" fill="none" stroke="#2E9E70" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M14.4 16l-3.6 2.2M20 16.8l3.2-1M16.6 23.2l-2.8 4.2M20.4 23.4l2.2 4" fill="none" stroke="#2E9E70" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function WeightGoalCheckinGlyph({tone}){
+  if(tone === 'weight') return <WeightGoalCheckinWeightIcon/>;
+  if(tone === 'walk' || tone === 'steps') return <WeightGoalCheckinWalkIcon/>;
+  return <WeightGoalCheckinDietIcon/>;
+}
+
+function weightGoalFmtRange(first, last){
+  if(!first || !last) return '';
+  return first.y + '.' + first.d.replace('-', '.') + ' — ' + last.d.replace('-', '.');
+}
+
+function weightGoalRangeMeta(range){
+  const planDays = weightGoalPlanDays();
+  if(weightGoalIsAllTab(range)){
+    const first = planDays[0];
+    const last = planDays[planDays.length - 1];
+    return {
+      weekIndex:WEIGHT_GOAL_CURRENT_WEEK,
+      isCurrent:false,
+      isAll:true,
+      left:weightGoalFmtRange(first, last),
+      right:'',
+    };
+  }
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
+  const days = planDays.slice(weekIndex * 7, weekIndex * 7 + 7);
+  const first = days[0];
+  const last = days[days.length - 1];
+  const isCurrent = weekIndex === WEIGHT_GOAL_CURRENT_WEEK;
+  return {
+    weekIndex,
+    isCurrent,
+    isAll:false,
+    left:weightGoalFmtRange(first, last),
+    right:'',
+  };
+}
+
+function WeightGoalProgressCard({range, onAdjustGoal}){
+  const isAll = weightGoalIsAllTab(range);
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
+  const week = WEIGHT_GOAL_WEEK_STATS[weekIndex] || WEIGHT_GOAL_WEEK_STATS[WEIGHT_GOAL_CURRENT_WEEK];
+  const isCurrent = !isAll && weekIndex === WEIGHT_GOAL_CURRENT_WEEK;
+  const weekNo = isAll ? WEIGHT_GOAL_PLAN_WEEKS : (weekIndex + 1);
+  const displayWt = isAll || isCurrent
+    ? WEIGHT_GOAL_CUR
+    : Number((week?.to ?? WEIGHT_GOAL_CUR).toFixed(1));
+  const totLost = Number((WEIGHT_GOAL_START - displayWt).toFixed(1));
+  const left = Math.max(0, Number((displayWt - WEIGHT_GOAL_WEIGHT_TARGET).toFixed(1)));
+  const span = WEIGHT_GOAL_START - WEIGHT_GOAL_WEIGHT_TARGET;
+  const progress = span > 0 ? Math.round((totLost / span) * 100) : 0;
+  const tipLeft = Math.max(8, Math.min(92, progress));
+  const remainWeeks = Math.max(0, WEIGHT_GOAL_EST_WEEKS - weekNo);
+  const weekLost = Math.max(0, Number((week?.lost || 0).toFixed(1)));
+  const weekGoal = week?.goal || 0.3;
+  const weekMet = weekLost >= weekGoal;
+  const title = '目标进度';
+  const subtitle = isAll
+    ? ('共 ' + WEIGHT_GOAL_EST_WEEKS + ' 周')
+    : ('第 ' + weekNo + ' 周 / 共 ' + WEIGHT_GOAL_EST_WEEKS + ' 周');
+  const weekGoalLabel = '第' + weekNo + '周目标';
+  const metCount = WEIGHT_GOAL_WEEK_STATS.filter(item=>item.met).length;
+  return (
+    <section className="review-detail-card review-weight-goal-progress-card is-stage" aria-label={title}>
+      <header className="review-weight-goal-stage-head">
+        <span className="review-card-icon is-diet-target" aria-hidden="true"><ReviewDietTargetIcon/></span>
+        <div className="review-weight-goal-stage-title">
+          <h3>{title}</h3>
+          <small>{subtitle}</small>
+        </div>
+        <button
+          type="button"
+          className="review-weight-goal-text-action"
+          onClick={(event)=>{
+            event.stopPropagation();
+            onAdjustGoal?.();
+          }}
+        >
+          调整目标
+          <span className="review-weight-goal-text-action-chevron" aria-hidden="true"><ReviewChevron/></span>
+        </button>
+      </header>
+      <div className="review-weight-goal-stage-metric">
+        <span className="review-weight-goal-stage-cur">
+          {displayWt.toFixed(1)}
+          <i>kg</i>
+        </span>
+        <span className="review-weight-goal-stage-to">/ 目标 {WEIGHT_GOAL_WEIGHT_TARGET.toFixed(1)}kg</span>
+      </div>
+      <div className="review-weight-goal-stage-bar" aria-hidden="true">
+        <i style={{width:progress + '%'}}/>
+        <em style={{left:progress + '%'}}/>
+        <span className="review-weight-goal-stage-tip" style={{left:tipLeft + '%'}}>已完成 {progress}%</span>
+      </div>
+      <div className="review-weight-goal-stage-foot is-split">
+        <span>起始 {WEIGHT_GOAL_START.toFixed(1)}kg</span>
+        <span>还差 {left}kg · 剩 {remainWeeks} 周</span>
+      </div>
+      <div className="review-weight-goal-stage-split">
+        <div>
+          <small>累计减重</small>
+          <b>{totLost.toFixed(1)} <i>kg</i></b>
+        </div>
+        {isAll ? (
+          <div>
+            <small>周目标达成</small>
+            <b>{metCount}<i>/{WEIGHT_GOAL_WEEK_STATS.length} 周</i></b>
+          </div>
+        ) : (
+          <div>
+            <small>{weekGoalLabel}</small>
+            <b>
+              {weekLost.toFixed(1)} / {weekGoal.toFixed(1)}kg
+              {weekMet ? <span className="is-ok" aria-label="已达成">✓</span> : null}
+            </b>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function WeightGoalPlanLockIcon(){
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <rect x="2.5" y="5.2" width="7" height="5.3" rx="1.4" fill="currentColor"/>
+      <path d="M4.1 5.2V3.8a1.9 1.9 0 0 1 3.8 0v1.4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function WeightGoalPlanRecipeIcon(){
+  return (
+    <svg viewBox="0 0 28 28" aria-hidden="true">
+      <rect x="4" y="7" width="20" height="15" rx="4" fill="#FFE1C4"/>
+      <rect x="6.5" y="9.5" width="7" height="5" rx="1.5" fill="#FFB37A"/>
+      <rect x="14.5" y="9.5" width="7" height="5" rx="1.5" fill="#FFD08A"/>
+      <rect x="6.5" y="16" width="15" height="3.5" rx="1.5" fill="#F29A55"/>
+    </svg>
+  );
+}
+
+function WeightGoalPlanYogaIcon(){
+  return (
+    <svg viewBox="0 0 28 28" aria-hidden="true">
+      <circle cx="14" cy="7.2" r="2.4" fill="#FF8AB4"/>
+      <path d="M14 10.4v5.2M10.2 13.2l3.8 2.4 3.8-2.4M9.6 21.2l4.4-5.6 4.4 5.6" fill="none" stroke="#FF6B9D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+const WEIGHT_GOAL_PAID_BUDGET = 1450;
+const WEIGHT_GOAL_PAID_PLAN_TASKS = [
+  {
+    id:'dinner',
+    emoji:'🐟',
+    bg:'#FFF3EA',
+    fg:'#F08A4B',
+    title:'晚餐 · 清蒸鲈鱼 + 西兰花 + 半碗糙米',
+    done:false,
+    sub:'约 430 kcal · 15 分钟做好',
+    det:'鲈鱼 150g 清蒸 8 分钟；西兰花焯水；糙米饭半碗。外食可点：清蒸鱼 + 白灼青菜，米饭减半',
+    act:'看做法',
+  },
+  {
+    id:'ex',
+    emoji:'🔥',
+    bg:'#EAF8F1',
+    fg:'#3FB385',
+    title:'20 分钟燃脂操',
+    done:false,
+    sub:'跟练视频 · 预计消耗 150 kcal',
+    det:'低冲击，不跳跃，适合晚饭 1 小时后在家做',
+    act:'开始跟练',
+  },
+  {
+    id:'wt',
+    emoji:'⚖️',
+    bg:'#F4F0FF',
+    fg:'#8E74E6',
+    title:'称体重',
+    done:true,
+    sub:'今天 48.6kg · 较昨天 −0.2',
+  },
+  {
+    id:'breakfast',
+    emoji:'🥣',
+    bg:'#FFF3EA',
+    fg:'#F08A4B',
+    title:'早餐 · 燕麦牛奶 + 水煮蛋',
+    done:true,
+    sub:'推荐 320 kcal · 实际 340',
+  },
+  {
+    id:'lunch',
+    emoji:'🍱',
+    bg:'#FFF3EA',
+    fg:'#F08A4B',
+    title:'午餐 · 鸡胸藜麦碗',
+    done:true,
+    sub:'推荐 520 kcal · 实际 600',
+  },
+];
+
+function WeightGoalPaidExclusiveCard({onGoCheckIn}){
+  const eaten = 940;
+  const burn = 0;
+  const left = WEIGHT_GOAL_PAID_BUDGET - eaten + burn;
+  const tasks = [...WEIGHT_GOAL_PAID_PLAN_TASKS].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
+  const ringR = 34;
+  const ringC = 2 * Math.PI * ringR;
+  const eatenPct = Math.min(1, eaten / WEIGHT_GOAL_PAID_BUDGET);
+  const dash = eatenPct * ringC;
+  let firstTodoShown = false;
+  return (
+    <section className="review-detail-card review-weight-goal-paid-exclusive" aria-label="今日专属计划">
+      <header className="review-weight-goal-paid-exclusive-head">
+        <span className="review-weight-goal-week-plan-head-icon" aria-hidden="true">✓</span>
+        <h3>今日专属计划</h3>
+        <em className="review-weight-goal-paid-exclusive-vip">会员</em>
+      </header>
+      <div className="review-weight-goal-paid-budget" aria-label="今日热量预算">
+        <div className="review-weight-goal-paid-budget-ring" aria-hidden="true">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <defs>
+              <linearGradient id="wg-paid-ring" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#B4EDC4"/>
+                <stop offset="1" stopColor="#3FC497"/>
+              </linearGradient>
+            </defs>
+            <g transform="rotate(-90 40 40)">
+              <circle cx="40" cy="40" r={ringR} fill="none" stroke="#F1EFF2" strokeWidth="8"/>
+              <circle
+                cx="40"
+                cy="40"
+                r={ringR}
+                fill="none"
+                stroke="url(#wg-paid-ring)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={dash + ' ' + ringC}
+              />
+            </g>
+          </svg>
+          <div className="review-weight-goal-paid-budget-ring-copy">
+            <small>还可吃</small>
+            <b>{left}</b>
+            <small>kcal</small>
+          </div>
+        </div>
+        <div className="review-weight-goal-paid-budget-stats">
+          <div><span>今日预算</span><b>{WEIGHT_GOAL_PAID_BUDGET}</b></div>
+          <div><span>已吃</span><b>{eaten}</b></div>
+          <div><span>运动</span><b>+{burn}</b></div>
+        </div>
+      </div>
+      <div className="review-weight-goal-paid-task-list" role="list">
+        {tasks.map(item=>{
+          const showDetail = !item.done && !firstTodoShown;
+          if(showDetail) firstTodoShown = true;
+          return (
+            <div
+              key={item.id}
+              className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo')}
+              style={{'--wg-paid-bg':item.bg, '--wg-paid-fg':item.fg}}
+              role="listitem"
+              onClick={item.done ? undefined : onGoCheckIn}
+            >
+              <div className="review-weight-goal-paid-task-main">
+                <span className="review-weight-goal-paid-task-emoji" aria-hidden="true">{item.emoji}</span>
+                <strong>{item.title}</strong>
+                <span className={'review-weight-goal-paid-task-check' + (item.done ? ' is-on' : '')} aria-hidden="true">
+                  {item.done ? '✓' : null}
+                </span>
+              </div>
+              {!item.done ? (
+                <div className="review-weight-goal-paid-task-detail">
+                  <p>{item.sub}</p>
+                  {showDetail && item.det ? <small>{item.det}</small> : null}
+                  {item.act ? (
+                    <button type="button" className="review-weight-goal-paid-task-link">
+                      {item.act}
+                      <span aria-hidden="true"> ›</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function WeightGoalWeekPlanCard({onGoCheckIn, onAssess}){
+  const tasks = [...WEIGHT_GOAL_WEEK_PLAN_TASKS].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
+  return (
+    <section className="review-detail-card review-weight-goal-week-plan-card is-today" aria-label="今日计划">
+      <header className="review-weight-goal-week-plan-head is-compact">
+        <span className="review-weight-goal-week-plan-head-icon" aria-hidden="true">✓</span>
+        <h3>今日计划</h3>
+      </header>
+      <div className="review-weight-goal-paid-task-list" role="list">
+        {tasks.map(item=>(
+          <div
+            key={item.id}
+            className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo')}
+            style={{'--wg-paid-bg':item.bg, '--wg-paid-fg':item.fg}}
+            role="listitem"
+            onClick={item.done ? undefined : onGoCheckIn}
+          >
+            <div className="review-weight-goal-paid-task-main">
+              <span className="review-weight-goal-paid-task-emoji" aria-hidden="true">{item.emoji}</span>
+              <strong>{item.title}</strong>
+              {item.count ? (
+                <span className="review-weight-goal-week-plan-count is-p5">{item.count}</span>
+              ) : null}
+              <span className={'review-weight-goal-paid-task-check' + (item.done ? ' is-on' : '')} aria-hidden="true">
+                {item.done ? '✓' : null}
+              </span>
+            </div>
+            {!item.done && item.tip ? (
+              <div className="review-weight-goal-paid-task-detail">
+                <p>{item.tip}</p>
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <WeightGoalAssessBanner onAssess={onAssess}/>
+    </section>
+  );
+}
+
+function WeightGoalTrendRingRow({units, selected, onSelect}){
+  const n = units.length;
+  const size = n > 14 ? Math.min(22, Math.floor(277 / n) - 2) : 32;
+  const discSize = Math.round(size * 0.62);
+  const byWeek = units.some(unit=>!unit.single);
+  return (
+    <div className="review-weight-goal-trend-rings" role="tablist" aria-label={byWeek ? '按周切换' : '按天切换'}>
+      {units.map((unit, index)=>{
+        const on = index === selected;
+        const day = unit.days[0];
+        const label = unit.single
+          ? (day?.today ? '今' : (day ? String(day.dd) : unit.label))
+          : (unit.label === '本周' ? '本周' : ((index + 1) + '周'));
+        const hasExercise = unit.single ? Boolean(day?.ex) : unit.exD > 0;
+        return (
+          <button
+            key={unit.key}
+            type="button"
+            className={'review-weight-goal-trend-ring' + (on ? ' is-active' : '')}
+            aria-selected={on}
+            onClick={()=>onSelect?.(index)}
+          >
+            <span className="review-weight-goal-trend-ring-lab">{label}</span>
+            <span className="review-weight-goal-trend-ring-body" style={{width:size, height:size}}>
+              <WeightGoalStatusRing unit={unit} size={size} strokeRatio={0.12}/>
+              <span
+                className="review-weight-goal-trend-ring-disc"
+                style={{width:discSize, height:discSize}}
+              >
+                {hasExercise ? <WeightGoalFlameBadge size={Math.round(size * 0.4)}/> : null}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function WeightGoalTrendChart({units, selected, onSelect}){
+  const width = 319;
+  const height = 236;
+  const left = 26;
+  const right = 4;
+  const n = units.length;
+  const step = (width - left - right) / Math.max(n, 1);
+  const cx = index=>left + step * index + step / 2;
+  const P1 = {wT:30, wB:90, gY:104, bot:120};
+  const P2 = {top:140, up:154, base:206, down:228};
+  const weights = units.map(unit=>unit.wt).filter(value=>value != null).map(Number);
+  let wMin = weights.length ? Math.min(...weights) : WEIGHT_GOAL_WEIGHT_TARGET;
+  let wMax = weights.length ? Math.max(...weights) : WEIGHT_GOAL_WEIGHT_TARGET + 1;
+  if(wMax - wMin < 0.6){
+    const mid = (wMax + wMin) / 2;
+    wMin = mid - 0.3;
+    wMax = mid + 0.3;
+  }
+  const nice = value=>Math.round(value * 10) / 10;
+  const t1 = nice(wMax);
+  const t0 = nice(wMin);
+  const wy = weight=>P1.wT + (t1 - weight) / ((t1 - t0) || 1) * (P1.wB - P1.wT);
+  const KU = 2400;
+  const BU = 400;
+  const kyU = value=>P2.base - value / KU * (P2.base - P2.up);
+  const kyD = value=>P2.base + Math.min(value, BU) / BU * (P2.down - P2.base);
+  const barWidth = Math.min(14, step * 0.46);
+  const radius = Math.min(3, barWidth / 2.4);
+  const points = units.map((unit, index)=>unit.wt == null ? null : [cx(index), wy(Number(unit.wt))]).filter(Boolean);
+  const selectedX = cx(selected);
+  const selectedUnit = units[selected];
+  const remain = selectedUnit?.wt != null
+    ? Math.max(0, Number((Number(selectedUnit.wt) - WEIGHT_GOAL_WEIGHT_TARGET).toFixed(1)))
+    : Math.max(0, Number((48.6 - WEIGHT_GOAL_WEIGHT_TARGET).toFixed(1)));
+  const area = points.length
+    ? ('M' + points[0][0] + ',' + P1.wB + ' ' + points.map(point=>'L' + point.join(',')).join(' ') + ' L' + points[points.length - 1][0] + ',' + P1.wB + ' Z')
+    : '';
+  const selectPath = 'M' + (selectedX - step / 2) + ',0 h' + step + ' v' + (P2.down - 6)
+    + ' a10,10 0 0 1 -10,10 h' + (-(step - 20)) + ' a10,10 0 0 1 -10,-10 Z';
+  return (
+    <svg className="review-weight-goal-board-chart is-trend-c2" width="100%" viewBox={'0 0 ' + width + ' ' + height} role="img" aria-label="减重趋势图">
+      <defs>
+        <linearGradient id="wg-wa3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FF4D88" stopOpacity=".18"/>
+          <stop offset="1" stopColor="#FF4D88" stopOpacity="0"/>
+        </linearGradient>
+        <linearGradient id="wg-bi" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#8FDDB9"/>
+          <stop offset="1" stopColor="#5FC79C"/>
+        </linearGradient>
+        <linearGradient id="wg-bb" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FF9550"/>
+          <stop offset="1" stopColor="#FFC08A"/>
+        </linearGradient>
+      </defs>
+      <path d={selectPath} fill="#FFF5F8"/>
+      <text x="0" y="16" fontSize="11" fontWeight="500" fill="#333">体重</text>
+      {[t1, t0].map(tick=>(
+        <g key={'wt-' + tick}>
+          <line x1={left} x2={width - right} y1={wy(tick)} y2={wy(tick)} stroke="#F1EFF2"/>
+          <text x={left - 4} y={wy(tick) + 3} fontSize="9" fill="#AAA" textAnchor="end">{tick.toFixed(1)}</text>
+        </g>
+      ))}
+      <path d={'M' + (left - 8) + ',' + (P1.gY - 6) + ' l5,-4 M' + (left - 8) + ',' + (P1.gY - 2) + ' l5,-4'} stroke="#D8D4DA" strokeWidth="1.1" fill="none"/>
+      <line x1={left} x2={width - right} y1={P1.gY} y2={P1.gY} stroke="#FF4D88" strokeWidth="1.2" strokeDasharray="4 3"/>
+      <text x={left - 4} y={P1.gY + 3} fontSize="9" fill="#FF4D88" textAnchor="end">{WEIGHT_GOAL_WEIGHT_TARGET}</text>
+      <text x={left + 4} y={P1.gY + 12} fontSize="9.5" fill="#FF4D88">
+        目标 {WEIGHT_GOAL_WEIGHT_TARGET}kg
+        <tspan fill="#C98AA5"> · 还差 {remain}kg</tspan>
+      </text>
+      {area ? <path d={area} fill="url(#wg-wa3)" style={{pointerEvents:'none'}}/> : null}
+      {points.length ? (
+        <polyline
+          points={points.map(point=>point.join(',')).join(' ')}
+          fill="none"
+          stroke="#FF4D88"
+          strokeWidth="2.2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          style={{pointerEvents:'none'}}
+        />
+      ) : null}
+      <line x1="0" x2={width} y1={P1.bot + 6} y2={P1.bot + 6} stroke="#F0EEF1"/>
+      <text x="0" y={P2.top} fontSize="11" fontWeight="500" fill="#333">热量</text>
+      {[2000, 1000].map(value=>(
+        <g key={'ku-' + value}>
+          <line x1={left} x2={width - right} y1={kyU(value)} y2={kyU(value)} stroke="#F4F2F5"/>
+          <text x={left - 4} y={kyU(value) + 3} fontSize="9" fill="#AAA" textAnchor="end">{value}</text>
+        </g>
+      ))}
+      <line x1={left} x2={width - right} y1={kyD(300)} y2={kyD(300)} stroke="#F4F2F5"/>
+      <text x={left - 4} y={kyD(300) + 3} fontSize="9" fill="#AAA" textAnchor="end">300</text>
+      <line x1={left} x2={width - right} y1={P2.base} y2={P2.base} stroke="#DDD9DF"/>
+      <line
+        x1={selectedX}
+        x2={selectedX}
+        y1={P1.wT - 4}
+        y2={P2.down}
+        stroke="#FF4D88"
+        strokeWidth="1"
+        strokeDasharray="2 3"
+        opacity=".45"
+        style={{pointerEvents:'none'}}
+      />
+      {units.map((unit, index)=>{
+        const center = cx(index);
+        const on = index === selected;
+        return (
+          <g key={'bar-' + unit.key} style={{pointerEvents:'none'}}>
+            {unit.st !== 'none' ? (
+              <>
+                <rect
+                  x={center - barWidth / 2}
+                  y={kyU(unit.in)}
+                  width={barWidth}
+                  height={Math.max(2, P2.base - kyU(unit.in) - 1)}
+                  rx={radius}
+                  fill="url(#wg-bi)"
+                  opacity={on ? 1 : 0.8}
+                />
+                {on ? (
+                  <text x={center} y={kyU(unit.in) - 4} fontSize="9.5" fontWeight="500" fill="#3E9F7B" textAnchor="middle">{Math.round(unit.in)}</text>
+                ) : null}
+              </>
+            ) : null}
+            {unit.burn ? (
+              <>
+                <rect
+                  x={center - barWidth / 2}
+                  y={P2.base + 1}
+                  width={barWidth}
+                  height={Math.max(2, kyD(unit.burn) - P2.base - 1)}
+                  rx={radius}
+                  fill="url(#wg-bb)"
+                  opacity={on ? 1 : 0.8}
+                />
+                {on ? (
+                  <text x={center} y={kyD(unit.burn) + 11} fontSize="9.5" fontWeight="500" fill="#E07A35" textAnchor="middle">{Math.round(unit.burn)}</text>
+                ) : null}
+              </>
+            ) : null}
+          </g>
+        );
+      })}
+      {units.map((unit, index)=>{
+        if(unit.wt == null) return null;
+        const on = index === selected;
+        const x = cx(index);
+        const y = wy(Number(unit.wt));
+        const bubbleX = Math.max(left, Math.min(width - right - 42, x - 21));
+        return (
+          <g key={'dot-' + unit.key} style={{pointerEvents:'none'}}>
+            <circle cx={x} cy={y} r={on ? 4.6 : (n > 14 ? 1.7 : 2.8)} fill="#fff" stroke="#FF4D88" strokeWidth={on ? 2.6 : 1.6}/>
+            {on ? (
+              <>
+                <rect x={bubbleX} y={y - 24} width="42" height="17" rx="8.5" fill="#FF4D88"/>
+                <text x={bubbleX + 21} y={y - 12} fontSize="10" fontWeight="500" fill="#fff" textAnchor="middle">{unit.wt}</text>
+              </>
+            ) : null}
+          </g>
+        );
+      })}
+      {units.map((unit, index)=>(
+        <rect
+          key={'hit-' + unit.key}
+          x={cx(index) - step / 2}
+          y="0"
+          width={step}
+          height={height}
+          fill="transparent"
+          style={{cursor: onSelect ? 'pointer' : 'default'}}
+          onClick={()=>onSelect?.(index)}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function weightGoalRangeSummary(units, range){
+  if(!units.length) return {change:null, intake:0, burn:0};
+  if(weightGoalIsAllTab(range)){
+    const firstWt = units.reduce((found, unit)=>{
+      if(found != null) return found;
+      if(unit.wt0 != null) return Number(unit.wt0);
+      if(unit.wt != null) return Number(unit.wt);
+      return null;
+    }, null);
+    const lastWt = [...units].reverse().reduce((found, unit)=>{
+      if(found != null) return found;
+      if(unit.wt != null) return Number(unit.wt);
+      return null;
+    }, null);
+    const change = firstWt != null && lastWt != null
+      ? Number((lastWt - firstWt).toFixed(1))
+      : null;
+    return {
+      change,
+      intake:Math.round(units.reduce((sum, unit)=>sum + (unit.in || 0), 0) / units.length),
+      burn:Math.round(units.reduce((sum, unit)=>sum + (unit.burn || 0), 0) / units.length),
+    };
+  }
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
+  const weekStat = WEIGHT_GOAL_WEEK_STATS[weekIndex];
+  const change = weekStat
+    ? Number((weekStat.to - weekStat.from).toFixed(1))
+    : (()=>{
+      const weights = units.filter(unit=>unit.wt != null).map(unit=>Number(unit.wt));
+      return weights.length >= 2
+        ? Number((weights[weights.length - 1] - weights[0]).toFixed(1))
+        : null;
+    })();
+  return {
+    change,
+    intake:Math.round(units.reduce((sum, unit)=>sum + (unit.in || 0), 0) / units.length),
+    burn:Math.round(units.reduce((sum, unit)=>sum + (unit.burn || 0), 0) / units.length),
+  };
+}
+
+function weightGoalTrendInsights(summary, range){
+  const isAll = weightGoalIsAllTab(range);
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range];
+  const label = isAll ? '累计阶段' : ('第' + ((weekIndex ?? WEIGHT_GOAL_CURRENT_WEEK) + 1) + '周');
+  const change = summary.change;
+  if(change == null){
+    return {
+      combined: <>{label}记录还不够，暂时看不清体重变化的主要原因。先把<b>体重</b>和<b>三餐</b>补记完整，会更容易看出节奏，也方便给出更准的调整建议。</>,
+    };
+  }
+  if(change < 0){
+    return {
+      combined: <>{label}体重下降 {Math.abs(change).toFixed(1)}kg，日均摄入约 {summary.intake} kcal，运动消耗约 {summary.burn} kcal，整体处于<b>可控减重节奏</b>。保持当前饮食结构，晚饭后维持<b>快走</b>；周末少一份<b>高热量加餐</b>，并继续完整记录三餐。</>,
+    };
+  }
+  if(change > 0){
+    return {
+      combined: <>{label}体重回升 {change.toFixed(1)}kg，可能与<b>摄入偏高</b>或<b>运动不足</b>有关；日均摄入约 {summary.intake} kcal。下一阶段优先控住<b>晚餐油脂</b>和加餐甜食，补 2～3 次中等强度运动，观察体重是否回落。</>,
+    };
+  }
+  return {
+    combined: <>{label}体重基本持平，日均摄入约 {summary.intake} kcal，运动消耗约 {summary.burn} kcal，波动仍在正常范围。可小幅增加日常<b>步数</b>，或把一餐主食换成更多<b>蔬菜与优质蛋白</b>，推动缓慢下降。</>,
+  };
+}
+
+function WeightGoalTrendCard({units, selected, onSelect, range, isPaid=false}){
+  const summary = React.useMemo(()=>weightGoalRangeSummary(units, range), [units, range]);
+  const insights = React.useMemo(
+    ()=>isPaid ? null : weightGoalTrendInsights(summary, range),
+    [summary, range, isPaid]
+  );
+  const rangeMeta = weightGoalRangeMeta(range);
+  const title = '减重趋势';
+  const changeText = summary.change == null
+    ? '–'
+    : (summary.change === 0
+      ? '0.0'
+      : ((summary.change > 0 ? '+' : '–') + Math.abs(summary.change).toFixed(1)));
+  return (
+    <section className="review-detail-card review-weight-goal-trend-card" aria-label={title}>
+      <WeightGoalSectionHead
+        iconClass="is-weight-goal-trend"
+        icon={<WeightGoalTrendSectionIcon/>}
+        title={title}
+        subtitle={rangeMeta.left}
+      />
+      <WeightGoalTrendRingRow units={units} selected={selected} onSelect={onSelect}/>
+      <WeightGoalTrendChart units={units} selected={selected} onSelect={onSelect}/>
+      <div className="review-weight-goal-trend-legend" aria-hidden="true">
+        <span><i className="is-line"/>体重</span>
+        <span><i className="is-goal"/>目标体重</span>
+        <span><i className="is-in"/>饮食摄入</span>
+        <span><i className="is-burn"/>运动消耗</span>
+      </div>
+      <div className="review-mood-trend-insight-row review-weight-stat-row review-weight-goal-trend-stats">
+        <div className={'review-mood-trend-record-card review-weight-stat-card is-vs-baseline' + (summary.change == null ? '' : summary.change < 0 ? ' is-down' : summary.change > 0 ? ' is-up' : '')}>
+          <span className="review-mood-trend-record-card-title">体重变化</span>
+          <p><b>{changeText}</b>{summary.change == null ? null : <em>kg</em>}</p>
+        </div>
+        <div className="review-mood-trend-record-card review-weight-stat-card">
+          <span className="review-mood-trend-record-card-title">日均摄入</span>
+          <p><b>{summary.intake}</b><em>kcal</em></p>
+        </div>
+        <div className="review-mood-trend-record-card review-weight-stat-card">
+          <span className="review-mood-trend-record-card-title">运动消耗</span>
+          <p><b>{summary.burn}</b><em>kcal</em></p>
+        </div>
+      </div>
+      {!isPaid && insights ? (
+        <div className="review-weight-goal-obs is-free">
+          <div className="review-love-insight">{insights.combined}</div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function weightGoalPaidDiscovery(summary, range){
+  const isAll = weightGoalIsAllTab(range);
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range];
+  const label = isAll ? '累计阶段' : ('第' + ((weekIndex ?? WEIGHT_GOAL_CURRENT_WEEK) + 1) + '周');
+  const change = summary.change;
+  const lost = change == null ? null : Math.abs(change);
+  if(change == null){
+    return {
+      items: [
+        {
+          tone:'is-note',
+          title:'变化原因',
+          text:<>{label}体重与餐次记录还不完整，暂时无法判断主要拉动因素。补齐后才能区分是摄入、运动还是水分波动在起作用。</>,
+        },
+        {
+          tone:'is-good',
+          title:'下一步建议',
+          text:<>先把每天的体重和三餐记全，至少连续 5 天。有完整数据后，再据此调整热量预算和运动安排会更准。</>,
+        },
+      ],
+      summary: label + '更适合先把记录打底，而不是急着改目标。',
+    };
+  }
+  if(change < 0){
+    return {
+      items: [
+        {
+          tone:'is-good',
+          title:'变化原因',
+          text:<>{label}体重下降 <b>{lost.toFixed(1)}kg</b>，日均摄入约 <b>{summary.intake} kcal</b>、运动约 <b>{summary.burn} kcal</b>。工作日大多落在预算内，超额主要集中在周末午餐（火锅、外卖），其余天数节奏较稳，整体仍属可控减重。</>,
+        },
+        {
+          tone:'is-note',
+          title:'下一步建议',
+          text:<>下周把热量预算从 <b>1450 → 1400 kcal</b>，运动保持每周 5 次并加 1 次力量；周末午餐换成轻食套餐推荐。调整会在周一自动生效，也可在「调整计划」里修改。</>,
+        },
+      ],
+      summary: '当前下降主要来自工作日控热量 + 基础有氧；把周末午餐稳住，进度会更平滑。',
+    };
+  }
+  if(change > 0){
+    return {
+      items: [
+        {
+          tone:'is-note',
+          title:'变化原因',
+          text:<>{label}体重回升 <b>{lost.toFixed(1)}kg</b>，日均摄入约 <b>{summary.intake} kcal</b>。回升与摄入偏高、运动不足叠在一起，尤其是周末大餐和加餐甜食贡献更大，不完全是脂肪增加。</>,
+        },
+        {
+          tone:'is-good',
+          title:'下一步建议',
+          text:<>优先控住<b>晚餐油脂</b>和加餐甜食，补 2～3 次中等强度运动；连续观察 5～7 天，看体重是否回到下行通道，再决定是否下调预算。</>,
+        },
+      ],
+      summary: '先纠偏周末与加餐，比立刻大幅砍预算更稳妥，也更不容易反弹。',
+    };
+  }
+  return {
+    items: [
+      {
+        tone:'is-note',
+        title:'变化原因',
+        text:<>{label}体重基本持平，日均摄入约 <b>{summary.intake} kcal</b>、运动约 <b>{summary.burn} kcal</b>。波动仍在正常范围，可能同时受水分、经期和周末摄入影响。</>,
+      },
+      {
+        tone:'is-good',
+        title:'下一步建议',
+        text:<>小幅增加日常步数，或把一餐主食换成更多蔬菜与优质蛋白；保持现有记录完整度，再观察一周是否出现缓慢下降。</>,
+      },
+    ],
+    summary: '持平不等于无效，先用微调推动，比大幅改目标更可持续。',
+  };
+}
+
+function WeightGoalTrendDiscovery({units, range}){
+  const summary = React.useMemo(()=>weightGoalRangeSummary(units, range), [units, range]);
+  const discovery = React.useMemo(()=>weightGoalPaidDiscovery(summary, range), [summary, range]);
+  return (
+    <div className="review-weight-goal-discovery">
+      <div className="review-love-trend-title review-cycle-discovery-title">趋势发现</div>
+      <section className="review-detail-card review-ai-insight-card review-cycle-discovery-card" aria-label="趋势发现">
+        <div className="review-insight-body">
+          {discovery.items.map((item, index)=>(
+            <div className={'review-insight-item ' + item.tone} key={index}>
+              <span className="review-insight-dot"></span>
+              <div>
+                <div className="review-insight-title">{item.title}</div>
+                <div className="review-insight-text">{item.text}</div>
+              </div>
+            </div>
+          ))}
+          {discovery.summary ? (
+            <div className="review-insight-summary">
+              <div className="review-summary-head">总结</div>
+              <p className="review-summary-text">{discovery.summary}</p>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const WEIGHT_GOAL_BASE_WT = (WEIGHT_GOAL_ALL_DAYS.find(day=>day.wt != null) || {wt:WEIGHT_GOAL_START}).wt;
+
+function weightGoalRecordsRows(){
+  let prevWt = null;
+  const days = WEIGHT_GOAL_ALL_DAYS.map(day=>{
+    const delta = day.wt != null && prevWt != null ? Number((day.wt - prevWt).toFixed(1)) : null;
+    const cum = day.wt != null ? Number((WEIGHT_GOAL_BASE_WT - day.wt).toFixed(1)) : null;
+    if(day.wt != null) prevWt = day.wt;
+    return {...day, delta, cum};
+  });
+  return [...days].reverse();
+}
+
+function WeightGoalRecordsPage({open, onClose}){
+  const [limit, setLimit] = React.useState(60);
+  const rows = React.useMemo(()=>weightGoalRecordsRows(), []);
+  React.useEffect(()=>{ if(open) setLimit(60); }, [open]);
+  const visible = rows.slice(0, limit);
+  const byMonth = {};
+  WEIGHT_GOAL_ALL_DAYS.forEach(day=>{
+    const key = day.y + '-' + day.m;
+    (byMonth[key] = byMonth[key] || []).push(day);
+  });
+  let lastMonth = '';
   return (
     <section
-      className={'review-cycle-detail is-fullscreen-detail review-weight-goal-detail' + (open ? ' is-open' : '')}
+      className={'review-cycle-detail is-fullscreen-detail review-weight-goal-records-page' + (open ? ' is-open' : '')}
       aria-hidden={!open}
-      aria-label="体重目标管理详情"
+      aria-label="所有记录"
     >
       <div className="review-detail-nav">
         <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
           <ReviewBackIcon/>
         </button>
-        <span className="review-detail-title">体重目标管理</span>
-        <WeightAssessEntry onAssess={onAssess}/>
+        <span className="review-detail-title">所有记录</span>
       </div>
       <div className="review-detail-content review-weight-goal-detail-content">
-        <section className="review-weight-goal-skeleton-card" aria-label="目标进度占位">
-          <div className="review-weight-goal-skeleton-head">目标进度</div>
-          <div className="review-weight-goal-skeleton-panel is-hero"/>
-        </section>
-        <section className="review-weight-goal-skeleton-card" aria-label="体重趋势占位">
-          <div className="review-weight-goal-skeleton-head">体重趋势</div>
-          <div className="review-weight-goal-skeleton-panel is-chart"/>
-        </section>
-        <section className="review-weight-goal-skeleton-card" aria-label="计划建议占位">
-          <div className="review-weight-goal-skeleton-head">计划建议</div>
-          <div className="review-weight-goal-skeleton-lines">
-            <span/>
-            <span/>
-            <span className="is-short"/>
+        <div className="review-weight-goal-sheet-card" aria-label="所有记录列表">
+          <div className="review-weight-goal-sheet-head" aria-hidden="true">
+            <span>日期</span>
+            <span>体重</span>
+            <span>较前一天</span>
+            <span>累计减重</span>
+            <span className="is-left">饮食</span>
+            <span>运动</span>
           </div>
-        </section>
+          {visible.map(day=>{
+            const monthKey = day.y + '-' + day.m;
+            const showMonth = monthKey !== lastMonth;
+            lastMonth = monthKey;
+            const monthDays = byMonth[monthKey] || [];
+            const monthWeights = monthDays.filter(item=>item.wt != null);
+            const monthChange = monthWeights.length > 1
+              ? Number((monthWeights[0].wt - monthWeights[monthWeights.length - 1].wt).toFixed(1))
+              : 0;
+            const monthEx = monthDays.filter(item=>item.ex).length;
+            const meals = [...day.meals, day.sn].map((meal, index)=>meal ? {meal, index} : null).filter(Boolean);
+            const status = WEIGHT_GOAL_STATUS[day.st];
+            const kcalColor = day.st === 'over' ? '#D2465E' : (day.st === 'none' ? '#BBB' : '#2E9E70');
+            return (
+              <React.Fragment key={day.d + '-' + day.y}>
+                {showMonth ? (
+                  <div className="review-weight-goal-sheet-month">
+                    <b>{day.y}年{day.m}月</b>
+                    <small>
+                      {monthChange >= 0 ? '减' : '增'} <b>{Math.abs(monthChange).toFixed(1)}kg</b>
+                      {' · 运动 '}
+                      <b>{monthEx}</b>
+                      {' 天'}
+                    </small>
+                  </div>
+                ) : null}
+                <div className={'review-weight-goal-sheet-row' + (day.today ? ' is-today' : '')}>
+                  <div className="review-weight-goal-sheet-date">
+                    <b>{day.d}</b>
+                    <small>{day.today ? '今天' : day.w}</small>
+                  </div>
+                  <div className={'review-weight-goal-sheet-wt' + (day.wt == null ? ' is-empty' : '')}>
+                    {day.wt != null ? day.wt.toFixed(1) : '未称'}
+                  </div>
+                  <div className="review-weight-goal-sheet-delta">
+                    {day.delta == null ? (
+                      <span className="is-eq">—</span>
+                    ) : (
+                      <span className={day.delta < 0 ? 'is-dn' : (day.delta > 0 ? 'is-up' : 'is-eq')}>
+                        {day.delta < 0 ? '−' + (-day.delta).toFixed(1) : (day.delta > 0 ? '+' + day.delta.toFixed(1) : '0.0')}
+                      </span>
+                    )}
+                  </div>
+                  <div className={'review-weight-goal-sheet-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
+                    {day.cum == null
+                      ? <span className="is-empty">—</span>
+                      : (day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1))}
+                  </div>
+                  <div className="review-weight-goal-sheet-food">
+                    {meals.length ? (
+                      <>
+                        <div className="review-weight-goal-sheet-thumbs">
+                          {meals.map(item=>(
+                            <span key={item.index}>
+                              <WeightGoalFoodPlate foodKey={item.meal[0]} seed={day.idx * 10 + item.index + 1}/>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="review-weight-goal-sheet-kcal" style={{color:kcalColor}}>
+                          {day.in}
+                          <small>{day.n < 3 ? (day.n + '/3 餐') : status.label}</small>
+                        </div>
+                      </>
+                    ) : <span className="is-empty">未记录</span>}
+                  </div>
+                  <div className={'review-weight-goal-sheet-ex' + (day.ex ? '' : ' is-empty')}>
+                    {day.ex ? <>{day.burn}<small>{day.ex[0]}{day.ex[1]}′</small></> : '—'}
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+          {rows.length > limit ? (
+            <button
+              type="button"
+              className="review-weight-goal-sheet-more"
+              onClick={()=>setLimit(value=>value + 60)}
+            >
+              查看更早的记录（还有 {rows.length - limit} 天）
+            </button>
+          ) : null}
+        </div>
       </div>
     </section>
+  );
+}
+
+function WeightGoalAssessBanner({onAssess}){
+  if(typeof onAssess !== 'function') return null;
+  return (
+    <button
+      type="button"
+      className="review-weight-goal-upgrade"
+      onClick={onAssess}
+      aria-label="升级专属计划，每天推荐食谱和运动"
+    >
+      <em className="review-weight-goal-upgrade-vip" aria-hidden="true">会员</em>
+      <span>升级专属计划，每天推荐食谱和运动</span>
+      <strong>去看看 ›</strong>
+    </button>
+  );
+}
+
+function WeightGoalGradientDefs(){
+  return (
+    <svg width="0" height="0" style={{position:'absolute'}} aria-hidden="true">
+      <defs>
+        <linearGradient id="wg-g-ok" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#B4EDC4"/>
+          <stop offset="1" stopColor="#3FC497"/>
+        </linearGradient>
+        <linearGradient id="wg-g-over" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F0566B"/>
+          <stop offset="1" stopColor="#FF9AA8"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function WeightGoalDetailPage({open, onClose, onAssess, onGoCheckIn, phase='none', isPaid=false}){
+  const [recordsOpen, setRecordsOpen] = React.useState(false);
+  const weekTabsRef = React.useRef(null);
+  const currentWeekKey = 'w' + WEIGHT_GOAL_PLAN_WEEKS;
+  const [range, setRange] = React.useState(currentWeekKey);
+  const isSample = phase !== 'plan';
+  const ranges = [
+    ...Array.from({length:WEIGHT_GOAL_PLAN_WEEKS}, (_, index)=>({
+      key:'w' + (index + 1),
+      label:'第' + (index + 1) + '周',
+      badge:index === WEIGHT_GOAL_CURRENT_WEEK ? '本周' : null,
+    })),
+    {key:'all', label:'累计', badge:null},
+  ];
+  const units = React.useMemo(()=>weightGoalUnits(range), [range]);
+  const [selected, setSelected] = React.useState(units.length - 1);
+  React.useEffect(()=>{
+    if(!open){
+      setRecordsOpen(false);
+      return;
+    }
+    setRange(currentWeekKey);
+  }, [open, currentWeekKey]);
+  React.useEffect(()=>{
+    let next = units.length - 1;
+    if(units.length > 1 && !units[next].single && units[next].days.length < 4) next -= 1;
+    setSelected(Math.max(0, next));
+  }, [range, units]);
+  React.useEffect(()=>{
+    if(!open) return;
+    const root = weekTabsRef.current;
+    if(!root) return;
+    const active = root.querySelector('button.is-active');
+    if(active && typeof active.scrollIntoView === 'function'){
+      active.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
+    }
+  }, [open, range]);
+  return (
+    <>
+      <WeightGoalGradientDefs/>
+      <section
+        className={'review-cycle-detail is-fullscreen-detail review-weight-goal-detail' + (open ? ' is-open' : '') + (recordsOpen ? ' is-timeline-open' : '') + (isSample ? ' is-sample' : '')}
+        aria-hidden={!open}
+        aria-label={isSample ? '体重管理示例数据' : '体重管理详情'}
+      >
+        <div className="review-detail-nav">
+          <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
+            <ReviewBackIcon/>
+          </button>
+          <span className="review-detail-title">体重管理</span>
+          {isSample ? (
+            <span className="review-weight-manage-sample-badge review-weight-goal-nav-sample">示例</span>
+          ) : (
+            <button type="button" className="review-detail-all-records" onClick={()=>setRecordsOpen(true)}>所有记录</button>
+          )}
+        </div>
+        <div className="review-detail-content review-weight-goal-detail-content">
+          <div className="review-weight-goal-detail-top">
+            <div ref={weekTabsRef} className="review-segment review-weight-goal-week-tabs" role="tablist" aria-label="目标周次">
+              {ranges.map(item=>(
+                <button
+                  key={item.key}
+                  type="button"
+                  className={range === item.key ? 'is-active' : ''}
+                  aria-selected={range === item.key}
+                  onClick={()=>setRange(item.key)}
+                  disabled={isSample}
+                >
+                  <span>{item.label}</span>
+                  {item.badge ? <em className="review-weight-goal-week-tab-badge">{item.badge}</em> : null}
+                </button>
+              ))}
+            </div>
+          </div>
+          <WeightGoalProgressCard range={range} onAdjustGoal={onAssess}/>
+          {range === currentWeekKey ? (
+            !isSample && isPaid ? (
+              <WeightGoalPaidExclusiveCard onGoCheckIn={onGoCheckIn}/>
+            ) : (
+              <WeightGoalWeekPlanCard
+                onGoCheckIn={isSample ? undefined : onGoCheckIn}
+                onAssess={isSample ? undefined : onAssess}
+              />
+            )
+          ) : null}
+          <WeightGoalTrendCard
+            units={units}
+            selected={selected}
+            onSelect={isSample ? undefined : setSelected}
+            range={range}
+            isPaid={!isSample && isPaid}
+          />
+          {!isSample && isPaid ? (
+            <WeightGoalTrendDiscovery units={units} range={range}/>
+          ) : null}
+        </div>
+        {isSample ? (
+          <div className="review-weight-goal-page-mask">
+            <span className="review-weight-goal-page-mask-label">示例数据</span>
+            <button
+              type="button"
+              className="review-weight-goal-page-mask-btn"
+              onClick={()=>onAssess?.()}
+            >
+              制定目标
+            </button>
+          </div>
+        ) : null}
+      </section>
+      <WeightGoalRecordsPage
+        open={open && recordsOpen && !isSample}
+        onClose={()=>setRecordsOpen(false)}
+      />
+    </>
   );
 }
 
@@ -2573,8 +4055,8 @@ function WeightPlanGuideBanner({phase='none', onCreatePlan}){
         subtitle: '测评一下，把目标拆成每周做得到的小步',
       }
     : {
-        title: '想更有方向地管理体重？',
-        subtitle: '设定目标，结合饮食、活动记录查看长期进展',
+        title: '想让体重变化更有方向？',
+        subtitle: '1 分钟测评，定适合你的目标',
       };
   return (
     <button
@@ -9253,37 +10735,46 @@ function SymptomOverviewRank({items = SYMPTOM_L1_RANK}){
   );
 }
 
+const SYMPTOM_DIST_ICON = {
+  '腰酸':'assets/symptom-back.png',
+  '腹痛':'assets/symptom-cramp.png',
+  '疲惫':'assets/symptom-tired.png',
+  '乳房胀痛':'assets/symptom-breast.png',
+  '头痛':'assets/symptom-picker-headache.png',
+  '失眠':'assets/symptom-insomnia.png',
+};
+
 const SYMPTOM_DIST_DATA = {
   d30: [
-    {label:'腰酸', days:13, color:'#7aa8e8'},
-    {label:'腹痛', days:10, color:'#7aa8e8'},
-    {label:'疲惫', days:8, color:'#7aa8e8'},
-    {label:'乳房胀痛', days:6, color:'#7aa8e8'},
-    {label:'头痛', days:4, color:'#7aa8e8'},
+    {label:'腰酸', days:13, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'腹痛', days:10, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'疲惫', days:8, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳房胀痛', days:6, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
+    {label:'头痛', days:4, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
   ],
   half: [
-    {label:'腰酸', days:28, color:'#7aa8e8'},
-    {label:'腹痛', days:22, color:'#7aa8e8'},
-    {label:'疲惫', days:18, color:'#7aa8e8'},
-    {label:'乳房胀痛', days:14, color:'#7aa8e8'},
-    {label:'头痛', days:11, color:'#7aa8e8'},
-    {label:'失眠', days:8, color:'#7aa8e8'},
+    {label:'腰酸', days:28, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'腹痛', days:22, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'疲惫', days:18, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳房胀痛', days:14, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
+    {label:'头痛', days:11, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'失眠', days:8, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
   ],
   year: [
-    {label:'腰酸', days:52, color:'#7aa8e8'},
-    {label:'腹痛', days:41, color:'#7aa8e8'},
-    {label:'疲惫', days:33, color:'#7aa8e8'},
-    {label:'乳房胀痛', days:29, color:'#7aa8e8'},
-    {label:'头痛', days:21, color:'#7aa8e8'},
-    {label:'失眠', days:17, color:'#7aa8e8'},
+    {label:'腰酸', days:52, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'腹痛', days:41, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'疲惫', days:33, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳房胀痛', days:29, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
+    {label:'头痛', days:21, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'失眠', days:17, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
   ],
   all: [
-    {label:'腰酸', days:86, color:'#7aa8e8'},
-    {label:'腹痛', days:70, color:'#7aa8e8'},
-    {label:'疲惫', days:58, color:'#7aa8e8'},
-    {label:'乳房胀痛', days:49, color:'#7aa8e8'},
-    {label:'头痛', days:36, color:'#7aa8e8'},
-    {label:'失眠', days:28, color:'#7aa8e8'},
+    {label:'腰酸', days:86, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'腹痛', days:70, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'疲惫', days:58, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳房胀痛', days:49, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
+    {label:'头痛', days:36, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'失眠', days:28, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
   ],
 };
 
@@ -9292,29 +10783,33 @@ const SYMPTOM_RANGE_META = {
     label:'近30天',
     dateText:'2026年6月14日至7月13日',
     kinds:5,
-    recordDays:12,
-    topSymptoms:'腰酸、腹痛',
+    longestName:'腰酸',
+    longestDays:3,
+    coOccur:'腰酸+腹痛',
   },
   half:{
     label:'近半年',
     dateText:'2026年1月13日至7月13日',
     kinds:6,
-    recordDays:64,
-    topSymptoms:'腰酸、疲惫',
+    longestName:'腰酸',
+    longestDays:5,
+    coOccur:'腰酸+腹痛',
   },
   year:{
     label:'近1年',
     dateText:'2025年7月14日至2026年7月13日',
     kinds:6,
-    recordDays:118,
-    topSymptoms:'腰酸、腹痛',
+    longestName:'腰酸',
+    longestDays:6,
+    coOccur:'腰酸+腹痛',
   },
   all:{
     label:'全部',
     dateText:'2024年7月14日至2026年7月13日',
     kinds:6,
-    recordDays:196,
-    topSymptoms:'腰酸、腹痛',
+    longestName:'腰酸',
+    longestDays:7,
+    coOccur:'腰酸+腹痛',
   },
 };
 
@@ -9324,6 +10819,7 @@ function SymptomReviewChart({symptoms, maxDays = 10, ariaLabel = '症状分布'}
   const padL = 4, padR = 4, top = 4, bottom = 4;
   const labelW = 56;
   const valueW = 44;
+  const iconSize = 20;
   const gapL = 8, gapR = 8;
   const rowH = 30;
   const H = top + bottom + list.length * rowH;
@@ -9337,10 +10833,20 @@ function SymptomReviewChart({symptoms, maxDays = 10, ariaLabel = '症状分布'}
         const y = top + i * rowH;
         const midY = y + rowH / 2;
         const width = barW * item.days / ceil;
+        const iconSrc = item.icon || SYMPTOM_DIST_ICON[item.label];
+        const tipX = barX + Math.max(width, iconSize * 0.55);
+        const iconX = Math.min(tipX - iconSize / 2, barX + barW - iconSize);
+        const iconY = midY - iconSize / 2;
         return <g key={item.label}>
           <text x={padL} y={midY} textAnchor="start" dominantBaseline="middle" fontSize="12" fill="#66666c" fontFamily="PingFang SC">{item.label}</text>
           <rect x={barX} y={midY - 7} width={barW} height="14" rx="7" fill="rgba(122,168,232,0.14)"/>
           <rect x={barX} y={midY - 7} width={width} height="14" rx="7" fill={item.color}/>
+          {iconSrc ? (
+            <g aria-hidden="true">
+              <circle cx={iconX + iconSize / 2} cy={midY} r={iconSize / 2 + 1} fill="#fff"/>
+              <image href={iconSrc} x={iconX} y={iconY} width={iconSize} height={iconSize} preserveAspectRatio="xMidYMid meet"/>
+            </g>
+          ) : null}
           <text x={valueX} y={midY} textAnchor="end" dominantBaseline="middle" fontSize="12" fontWeight="500" fill={item.color} fontFamily="PingFang SC">{item.days}天</text>
         </g>;
       })}
@@ -9371,13 +10877,17 @@ function SymptomTrendSummary({range = 'd30'}){
             <span className="review-mood-trend-record-card-title">记录症状</span>
             <p><b>{meta.kinds}</b><em>种</em></p>
           </div>
-          <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
-            <span className="review-mood-trend-record-card-title">症状记录天数</span>
-            <p><b>{meta.recordDays}</b><em>天</em></p>
+          <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest">
+            <span className="review-mood-trend-record-card-title">最长持续天数</span>
+            <p>
+              <em className="is-name">{meta.longestName}</em>
+              <b>{meta.longestDays}</b>
+              <em>天</em>
+            </p>
           </div>
           <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-freq">
-            <span className="review-mood-trend-record-card-title">高频症状</span>
-            <p className="review-mood-freq-words"><b>{meta.topSymptoms}</b></p>
+            <span className="review-mood-trend-record-card-title">常一起出现</span>
+            <p className="review-mood-freq-words"><b>{meta.coOccur}</b></p>
           </div>
         </div>
       </div>
@@ -13819,7 +15329,7 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
@@ -14005,7 +15515,13 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
       />
       <WeightGoalDetailPage
         open={weightGoalDetailOpen}
+        phase={weightManagePhase}
+        isPaid={isMember}
         onAssess={()=>setWeightAssessOpen(true)}
+        onGoCheckIn={()=>{
+          setWeightGoalDetailOpen(false);
+          onWeightGoalGoCheckIn?.();
+        }}
         onClose={()=>{
           setWeightGoalDetailOpen(false);
           onWeightGoalDetailReturn?.();

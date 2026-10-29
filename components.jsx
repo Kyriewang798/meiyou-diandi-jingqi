@@ -12,9 +12,30 @@ function StatusBar({
       <span>9:41</span>
       {showPlanSwitch ? (
         <div className="demo-member-switch is-plan-phase" role="group" aria-label="体重管理状态演示切换">
-          <button type="button" className={planPhase === 'none' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('none')}>无目标</button>
-          <button type="button" className={planPhase === 'goal' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('goal')}>有目标</button>
-          <button type="button" className={planPhase === 'plan' ? 'is-active' : ''} onClick={()=>onPlanPhaseChange?.('plan')}>有计划</button>
+          <button
+            type="button"
+            className={planPhase !== 'plan' ? 'is-active' : ''}
+            onClick={()=>{
+              onPlanPhaseChange?.('none');
+              onMemberChange?.(false);
+            }}
+          >示例数据</button>
+          <button
+            type="button"
+            className={planPhase === 'plan' && !isMember ? 'is-active' : ''}
+            onClick={()=>{
+              onPlanPhaseChange?.('plan');
+              onMemberChange?.(false);
+            }}
+          >免费</button>
+          <button
+            type="button"
+            className={planPhase === 'plan' && isMember ? 'is-active' : ''}
+            onClick={()=>{
+              onPlanPhaseChange?.('plan');
+              onMemberChange?.(true);
+            }}
+          >付费</button>
         </div>
       ) : showMemberSwitch ? (
         <div className="demo-member-switch" role="group" aria-label="会员演示切换">

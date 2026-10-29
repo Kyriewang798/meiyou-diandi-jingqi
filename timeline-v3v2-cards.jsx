@@ -809,7 +809,21 @@ function TimelineReviewEntry({label, eventName}){
 }
 
 function WeightTrendReviewEntry(){
-  return <TimelineReviewEntry label="制定目标，更有方向地管理体重" eventName="openReviewWeightGoalDetail"/>;
+  return (
+    <button
+      type="button"
+      className="tl-card-review-entry"
+      onClick={()=>window.dispatchEvent(new CustomEvent('openReviewWeightGoalDetail', {
+        detail: { activateGoal: true, returnTab: 'note' },
+      }))}
+      aria-label="1 分钟测评，定适合你的目标"
+    >
+      <span>1 分钟测评，定适合你的目标</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6"/>
+      </svg>
+    </button>
+  );
 }
 
 function DietCalorieReviewEntry(){
@@ -1245,6 +1259,28 @@ function V3v2PrimaryBody({entry, showTags = true, tagsAnimate = false, photoAnal
       </div>
     );
   }
+  if(entry.kind === 'goal-text'){
+    return (
+      <div className="v3-weight-text-record">
+        <div className="v3-weight-text-body">{entry.text}</div>
+        {showTags && (entry.tags || []).length > 0 && (
+          <div style={tagRowStyle}>
+            {(entry.tags || []).map((t, i)=>(
+              <span key={i}><TLTag tag={t}/></span>
+            ))}
+          </div>
+        )}
+        <div className="v3-weight-record">
+          <span className="v3-weight-record-icon" aria-hidden="true">
+            <img src={recordIconSrc(entry.icon || 'goal')} alt="" width={28} height={28} draggable={false}/>
+          </span>
+          <span className="v3-weight-record-text">
+            {entry.recordLabel || '目标'}：{entry.recordDetail || entry.recordValue}
+          </span>
+        </div>
+      </div>
+    );
+  }
   if(entry.kind === 'weight'){
     return (
       <div className="v3-weight-record">
@@ -1561,7 +1597,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
       ? 'daily-record'
       : isDietImage
         ? 'daily-record'
-      : (p?.kind === 'weight' || p?.kind === 'weight-text')
+      : (p?.kind === 'weight' || p?.kind === 'weight-text' || p?.kind === 'goal-text')
         ? 'daily-record'
         : (isPeriodQuick || p?.kind === 'symptom') ? 'quick' : primary?.voice ? 'mixed' : primary?.photo ? 'image' : primary?.body || primary?.text ? 'text' : 'quick';
   const derivedId = entryId || primary?.id;
@@ -1616,6 +1652,19 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
           mealType: p.mealType,
           photoUrl: p.photoUrl,
           note: p.note || '',
+          dayLabel: p.dayLabel || '今天',
+        }
+    : p?.kind === 'goal-text'
+      ? {
+          kind: 'daily-record',
+          time: p.time,
+          recordType: 'goal',
+          recordLabel: p.recordLabel || '目标',
+          recordValue: p.recordValue,
+          recordDetail: p.recordDetail || p.recordValue,
+          icon: p.icon || 'goal',
+          iconText: '',
+          note: p.text || '',
           dayLabel: p.dayLabel || '今天',
         }
     : (p?.kind === 'weight' || p?.kind === 'weight-text')

@@ -738,6 +738,26 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
         </EditableRecordArea>
       )}
 
+      {entry.detailLink?.label && (
+        <button
+          type="button"
+          className="tl-card-review-entry"
+          onClick={(e)=>{
+            e.stopPropagation();
+            const link = entry.detailLink;
+            window.dispatchEvent(new CustomEvent(link.event || 'openReviewWeightGoalDetail', {
+              detail: link.detail || { activateGoal:true, returnTab:'note' },
+            }));
+          }}
+          aria-label={entry.detailLink.label}
+        >
+          <span>{entry.detailLink.label}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6"/>
+          </svg>
+        </button>
+      )}
+
       {hasAiNote && (
         <>
           <div className="tl-t5-divider" role="separator"/>

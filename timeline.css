@@ -2019,6 +2019,12 @@
   color:rgba(0,0,0,.6);
   font-weight:400;
 }
+.tl-card-review-entry > span{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
 .diet-fb-card .tl-card-review-entry{
   width:100%;
   margin:0;
@@ -3685,6 +3691,7 @@
   line-height:inherit;
 }
 .v3-tag[data-cat="体重"]{color:#8d54ff}
+.v3-tag[data-cat="目标"]{color:#ff4d88}
 .v3-tag[data-cat="心情"]{color:#f2b705}
 .v3-tag[data-cat="症状"]{color:#4f7cae}
 .v3-tag[data-cat="饮食"]{color:#ff9500}

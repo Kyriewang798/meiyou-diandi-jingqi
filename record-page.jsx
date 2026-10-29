@@ -317,6 +317,7 @@ const CALENDAR_TAB_HIDDEN_IDS = new Set([
   'diary',
   'habit',
   'stool',
+  'goal',
 ]);
 
 const SYM_ICON_C = 'var(--sym-picker-coral)';
@@ -3129,7 +3130,7 @@ function HealthMorphList({
   futureOnlyPlan = false,
 }) {
   const visibleItems = MORPH_ITEMS.filter((item) => {
-    if (futureOnlyPlan) return item.id === 'plan' || item.id === 'goal';
+    if (futureOnlyPlan) return item.id === 'plan';
     return !CALENDAR_TAB_HIDDEN_IDS.has(item.id);
   });
   return (
@@ -3585,7 +3586,8 @@ function RecordPage({
   const confirmAddGoal = (payload) => {
     setGoalSheetOpen(false);
     if (!payload?.text) return;
-    const displayText = payload.text === '减肥' ? '减肥到 45公斤' : payload.text;
+    const isWeightLoss = payload.text === '减肥' || /减重|减肥|体重/.test(payload.text);
+    const displayText = isWeightLoss ? '减重至 100 斤' : payload.text;
     setGoalByDay((prev) => ({ ...prev, [selectedDay]: displayText }));
     setHealthRecordValues((prev) => ({
       ...prev,
@@ -3778,27 +3780,6 @@ function RecordPage({
         </div>
 
         <div className="record-page-content">
-          {(Object.keys(goalByDay).length > 0 || weightManagePhase === 'goal') && weightManagePhase !== 'plan' ? (
-            <button
-              type="button"
-              className="record-weight-plan-guide"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('openReviewWeightGoalDetail', {
-                  detail: { returnTab: 'cal', activatePlan: true },
-                }));
-              }}
-              aria-label="定制我的体重计划"
-            >
-              <span className="record-weight-plan-guide-icon" aria-hidden="true">
-                <img src={ICON_GOAL_TARGET} alt=""/>
-              </span>
-              <span className="record-weight-plan-guide-copy">
-                <strong>定制我的体重计划</strong>
-                <span>1 分钟生成你的专属减重计划</span>
-              </span>
-              <em className="record-weight-plan-guide-cta">去测评</em>
-            </button>
-          ) : null}
           <HealthMorphList
             periodYes={periodYes}
             periodEndMode={periodEndRecordReady}

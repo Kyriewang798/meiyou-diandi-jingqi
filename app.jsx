@@ -393,6 +393,7 @@ function App(){
   const [reviewMoodReturnTab, setReviewMoodReturnTab] = useState(null);
   const [isMember, setIsMember] = useState(false);
   const [weightManagePhase, setWeightManagePhase] = useState('none');
+  const goalTimelinePostedRef = useRef(false);
   const [recordLifeMode, setRecordLifeMode] = useState('经期');
   const [reviewShareState, setReviewShareState] = useState(DEFAULT_REVIEW_SHARE_STATE);
   const [partnerPreviewOpen, setPartnerPreviewOpen] = useState(false);
@@ -447,7 +448,9 @@ function App(){
     };
     const handleOpenReviewWeightGoal = (event)=>{
       if(event?.detail?.activatePlan) setWeightManagePhase('plan');
-      else if(event?.detail?.activateGoal) setWeightManagePhase((prev)=>prev === 'plan' ? 'plan' : 'goal');
+      else if(event?.detail?.activateGoal){
+        setWeightManagePhase((prev)=>prev === 'plan' ? 'plan' : 'goal');
+      }
       setReviewWeightGoalOpenRequest(request=>request + 1);
       setReviewWeightGoalReturnTab(event?.detail?.returnTab || 'note');
       setActiveTab('cash');
@@ -781,6 +784,13 @@ function App(){
     };
   };
 
+  const buildWeightGoalRecord = (targetJin = 100)=>({
+    type:'goal',
+    label:'目标',
+    value:`减重至 ${targetJin} 斤`,
+    detail:`减重至 ${targetJin} 斤`,
+  });
+
   const buildHealthRecordEntry = (record)=>{
     if(!record?.type || !record?.label || !record?.value) return null;
     const now = Date.now();
@@ -794,6 +804,27 @@ function App(){
       goal: 'goal',
     };
     const valueText = record.detail || record.value;
+    if(record.type === 'goal'){
+      const recordLabel = record.label || '目标';
+      const text = `${recordLabel}：${valueText}`;
+      return {
+        kind:'record-group',
+        id:'e-health-goal-'+now,
+        isNew:true,
+        primary:{
+          id:'e-health-primary-goal-'+now,
+          time: window.formatNowTime(),
+          kind:'daily-record',
+          recordType:'goal',
+          recordLabel,
+          recordValue: record.value,
+          recordDetail: valueText,
+          icon:'goal',
+          text,
+          tags:[],
+        },
+      };
+    }
     return {
       kind:'record-group',
       id:'e-health-'+record.type+'-'+now,
@@ -813,6 +844,35 @@ function App(){
       },
     };
   };
+
+  const appendWeightGoalToTimeline = (record)=>{
+    if(goalTimelinePostedRef.current) return false;
+    const payload = record?.type === 'goal' ? record : buildWeightGoalRecord(record?.targetJin || 100);
+    const entry = buildHealthRecordEntry(payload);
+    if(!entry) return false;
+    goalTimelinePostedRef.current = true;
+    setTimeline(blocks=>{
+      const dayId = blocks.find(b=>b.type==='day' && b.isToday)?.id
+        || window.resolveEntryDayId?.('', blocks);
+      return window.appendTimelineEntry(blocks, entry, { dayId });
+    });
+    requestAnimationFrame(()=>setTimeout(()=>scrollTimelineToLastItem?.('smooth'), 160));
+    return true;
+  };
+
+  const changeWeightManagePhase = (phase)=>{
+    setWeightManagePhase(phase);
+  };
+
+  React.useEffect(()=>{
+    if(weightManagePhase === 'none'){
+      goalTimelinePostedRef.current = false;
+      return;
+    }
+    if(weightManagePhase === 'goal'){
+      appendWeightGoalToTimeline(buildWeightGoalRecord(100));
+    }
+  }, [weightManagePhase]);
 
   const submitHealthRecordDraftsToTimeline = ()=>{
     if(!healthRecordDrafts.length) return false;
@@ -1827,6 +1887,29 @@ function App(){
       return;
     }
 
+    const goalBundle = photos.length ? null : window.tryCreateGoalTextEntry?.(text, opts);
+    if (goalBundle?.textEntry && goalBundle?.structuredEntry) {
+      setDraft('');
+      markUserRecorded();
+      if(goalBundle.isWeightGoal){
+        goalTimelinePostedRef.current = true;
+        setWeightManagePhase((prev)=>prev === 'plan' ? 'plan' : 'goal');
+      }
+      const entryText = goalBundle.textEntry.body || goalBundle.textEntry.voiceText || text;
+      const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
+        || window.resolveEntryDayId(entryText, timeline);
+      setTimeline(blocks=>{
+        // 结构化目标卡在上，原文卡（含文字链）在下
+        let next = window.appendTimelineEntry(blocks, goalBundle.structuredEntry, { dayId });
+        next = window.appendTimelineEntry(next, goalBundle.textEntry, { dayId });
+        return next;
+      });
+      requestAnimationFrame(()=>{
+        setTimeout(()=>scrollTimelineToLastItem?.('smooth'), 160);
+      });
+      return;
+    }
+
     const weightEntry = photos.length ? null : window.tryCreateWeightTextEntry?.(text, opts);
     if (weightEntry) {
       setDraft('');
@@ -2098,6 +2181,10 @@ function App(){
   const submitHealthRecord = (payload)=>{
     if(!payload?.type || !payload?.value) return;
     markUserRecorded();
+    if(payload.type === 'goal'){
+      appendWeightGoalToTimeline(payload);
+      return;
+    }
     setHealthRecordDrafts((prev)=>[...prev, payload]);
   };
 
@@ -2755,7 +2842,9 @@ function App(){
       >
         <StatusBar
           planPhase={weightManagePhase}
-          onPlanPhaseChange={setWeightManagePhase}
+          onPlanPhaseChange={changeWeightManagePhase}
+          isMember={isMember}
+          onMemberChange={setIsMember}
           showPlanSwitch={showReview}
         />
 
@@ -2820,7 +2909,7 @@ function App(){
           periodDetailDemoEnabled={periodDetailRecordEnabled || periodEndRecordCompleted}
           onEmptyPreviewEnter={handleEmptyPreviewEnter}
           weightManagePhase={weightManagePhase}
-          onWeightManagePhaseChange={setWeightManagePhase}
+          onWeightManagePhaseChange={changeWeightManagePhase}
         />
       )}
 
@@ -2838,7 +2927,7 @@ function App(){
           mode={recordLifeMode}
           isMember={isMember}
           weightManagePhase={weightManagePhase}
-          onWeightManageChange={setWeightManagePhase}
+          onWeightManageChange={changeWeightManagePhase}
           openCycleDetailRequest={reviewCycleOpenRequest}
           onCycleDetailRequestHandled={()=>setReviewCycleOpenRequest(0)}
           onCycleDetailReturn={()=>{
@@ -2862,6 +2951,10 @@ function App(){
             const returnTab = reviewWeightGoalReturnTab;
             setReviewWeightGoalReturnTab(null);
             setActiveTab(returnTab);
+          }}
+          onWeightGoalGoCheckIn={()=>{
+            setReviewWeightGoalReturnTab(null);
+            setActiveTab('note');
           }}
           openDietDetailRequest={reviewDietOpenRequest}
           onDietDetailRequestHandled={()=>setReviewDietOpenRequest(0)}

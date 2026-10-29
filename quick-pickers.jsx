@@ -471,6 +471,129 @@ function tryCreateWeightTextEntry(text, opts = {}){
   return createWeightRecordEntryFromText(text, opts);
 }
 
+function normalizeGoalJinValue(num, unitToken){
+  const value = parseFloat(num);
+  if(!Number.isFinite(value) || value <= 0) return null;
+  const unit = String(unitToken || '斤').toLowerCase();
+  if(unit === '公斤' || unit === 'kg' || unit === 'kgs' || unit === '千克'){
+    return `减重至 ${Math.round(value * 2)} 斤`;
+  }
+  return `减重至 ${String(num).replace(/\.0$/, '')} 斤`;
+}
+
+function parseGoalFromText(text){
+  const raw = String(text || '').trim();
+  if(!raw) return null;
+
+  const labeled = raw.match(/^目标\s*[:：]\s*(.+)$/);
+  if(labeled){
+    const value = labeled[1].trim();
+    if(!value) return null;
+    return {
+      label:'目标',
+      value,
+      text: raw,
+      isWeightGoal: /(减重|减肥|体重|瘦|斤|公斤|kg)/i.test(value),
+    };
+  }
+
+  const titledWeight = raw.match(/(?:制定|设定)?\s*体重\s*目标\s*[:：]?\s*(\d+(?:\.\d+)?)\s*(斤|公斤|kg|kgs|千克)?/i);
+  if(titledWeight){
+    const value = normalizeGoalJinValue(titledWeight[1], titledWeight[2]);
+    if(!value) return null;
+    return { label:'目标', value, text: raw, isWeightGoal:true };
+  }
+
+  const lose = raw.match(/(?:减重至|减肥到|减到|瘦到)\s*(\d+(?:\.\d+)?)\s*(斤|公斤|kg|kgs|千克)?/i);
+  if(lose){
+    const value = normalizeGoalJinValue(lose[1], lose[2]);
+    if(!value) return null;
+    return { label:'目标', value, text: raw, isWeightGoal:true };
+  }
+
+  if(/定了个目标|制定目标|设定目标|添加目标/.test(raw)){
+    const after = raw.replace(/.*?(?:定了个目标|制定目标|设定目标|添加目标)\s*[:：]?\s*/, '').trim();
+    const num = after.match(/(\d+(?:\.\d+)?)\s*(斤|公斤|kg|kgs|千克)?/i);
+    const value = num
+      ? (normalizeGoalJinValue(num[1], num[2]) || after)
+      : (after || '减重至 100 斤');
+    return {
+      label:'目标',
+      value,
+      text: raw,
+      isWeightGoal: /(减重|减肥|体重|瘦|斤|公斤|kg)/i.test(raw + value),
+    };
+  }
+
+  if(/目标/.test(raw) && /(减重|减肥|体重|瘦)/.test(raw)){
+    const num = raw.match(/(\d+(?:\.\d+)?)\s*(斤|公斤|kg|kgs|千克)?/i);
+    if(num){
+      const value = normalizeGoalJinValue(num[1], num[2]);
+      if(!value) return null;
+      return { label:'目标', value, text: raw, isWeightGoal:true };
+    }
+    const value = raw.replace(/^.*?目标\s*[:：]?\s*/, '').trim() || raw;
+    return { label:'目标', value, text: raw, isWeightGoal:true };
+  }
+
+  return null;
+}
+
+function createGoalRecordEntriesFromText(text, opts = {}){
+  const parsed = parseGoalFromText(text);
+  if(!parsed) return null;
+  const now = Date.now();
+  const time = window.formatNowTime();
+  const textEntry = {
+    id:'e-goal-text-'+now,
+    kind: opts.voice ? 'voice-card' : 'rec',
+    time,
+    isNew:true,
+    tags:[{ cat: parsed.label || '目标', val: parsed.value, icon:'goal' }],
+    tagLayout:'t5',
+  };
+  if(parsed.isWeightGoal){
+    textEntry.detailLink = {
+      label:'定个小目标，减重更有方向',
+      event:'openReviewWeightGoalDetail',
+      detail:{ activateGoal:true, returnTab:'note' },
+    };
+  }
+  if(opts.voice){
+    textEntry.voice = opts.voice;
+    textEntry.voiceText = parsed.text;
+  }else{
+    textEntry.body = parsed.text;
+  }
+  const structuredEntry = {
+    kind:'record-group',
+    id:'e-goal-struct-'+now+'-g',
+    isNew:true,
+    primary:{
+      id:'e-goal-struct-'+now,
+      time,
+      kind:'daily-record',
+      recordType:'goal',
+      recordLabel: parsed.label,
+      recordValue: parsed.value,
+      recordDetail: parsed.value,
+      icon:'goal',
+      text: `${parsed.label}：${parsed.value}`,
+      tags:[],
+    },
+  };
+  return {
+    isWeightGoal: !!parsed.isWeightGoal,
+    textEntry,
+    structuredEntry,
+    entries:[textEntry, structuredEntry],
+  };
+}
+
+function tryCreateGoalTextEntry(text, opts = {}){
+  return createGoalRecordEntriesFromText(text, opts);
+}
+
 /* ============ 卡片扇 · 紧凑选择器（方案 I） ============ */
 
 const QUICK_SYMPTOM_TAGS = [
@@ -834,6 +957,9 @@ Object.assign(window, {
   createWeightRecordEntryFromText,
   tryCreateWeightTextEntry,
   parseWeightFromText,
+  parseGoalFromText,
+  createGoalRecordEntriesFromText,
+  tryCreateGoalTextEntry,
   WEIGHT_BASELINE_KG,
   formatWeightDelta,
 });

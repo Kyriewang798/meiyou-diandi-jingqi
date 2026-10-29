@@ -164,106 +164,2097 @@
   flex-direction:column;
   gap:8px;
 }
-.review-weight-manage-card{
-  padding:13px 14px 14px;
-  border-radius:12px;
-  background:#fff;
+.review-weight-manage-card.review-overview-card{
   color:rgba(0,0,0,.8);
-  overflow:hidden;
 }
-.review-weight-manage-card.is-active{
-  padding-bottom:12px;
+.review-overview-icon.is-weight-manage{
+  width:16px;
+  height:16px;
+  border-radius:5px;
+  background:#fff0f5;
+  color:#ff4d88;
 }
-.review-weight-manage-card.is-actionable{
-  cursor:pointer;
+.review-overview-icon.is-weight-manage svg{
+  width:12px;
+  height:12px;
+  stroke-width:2.2;
+}
+.review-weight-manage-card .review-weight-manage-sample-badge{
+  margin-left:auto;
 }
 .review-weight-goal-detail-content{
-  padding:12px 16px calc(28px + var(--my-safe-bottom, 0px));
+  padding:12px 14px calc(28px + var(--my-safe-bottom, 0px));
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:0;
 }
-.review-weight-goal-skeleton-card{
-  padding:14px;
-  border-radius:12px;
+.review-weight-goal-detail-top{
+  margin-bottom:12px;
+}
+.review-weight-goal-detail-top .review-segment{
+  margin-bottom:0;
+}
+.review-weight-goal-detail-top .review-segment.review-weight-goal-week-tabs{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  gap:0;
+  padding:3px;
+  background:#e9e9ee;
+  border-radius:80px;
+  overflow:visible;
+}
+.review-weight-goal-detail-top .review-weight-goal-week-tabs button{
+  position:relative;
+  height:32px;
+  padding:0 2px;
+  border:0;
+  border-radius:80px;
+  background:transparent;
+  color:rgba(0,0,0,.45);
+  font-size:13px;
+  font-weight:400;
+  font-family:inherit;
+  line-height:32px;
+  cursor:pointer;
+  overflow:visible;
+  white-space:nowrap;
+}
+.review-weight-goal-detail-top .review-weight-goal-week-tabs button span{
+  position:relative;
+  z-index:1;
+}
+.review-weight-goal-detail-top .review-weight-goal-week-tabs button.is-active{
   background:#fff;
+  color:#ff4d88;
+  font-weight:500;
+  box-shadow:0 0 0 0.5px rgba(0,0,0,.04);
 }
-.review-weight-goal-skeleton-head{
+.review-weight-goal-week-tab-badge{
+  position:absolute;
+  top:-7px;
+  right:2px;
+  z-index:2;
+  min-width:28px;
+  height:16px;
+  padding:0 5px;
+  border-radius:80px;
+  background:#ff4d88;
+  color:#fff;
+  font-size:10px;
+  font-style:normal;
+  font-weight:500;
+  line-height:16px;
+  text-align:center;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.review-weight-goal-detail-content > .review-detail-card{
+  padding:16px;
+  border-radius:12px;
+}
+.review-weight-goal-detail-content > .review-detail-card + .review-detail-card{
+  margin-top:12px;
+}
+.review-weight-goal-card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.review-weight-goal-card-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.review-weight-goal-card-title .review-card-icon{
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  border-radius:8px;
+}
+.review-weight-goal-card-title .review-card-icon svg{
+  width:16px;
+  height:16px;
+}
+.review-card-icon.is-weight-goal-plan{
+  background:rgba(255,77,136,.1);
+  color:#ff4d88;
+}
+.review-card-icon.is-weight-goal-trend{
+  background:#fff6dc;
+  color:#e2a12a;
+}
+.review-card-icon.is-weight-goal-board{
+  background:#eef4fd;
+  color:#5b8fd9;
+}
+.review-card-icon.is-weight-goal-insight{
+  background:#fff4e8;
+  color:#ff8a3d;
+}
+.review-weight-goal-range-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-flame-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:linear-gradient(135deg,#FFC46B,#FF7A3D);
+  color:#fff;
+  box-shadow:0 1px 3px rgba(255,122,61,.3);
+}
+.review-weight-goal-flame-badge.is-ring{
+  border:2px solid #fff;
+  box-sizing:content-box;
+}
+.review-weight-goal-ring2{
+  position:relative;
+  margin:0 auto;
+}
+.review-weight-goal-ring2-center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.1;
+}
+.review-weight-goal-ring2-badge{
+  position:absolute;
+  right:-2px;
+  bottom:2px;
+}
+.review-weight-goal-week7{
+  display:flex;
+  margin:0 -2px 12px;
+}
+.review-weight-goal-week7-day{
+  flex:1;
+  min-width:0;
+  padding:4px 0 2px;
+  border:0;
+  background:transparent;
+  text-align:center;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-week7-label{
+  display:block;
+  width:22px;
+  height:22px;
+  margin:0 auto 6px;
+  border-radius:11px;
+  font-size:12px;
+  line-height:22px;
+  color:rgba(0,0,0,.45);
+  transition:background .2s ease, color .2s ease;
+}
+.review-weight-goal-week7-day.is-active .review-weight-goal-week7-label{
+  background:#ff4d88;
+  color:#fff;
+  font-weight:500;
+}
+.review-weight-goal-ring2.is-week{
+  margin:0 auto;
+  border-radius:50%;
+  transition:box-shadow .2s ease;
+}
+.review-weight-goal-week7-day.is-active .review-weight-goal-ring2.is-week{
+  box-shadow:0 0 0 4px rgba(255,77,136,.14);
+}
+.review-weight-goal-ring2-center.is-weight b{
+  font-size:11px;
+  line-height:1.1;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+  transition:color .2s ease;
+}
+.review-weight-goal-ring2-center.is-weight small{
+  margin-top:1px;
+  font-size:9px;
+  line-height:1;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-week7-day.is-active .review-weight-goal-ring2-center.is-weight b{
+  color:#ff4d88;
+}
+.review-weight-goal-ring2-badge.is-top{
+  right:-3px;
+  top:-2px;
+  bottom:auto;
+}
+.review-weight-goal-cal{
+  display:grid;
+  grid-template-columns:repeat(7, minmax(0, 1fr));
+  row-gap:4px;
+  margin-bottom:4px;
+}
+.review-weight-goal-cal-hd{
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+  text-align:center;
+  padding-bottom:2px;
+}
+.review-weight-goal-cal-cell{
+  position:relative;
+  height:44px;
+  padding-top:3px;
+  border:1.5px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-cal-cell.is-active{
+  border-color:#ff4d88;
+  background:#fff0f5;
+}
+.review-weight-goal-cal-num{
+  position:absolute;
+  top:3px;
+  left:0;
+  right:0;
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  color:rgba(0,0,0,.6);
+  pointer-events:none;
+}
+.review-weight-goal-cal-cell.is-active .review-weight-goal-cal-num{
+  color:#ff4d88;
+  font-weight:500;
+}
+.review-weight-goal-hs{
+  display:flex;
+  gap:4px;
+  overflow-x:auto;
+  padding-bottom:6px;
+  margin-bottom:2px;
+  scrollbar-width:none;
+}
+.review-weight-goal-hs::-webkit-scrollbar{display:none}
+.review-weight-goal-hs .review-weight-goal-week-day{
+  flex:0 0 42px;
+}
+.review-weight-goal-mg{
+  display:grid;
+  grid-template-columns:repeat(6, minmax(0, 1fr));
+  gap:4px;
+  margin-bottom:4px;
+}
+.review-weight-goal-mg .review-weight-goal-week-day{
+  width:auto;
+}
+.review-weight-goal-ring-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 10px;
+  align-items:center;
+  margin:8px 0 12px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#faf9fb;
+  font-size:11px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-ring-legend i{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:3px;
+  border-radius:50%;
+  vertical-align:-1px;
+}
+.review-weight-goal-ring-legend .is-ex{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+.review-weight-goal-ring-legend small{
+  width:100%;
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-daily-hint{
   margin:0 0 12px;
-  font-size:15px;
-  line-height:21px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-day-panel.is-compact{
+  margin-bottom:0;
+}
+.review-weight-goal-energy-ring.is-auto{
+  flex:0 0 auto;
+  width:auto;
+  height:auto;
+}
+.review-weight-goal-big-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:3px;
+  flex:0 0 76px;
+}
+.review-weight-goal-big-text small{
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-big-text b{
+  font-size:22px;
+  line-height:1;
   font-weight:500;
   color:rgba(0,0,0,.8);
 }
-.review-weight-goal-skeleton-panel{
+.review-weight-goal-dist{
+  margin-top:4px;
+}
+.review-weight-goal-dist-bar{
+  display:flex;
+  height:10px;
+  border-radius:5px;
+  overflow:hidden;
+  background:#f4f2f5;
+}
+.review-weight-goal-dist-bar > i{
+  display:block;
+  height:100%;
+}
+.review-weight-goal-dist-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:6px;
+  font-size:10px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-dist-legend i{
+  display:inline-block;
+  width:7px;
+  height:7px;
+  margin-right:3px;
+  border-radius:2px;
+  vertical-align:0;
+}
+.review-weight-goal-gallery-period{
+  position:absolute;
+  right:6px;
+  top:6px;
+  padding:1px 5px;
+  border-radius:6px;
+  background:#ff4d88;
+  color:#fff;
+  font-size:10px;
+}
+.review-weight-goal-obs{
+  margin-top:12px;
+  font-size:13px;
+  line-height:1.7;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-obs > b{
+  display:block;
+  margin-bottom:2px;
+  color:rgba(0,0,0,.8);
+  font-weight:500;
+}
+.review-weight-goal-obs p{
+  margin:0;
+}
+.review-weight-goal-obs p + b,
+.review-weight-goal-obs .review-love-insight + b{
+  margin-top:10px;
+}
+.review-weight-goal-obs.is-free .review-love-insight{
+  margin-top:0;
+  margin-bottom:0;
+}
+.review-weight-goal-upgrade{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin-top:12px;
+  padding:10px 12px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(90deg,#fff0f5 0%, #ffe9f1 100%);
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+  box-sizing:border-box;
+}
+.review-weight-goal-upgrade-vip{
+  flex:0 0 auto;
+  height:18px;
+  padding:0 6px;
+  border-radius:4px;
+  background:linear-gradient(90deg,#ff9a5c,#ff4d88);
+  color:#fff;
+  font-size:10px;
+  font-style:normal;
+  font-weight:500;
+  line-height:18px;
+}
+.review-weight-goal-upgrade > span{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,.65);
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.review-weight-goal-upgrade strong{
+  flex:0 0 auto;
+  font-size:12px;
+  line-height:1.29;
+  font-weight:500;
+  color:#ff4d88;
+  white-space:nowrap;
+}
+.review-weight-goal-board-legend.is-chart{
+  margin:6px 0 0;
+}
+.review-weight-goal-trend-card .review-weight-goal-board-summary{
+  margin:12px 0 0;
+}
+.review-weight-goal-records-page .review-weight-goal-detail-content{
+  padding-left:12px;
+  padding-right:12px;
+}
+.review-weight-goal-sheet-card{
+  overflow:hidden;
+  border-radius:12px;
+  background:#fff;
+}
+.review-weight-goal-sheet-head,
+.review-weight-goal-sheet-row{
+  display:grid;
+  grid-template-columns:42px 40px 46px 42px minmax(0, 1fr) 40px;
+  align-items:center;
+  column-gap:4px;
+  padding:0 10px;
+}
+.review-weight-goal-sheet-head{
+  position:sticky;
+  top:0;
+  z-index:2;
+  height:30px;
+  background:#faf9fb;
+  border-bottom:0.5px solid #efedf0;
+  font-size:10px;
+  line-height:30px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-sheet-head span{
+  text-align:center;
+}
+.review-weight-goal-sheet-head span:first-child{
+  text-align:left;
+}
+.review-weight-goal-sheet-head span.is-left{
+  text-align:left;
+  padding-left:2px;
+}
+.review-weight-goal-sheet-month{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 10px;
+  background:#fcfbfc;
+  border-bottom:0.5px solid #efedf0;
+  font-size:12px;
+  line-height:1.29;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-sheet-month small{
+  font-size:11px;
+  font-weight:400;
+  color:rgba(0,0,0,.45);
+}
+.review-weight-goal-sheet-month small b{
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-sheet-row{
+  min-height:52px;
+  border-bottom:0.5px solid #f5f4f6;
+  font-size:12px;
+}
+.review-weight-goal-sheet-row.is-today{
+  background:#fff8fa;
+}
+.review-weight-goal-sheet-date b{
+  display:block;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-sheet-date small{
+  display:block;
+  font-size:10px;
+  line-height:1.2;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-sheet-wt{
+  text-align:center;
+  font-size:13px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-sheet-wt.is-empty{
+  color:#ccc;
+  font-weight:400;
+}
+.review-weight-goal-sheet-delta{
+  text-align:center;
+}
+.review-weight-goal-sheet-delta span{
+  display:inline-block;
+  min-width:38px;
+  padding:2px 0;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:500;
+}
+.review-weight-goal-sheet-delta .is-dn{
+  background:#e3f4f8;
+  color:#2e8ba3;
+}
+.review-weight-goal-sheet-delta .is-up{
+  background:#fdecef;
+  color:#d2465e;
+}
+.review-weight-goal-sheet-delta .is-eq{
+  background:#f4f3f5;
+  color:#999;
+}
+.review-weight-goal-sheet-cum{
+  text-align:center;
+  font-size:12px;
+  font-weight:500;
+  color:#2e8ba3;
+}
+.review-weight-goal-sheet-cum.is-neg{
+  color:#d2465e;
+}
+.review-weight-goal-sheet-cum .is-empty{
+  color:#ccc;
+  font-weight:400;
+}
+.review-weight-goal-sheet-food{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.review-weight-goal-sheet-thumbs{
+  display:flex;
+}
+.review-weight-goal-sheet-thumbs span{
+  width:22px;
+  height:22px;
+  margin-left:-7px;
+  border-radius:6px;
+  overflow:hidden;
+  border:1.5px solid #fff;
+  box-shadow:0 0 0 0.5px rgba(0,0,0,.06);
+  background:#eee;
+}
+.review-weight-goal-sheet-thumbs span:first-child{
+  margin-left:0;
+}
+.review-weight-goal-sheet-thumbs svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.review-weight-goal-sheet-kcal{
+  font-size:11px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.review-weight-goal-sheet-kcal small{
+  display:block;
+  font-size:9px;
+  font-weight:400;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-sheet-food .is-empty{
+  font-size:11px;
+  color:#bbb;
+}
+.review-weight-goal-sheet-ex{
+  text-align:center;
+  font-size:11px;
+  font-weight:500;
+  color:#e2702c;
+}
+.review-weight-goal-sheet-ex small{
+  display:block;
+  font-size:9px;
+  font-weight:400;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-sheet-ex.is-empty{
+  color:#ccc;
+  font-weight:400;
+}
+.review-weight-goal-sheet-more{
+  display:block;
+  width:100%;
+  padding:12px;
+  border:0;
+  background:transparent;
+  color:#ff4d88;
+  font-family:inherit;
+  font-size:12px;
+  line-height:1.29;
+  text-align:center;
+}
+.review-weight-goal-card-head.has-subtitle{
+  align-items:flex-start;
+}
+.review-weight-goal-card-head.has-subtitle .review-weight-goal-card-title{
+  align-items:flex-start;
+}
+.review-weight-goal-card-title-text{
+  min-width:0;
+}
+.review-weight-goal-card-head h3{
+  margin:0;
+  font-size:16px;
+  line-height:20px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-card-title-text p{
+  margin:4px 0 0;
+  font-size:12px;
+  line-height:1.29;
+  font-weight:400;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-card-head.has-subtitle .review-weight-goal-text-action{
+  margin-top:2px;
+}
+.review-weight-goal-card-head small{
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,.6);
+  white-space:nowrap;
+}
+.review-weight-goal-text-action{
+  appearance:none;
+  border:0;
+  background:transparent;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  font-family:inherit;
+  font-size:14px;
+  line-height:1.29;
+  font-weight:500;
+  color:#ff4d88;
+  cursor:pointer;
+}
+.review-weight-goal-text-action-chevron{
+  display:inline-flex;
+  width:14px;
+  height:14px;
+  color:currentColor;
+}
+.review-weight-goal-text-action-chevron svg{
+  width:14px;
+  height:14px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.review-weight-goal-range-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+  padding:0 4px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-progress-card.is-stage{
+  padding:16px;
+}
+.review-weight-goal-stage-head{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:14px;
+}
+.review-weight-goal-stage-head .review-card-icon{
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  border-radius:9px;
+}
+.review-weight-goal-stage-title{
+  flex:1;
+  min-width:0;
+}
+.review-weight-goal-stage-title h3{
+  margin:0;
+  font-size:16px;
+  font-weight:500;
+  line-height:1.2;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-stage-title small{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-stage-head .review-weight-goal-text-action{
+  margin-top:3px;
+}
+.review-weight-goal-stage-metric{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+}
+.review-weight-goal-stage-cur{
+  font-size:28px;
+  font-weight:500;
+  letter-spacing:-0.6px;
+  line-height:1;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-stage-cur i{
+  margin-left:3px;
+  font-size:13px;
+  font-style:normal;
+  font-weight:400;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-stage-to{
+  font-size:13px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-stage-bar{
+  position:relative;
+  height:8px;
+  margin:34px 0 8px;
+  border-radius:4px;
+  background:#f1eff2;
+}
+.review-weight-goal-stage-bar > i{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  border-radius:4px;
+  background:linear-gradient(90deg,#ff9dbe,#ff4d88);
+}
+.review-weight-goal-stage-bar > em{
+  position:absolute;
+  top:50%;
+  width:16px;
+  height:16px;
+  margin:-8px 0 0 -8px;
+  border-radius:50%;
+  background:#fff;
+  border:3.5px solid #ff4d88;
+  box-sizing:border-box;
+}
+.review-weight-goal-stage-tip{
+  position:absolute;
+  bottom:16px;
+  transform:translateX(-50%);
+  padding:2px 8px;
   border-radius:8px;
+  background:#ff4d88;
+  color:#fff;
+  font-size:11px;
+  line-height:1.29;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.review-weight-goal-stage-tip:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-4px;
+  margin-left:-4px;
+  border:4px solid transparent;
+  border-bottom:0;
+  border-top-color:#ff4d88;
+}
+.review-weight-goal-stage-foot{
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-stage-foot.is-split{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+.review-weight-goal-stage-split{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:0.5px solid #efedf0;
+}
+.review-weight-goal-stage-split > div:last-child{
+  padding-left:14px;
+  border-left:0.5px solid #efedf0;
+}
+.review-weight-goal-stage-split small{
+  display:block;
+  margin-bottom:4px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-stage-split b{
+  display:flex;
+  align-items:baseline;
+  gap:2px;
+  font-size:16px;
+  font-weight:500;
+  line-height:1.19;
+  color:rgba(0,0,0,.8);
+  white-space:nowrap;
+}
+.review-weight-goal-stage-split b i{
+  font-size:11px;
+  font-style:normal;
+  font-weight:400;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-stage-split em{
+  display:block;
+  margin-top:4px;
+  font-size:11px;
+  font-style:normal;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-stage-split .is-ok{
+  margin-left:6px;
+  font-size:13px;
+  font-weight:500;
+  color:#ff4d88;
+}
+.review-weight-goal-stage-mini{
+  display:block;
+  height:4px;
+  margin-top:8px;
+  border-radius:2px;
+  background:#f1eff2;
+  overflow:hidden;
+}
+.review-weight-goal-stage-mini i{
+  display:block;
+  height:100%;
+  border-radius:2px;
+  background:#ff4d88;
+}
+.review-weight-goal-trend-hint{
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+  white-space:nowrap;
+}
+.review-weight-goal-board-card .review-cycle-card-expand-btn{
+  margin-left:auto;
+}
+.review-weight-goal-week-plan-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.review-weight-goal-week-plan-head.is-compact{
+  justify-content:flex-start;
+  gap:10px;
+  margin-bottom:10px;
+}
+.review-weight-goal-week-plan-head-icon{
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  background:#fff0f5;
+  color:#ff4d88;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  font-weight:500;
+  line-height:1;
+}
+.review-weight-goal-week-plan-head.is-compact h3,
+.review-weight-goal-week-plan-title h3{
+  margin:0;
+  font-size:16px;
+  line-height:1.2;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-week-plan-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.review-weight-goal-week-plan-badge{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border-radius:10px;
   background:#f2f2f5;
+  font-size:11px;
+  line-height:20px;
+  color:rgba(0,0,0,.45);
+  white-space:nowrap;
 }
-.review-weight-goal-skeleton-panel.is-hero{
-  height:120px;
+.review-weight-goal-week-plan-badge em{
+  margin:0 1px;
+  font-style:normal;
+  font-weight:500;
+  color:#ff4d88;
 }
-.review-weight-goal-skeleton-panel.is-chart{
-  height:160px;
-}
-.review-weight-goal-skeleton-lines{
+.review-weight-goal-week-plan-list{
   display:flex;
   flex-direction:column;
   gap:8px;
 }
-.review-weight-goal-skeleton-lines span{
-  display:block;
-  height:12px;
-  border-radius:4px;
-  background:#f2f2f5;
+.review-weight-goal-week-plan-list.is-check{
+  gap:8px;
 }
-.review-weight-goal-skeleton-lines span.is-short{
-  width:62%;
-}
-.review-weight-manage-active-head,
-.review-weight-manage-idle-head{
-  min-height:26px;
+.review-weight-goal-week-plan-item{
   display:flex;
   align-items:center;
-  gap:9px;
-  margin-bottom:12px;
+  gap:10px;
+  min-height:64px;
+  padding:12px;
+  border-radius:12px;
+  background:#f7f7f9;
+  box-sizing:border-box;
 }
-.review-weight-manage-active-head h2,
-.review-weight-manage-idle-head h2{
-  margin:0;
-  font-size:17px;
-  line-height:26px;
+.review-weight-goal-week-plan-item.is-check{
+  display:block;
+  min-height:0;
+  padding:0;
+  overflow:hidden;
+  background:#f7f7f9;
+}
+.review-weight-goal-week-plan-item-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  padding:10px 12px;
+  box-sizing:border-box;
+}
+.review-weight-goal-week-plan-item.is-walk.is-todo .review-weight-goal-week-plan-item-head{
+  background:#eaf7f0;
+}
+.review-weight-goal-week-plan-item.is-walk.is-todo{
+  background:#fff;
+}
+.review-weight-goal-week-plan-item.is-check.is-done .review-weight-goal-week-plan-item-head strong,
+.review-weight-goal-week-plan-item.is-check.is-done .review-weight-goal-week-plan-count{
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-week-plan-icon{
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  flex:0 0 32px;
+  background:#fff;
+  overflow:hidden;
+}
+.review-weight-goal-week-plan-item.is-walk.is-todo .review-weight-goal-week-plan-icon{
+  background:rgba(255,255,255,.92);
+}
+.review-weight-goal-week-plan-item.is-check.is-done .review-weight-goal-week-plan-icon{
+  background:#efeff2;
+  opacity:.72;
+  filter:grayscale(.25);
+}
+.review-weight-goal-week-plan-icon svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
+.review-weight-goal-week-plan-item-head strong{
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  line-height:1.29;
   font-weight:500;
   color:rgba(0,0,0,.8);
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
-.review-weight-manage-active-icon{
-  width:16px;
-  height:16px;
-  flex:0 0 16px;
-  border-radius:5px;
-  background:linear-gradient(145deg,#ffb078,#ff8a3d);
+.review-weight-goal-week-plan-count{
+  flex:0 0 auto;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+  white-space:nowrap;
+}
+.review-weight-goal-week-plan-count.is-active{
+  color:#2e9e70;
+}
+.review-weight-goal-week-plan-count.is-p5{
+  margin-left:4px;
+  color:var(--wg-paid-fg, #3fb385);
+  opacity:.85;
+}
+.review-weight-goal-paid-task.is-done .review-weight-goal-week-plan-count.is-p5{
+  color:#aaa;
+  opacity:1;
+}
+.review-weight-goal-discovery{
+  margin-top:12px;
+}
+.review-weight-goal-discovery .review-cycle-discovery-title{
+  margin-bottom:10px;
+}
+.review-weight-goal-discovery .review-cycle-discovery-card{
+  margin-top:0;
+}
+.review-weight-goal-discovery .review-insight-body{
+  margin-top:0;
+}
+.review-weight-goal-week-plan-tip{
+  margin:0;
+  padding:10px 12px 12px;
+  background:#fff;
+  font-size:12px;
+  line-height:1.47;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-week-plan-check{
+  flex:0 0 22px;
+  width:22px;
+  height:22px;
+  border:1.8px solid #d8d4db;
+  border-radius:50%;
+  background:#fff;
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  line-height:1;
   color:#fff;
+}
+.review-weight-goal-week-plan-check.is-on.is-weight{
+  border-color:#9b7bff;
+  background:#9b7bff;
+}
+.review-weight-goal-week-plan-check.is-on.is-diet{
+  border-color:#f29a55;
+  background:#f29a55;
+}
+.review-weight-goal-week-plan-check.is-on.is-walk{
+  border-color:#2e9e70;
+  background:#2e9e70;
+}
+.review-weight-goal-week-plan-card .review-weight-goal-upgrade{
+  margin-top:10px;
+}
+.review-weight-goal-week-plan-item.is-check{
+  cursor:pointer;
+}
+.review-weight-goal-week-plan-item.is-check.is-done{
+  cursor:default;
+}
+.review-weight-goal-week-plan-vip.is-strip{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin-top:10px;
+  padding:10px 12px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(90deg,#fff4e8 0%, #ffe9f1 100%);
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+  box-sizing:border-box;
+}
+.review-weight-goal-week-plan-vip.is-strip em{
+  flex:0 0 auto;
+  height:18px;
+  padding:0 6px;
+  border-radius:4px;
+  background:#ff8a3d;
+  color:#fff;
+  font-size:10px;
+  font-style:normal;
+  font-weight:500;
+  line-height:18px;
+}
+.review-weight-goal-week-plan-vip.is-strip > span{
+  flex:1;
+  min-width:0;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-week-plan-vip.is-strip strong{
+  flex:0 0 auto;
+  font-size:12px;
+  font-weight:500;
+  color:#ff4d88;
+  white-space:nowrap;
+}
+.review-weight-goal-board-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:12px;
+}
+.review-weight-goal-segmented{
+  display:flex;
+  padding:3px;
+  border-radius:8px;
+  background:#f2f2f5;
+}
+.review-weight-goal-segmented button{
+  appearance:none;
+  border:0;
+  background:transparent;
+  min-height:26px;
+  padding:0 10px;
+  border-radius:6px;
+  font-family:inherit;
+  font-size:11px;
+  line-height:1;
+  color:rgba(0,0,0,.6);
+  cursor:pointer;
+}
+.review-weight-goal-segmented button.is-active{
+  background:#fff;
+  color:#ff4d88;
+  font-weight:500;
+}
+.review-weight-goal-trend-rings{
+  display:flex;
+  padding:0 4px 0 26px;
+  margin:0 0 2px;
+}
+.review-weight-goal-trend-ring{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:8px 0 6px;
+  border:0;
+  border-radius:10px 10px 0 0;
+  background:transparent;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-trend-ring.is-active{
+  background:#fff5f8;
+}
+.review-weight-goal-trend-ring-lab{
+  min-width:26px;
+  height:20px;
+  margin-bottom:6px;
+  padding:0 4px;
+  border-radius:10px;
+  font-size:12px;
+  line-height:20px;
+  text-align:center;
+  color:rgba(0,0,0,.45);
+  white-space:nowrap;
+}
+.review-weight-goal-trend-ring.is-active .review-weight-goal-trend-ring-lab{
+  background:#ff4d88;
+  color:#fff;
+  font-weight:500;
+}
+.review-weight-goal-trend-ring-body{
+  position:relative;
   display:grid;
   place-items:center;
 }
-.review-weight-manage-active-icon svg{
-  width:12px;
-  height:12px;
-  display:block;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:2.2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+.review-weight-goal-trend-ring.is-active .review-weight-goal-trend-ring-body{
+  filter:drop-shadow(0 2px 5px rgba(255,77,136,.25));
 }
-.review-weight-manage-status{
-  margin-left:auto;
+.review-weight-goal-trend-ring-disc{
+  position:absolute;
+  inset:0;
+  margin:auto;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+}
+.review-weight-goal-trend-legend{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:6px 12px;
+  margin-top:8px;
+  font-size:10px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-trend-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.review-weight-goal-trend-legend i{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:currentColor;
+}
+.review-weight-goal-trend-legend i.is-line{
+  width:12px;
+  height:0;
+  border-radius:0;
+  border-top:2px solid #ff4d88;
+  background:transparent;
+}
+.review-weight-goal-trend-legend i.is-goal{
+  width:12px;
+  height:0;
+  border-radius:0;
+  border-top:1.5px dashed #ff4d88;
+  background:transparent;
+}
+.review-weight-goal-trend-legend i.is-in{
+  border-radius:2px;
+  background:#5fc79c;
+}
+.review-weight-goal-trend-legend i.is-burn{
+  border-radius:2px;
+  background:#ff9550;
+}
+.review-weight-goal-board-summary{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:8px;
+  margin-bottom:14px;
+}
+.review-weight-goal-trend-stats{
+  margin-top:12px;
+}
+.review-weight-goal-board-chart.is-trend-c2{
+  display:block;
+  width:calc(100% + 8px);
+  margin-left:-4px;
+  overflow:visible;
+}
+.review-weight-goal-trend-ring-disc{
+  background:transparent;
+}
+.review-weight-goal-board-summary.is-proto > div{
+  padding:10px 8px;
+  border-radius:10px;
+  background:#faf9fb;
+  text-align:left;
+}
+.review-weight-goal-board-summary small{
+  display:block;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-board-summary b{
+  display:block;
+  margin-top:2px;
+  font-size:17px;
+  line-height:1.19;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-board-summary b i{
+  margin-left:1px;
+  font-style:normal;
+  font-size:11px;
+  font-weight:400;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-board-summary p{
+  margin:2px 0 0;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-week{
+  display:flex;
+  justify-content:space-between;
+  gap:2px;
+  margin-bottom:6px;
+}
+.review-weight-goal-week-day{
+  width:44px;
+  padding:6px 0 4px;
+  border:1.5px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  text-align:center;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-week-day.is-active{
+  border-color:#ff4d88;
+  background:#fff0f5;
+}
+.review-weight-goal-week-day-label{
+  display:block;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-week-day svg{
+  display:block;
+  margin:4px auto 0;
+}
+.review-weight-goal-week-day-weight{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+  line-height:1.29;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-board-legend{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin:6px 0 14px;
+  font-size:10px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-board-legend i{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:3px;
+  border-radius:50%;
+  vertical-align:-1px;
+}
+.review-weight-goal-day-panel{
+  margin-bottom:16px;
+  padding:12px;
+  border:1px solid #efedf0;
+  border-radius:12px;
+}
+.review-weight-goal-day-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:10px;
+}
+.review-weight-goal-day-head b{
+  font-size:15px;
+  line-height:1.19;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-day-head small{
+  margin-left:6px;
+  font-size:12px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-day-weight{
+  font-size:13px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-day-weight b{
+  margin-right:2px;
+  font-size:16px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-day-weight em{
+  margin-left:4px;
+  padding:1px 5px;
+  border-radius:4px;
+  background:#f4f2f5;
+  font-style:normal;
+  font-size:11px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-day-photos{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:6px;
+  margin-bottom:12px;
+}
+.review-weight-goal-day-photo{
+  position:relative;
+  aspect-ratio:1;
+  border-radius:8px;
+  overflow:hidden;
+  background:#f4f2f5;
+}
+.review-weight-goal-day-photo svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.review-weight-goal-day-photo-tag{
+  position:absolute;
+  left:4px;
+  top:4px;
+  padding:0 4px;
+  border-radius:4px;
+  background:rgba(0,0,0,.45);
+  color:#fff;
+  font-size:10px;
+  line-height:16px;
+}
+.review-weight-goal-day-photo-kcal{
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  padding:0 4px;
+  border-radius:4px;
+  background:rgba(255,255,255,.9);
+  color:rgba(0,0,0,.8);
+  font-size:10px;
+  line-height:16px;
+}
+.review-weight-goal-day-photo.is-empty{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  border:1px dashed #ddd8df;
+  background:#fcfbfc;
+  color:rgba(0,0,0,.38);
+  font-size:11px;
+}
+.review-weight-goal-day-photo.is-empty b{
+  font-size:16px;
+  font-weight:400;
+  color:#ff4d88;
+}
+.review-weight-goal-day-photo.is-cover{
+  border:0;
   font-size:14px;
-  line-height:20px;
-  color:#9b9b9f;
+}
+.review-weight-goal-energy{
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.review-weight-goal-energy-ring{
+  position:relative;
+  flex:0 0 76px;
+  width:76px;
+  height:76px;
+}
+.review-weight-goal-energy-ring-center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.review-weight-goal-energy-ring-center b{
+  font-size:16px;
+  line-height:1.19;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-energy-ring-center small{
+  font-size:10px;
+  line-height:1.29;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-energy-bars{
+  flex:1;
+  min-width:0;
+}
+.review-weight-goal-energy-row{
+  display:flex;
+  align-items:center;
+  margin-bottom:7px;
+  font-size:12px;
+  line-height:1.29;
+}
+.review-weight-goal-energy-row:last-child{margin-bottom:0}
+.review-weight-goal-energy-row > span{
+  width:52px;
+  flex:none;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-energy-track{
+  position:relative;
+  flex:1;
+  height:8px;
+  margin:0 8px;
+  border-radius:4px;
+  background:#f4f2f5;
+}
+.review-weight-goal-energy-track > i{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  border-radius:4px;
+}
+.review-weight-goal-energy-track > em{
+  position:absolute;
+  top:-3px;
+  bottom:-3px;
+  width:0;
+  border-left:1.5px dashed #bbb;
+}
+.review-weight-goal-energy-row > b{
+  width:58px;
+  flex:none;
+  text-align:right;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-day-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:6px;
+}
+.review-weight-goal-day-tags > span{
+  padding:2px 8px;
+  border-radius:10px;
+  background:#f4f2f5;
+  color:rgba(0,0,0,.6);
+  font-size:11px;
+  line-height:1.29;
+}
+.review-weight-goal-day-tags > span.is-pink{
+  background:#fff0f5;
+  color:#ff4d88;
+}
+.review-weight-goal-day-tags > span.is-blue{
+  background:#eef4fd;
+  color:#4c7fc4;
+}
+.review-weight-goal-day-note{
+  margin-top:10px;
+  padding:8px 10px;
+  border-radius:8px;
+  background:#fff7fa;
+  font-size:12px;
+  line-height:1.6;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-day-note em{
+  font-style:normal;
+  color:#ff4d88;
+}
+.review-weight-goal-chart-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:4px;
+}
+.review-weight-goal-chart-head strong{
+  font-size:14px;
+  line-height:1.29;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-chart-head small{
+  font-size:11px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-chart-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:8px 0 0;
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-chart-legend i{
+  display:inline-block;
+  width:10px;
+  height:6px;
+  margin-right:3px;
+  border-radius:2px;
+  vertical-align:1px;
+}
+.review-weight-goal-chart-legend i.is-line{
+  height:2px;
+  vertical-align:3px;
+}
+.review-weight-goal-chart-legend i.is-dash{
+  height:0;
+  border-top:1.5px dashed #bbb;
+  border-radius:0;
+  background:transparent;
+  vertical-align:3px;
+}
+.review-weight-goal-board-chart{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.review-weight-goal-gallery{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.review-weight-goal-gallery-card{
+  padding:0;
+  border:1px solid #efedf0;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-gallery-cover{
+  position:relative;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  aspect-ratio:1.15;
+  gap:1px;
+  background:#fff;
+}
+.review-weight-goal-gallery-cover .review-weight-goal-day-photo{
+  border-radius:0;
+  aspect-ratio:auto;
+}
+.review-weight-goal-gallery-date{
+  position:absolute;
+  left:6px;
+  top:6px;
+  padding:2px 6px;
+  border-radius:6px;
+  background:rgba(255,255,255,.92);
+  font-size:11px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-gallery-date small{
+  margin-left:2px;
+  font-weight:400;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-gallery-body{
+  padding:8px 10px 10px;
+}
+.review-weight-goal-gallery-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.review-weight-goal-gallery-row b{
+  font-size:14px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-gallery-row small{
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-gallery-status{
+  margin-left:auto;
+  padding:1px 6px;
+  border-radius:8px;
+  font-size:10px;
+  line-height:1.29;
   white-space:nowrap;
 }
-.review-weight-manage-sample-badge{
+.review-weight-goal-gallery-meta{
+  display:flex;
+  justify-content:space-between;
+  margin-top:6px;
+  font-size:11px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-gallery-meta b{
+  font-size:12px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-table-wrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.review-weight-goal-table-wrap.is-plain{
+  border:0;
+}
+.review-weight-goal-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  background:#fff;
+}
+.review-weight-goal-table.is-plain{
+  min-width:0;
+}
+.review-weight-goal-table th,
+.review-weight-goal-table td{
+  padding:9px 2px;
+  text-align:center;
+  border-bottom:1px solid #efedf0;
+  vertical-align:middle;
+}
+.review-weight-goal-table th{
+  padding:6px 2px;
+  color:rgba(0,0,0,.38);
+  font-size:11px;
+  font-weight:400;
+}
+.review-weight-goal-table th.is-left,
+.review-weight-goal-table td.is-left{
+  text-align:left;
+}
+.review-weight-goal-table td.is-left b{
+  display:block;
+  font-size:12px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-table td small{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-pill{
+  display:inline-block;
+  padding:1px 6px;
+  border-radius:8px;
+  font-size:11px;
+  line-height:1.29;
+  font-weight:500;
+}
+.review-weight-goal-insight-list{
+  display:flex;
+  flex-direction:column;
+}
+.review-weight-goal-insight-item{
+  border-top:0.5px solid rgba(0,0,0,.08);
+}
+.review-weight-goal-insight-item:first-child{border-top:0}
+.review-weight-goal-insight-item > button{
+  appearance:none;
+  border:0;
+  background:transparent;
+  width:100%;
+  padding:12px 0;
+  display:grid;
+  grid-template-columns:72px minmax(0, 1fr) 18px;
+  gap:8px;
+  align-items:start;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+.review-weight-goal-insight-label{
+  font-size:12px;
+  line-height:1.29;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-insight-item.is-factor .review-weight-goal-insight-label{color:#a46b08}
+.review-weight-goal-insight-item.is-observe .review-weight-goal-insight-label{color:#2a67ad}
+.review-weight-goal-insight-item.is-next .review-weight-goal-insight-label{color:#ff4d88}
+.review-weight-goal-insight-copy{
+  font-size:12px;
+  line-height:1.47;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-insight-chevron{
+  color:#a7a9b0;
+  font-size:16px;
+  line-height:1;
+  transition:transform .18s ease;
+}
+.review-weight-goal-insight-item.is-open .review-weight-goal-insight-chevron{
+  transform:rotate(90deg);
+}
+.review-weight-goal-insight-detail{
+  margin:-2px 0 12px 80px;
+  padding-right:18px;
+  font-size:12px;
+  line-height:1.47;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-paid-exclusive{
+  padding:14px 14px 12px;
+}
+.review-weight-goal-paid-exclusive-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+.review-weight-goal-paid-exclusive-head .review-weight-goal-week-plan-head-icon{
+  flex:0 0 28px;
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  font-size:14px;
+}
+.review-weight-goal-paid-exclusive-head h3{
+  margin:0;
+  font-size:16px;
+  line-height:1.19;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+}
+.review-weight-goal-paid-exclusive-vip{
+  flex:0 0 auto;
+  height:18px;
+  padding:0 6px;
+  border-radius:6px;
+  background:linear-gradient(90deg,#ff9a5c,#ff4d88);
+  color:#fff;
+  font-size:10px;
+  font-style:normal;
+  font-weight:500;
+  line-height:18px;
+}
+.review-weight-goal-paid-exclusive-progress{
   margin-left:auto;
+  font-size:13px;
+  line-height:20px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-paid-exclusive-progress b{
+  margin-right:1px;
+  font-size:20px;
+  font-weight:500;
+  color:#ff4d88;
+}
+.review-weight-goal-paid-budget{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:10px 12px 12px;
+  margin-bottom:10px;
+  border-radius:14px;
+  background:#faf9fb;
+}
+.review-weight-goal-paid-budget-ring{
+  position:relative;
+  flex:0 0 80px;
+  width:80px;
+  height:80px;
+}
+.review-weight-goal-paid-budget-ring svg{
+  display:block;
+  width:80px;
+  height:80px;
+}
+.review-weight-goal-paid-budget-ring-copy{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.15;
+}
+.review-weight-goal-paid-budget-ring-copy small{
+  font-size:9px;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-paid-budget-ring-copy b{
+  font-size:20px;
+  line-height:1.1;
+  font-weight:500;
+  color:#2e9e70;
+}
+.review-weight-goal-paid-budget-stats{
+  flex:1;
+  min-width:0;
+  display:grid;
+  row-gap:7px;
+}
+.review-weight-goal-paid-budget-stats div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  font-size:12px;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-paid-budget-stats b{
+  font-size:12px;
+  font-weight:500;
+  color:rgba(0,0,0,.8);
+  font-variant-numeric:tabular-nums;
+}
+.review-weight-goal-paid-budget-stats div:last-child b{
+  color:#e07a35;
+}
+.review-weight-goal-paid-task-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.review-weight-goal-paid-task{
+  border-radius:14px;
+  background:var(--wg-paid-bg, #f4f3f6);
+  padding:2px;
+  box-sizing:border-box;
+}
+.review-weight-goal-paid-task.is-todo{
+  cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+.review-weight-goal-paid-task.is-done{
+  background:#f8f7f9;
+  cursor:default;
+}
+.review-weight-goal-paid-task-main{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 10px 7px;
+}
+.review-weight-goal-paid-task.is-done .review-weight-goal-paid-task-main{
+  padding:7px 10px;
+}
+.review-weight-goal-paid-task-emoji{
+  flex:0 0 auto;
+  font-size:16px;
+  line-height:1;
+}
+.review-weight-goal-paid-task.is-done .review-weight-goal-paid-task-emoji{
+  filter:grayscale(.6);
+  opacity:.6;
+}
+.review-weight-goal-paid-task-main strong{
+  flex:1;
+  min-width:0;
+  font-size:15px;
+  line-height:1.29;
+  font-weight:500;
+  color:#333;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.review-weight-goal-paid-task.is-done .review-weight-goal-paid-task-main strong{
+  font-size:13px;
+  color:#999;
+  text-decoration:line-through;
+  text-decoration-color:rgba(0,0,0,.25);
+}
+.review-weight-goal-paid-task-check{
+  flex:0 0 24px;
+  width:24px;
+  height:24px;
+  margin-left:auto;
+  border:1.8px solid #c9c4cc;
+  border-radius:50%;
+  background:#fff;
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  line-height:1;
+  color:#fff;
+}
+.review-weight-goal-paid-task.is-done .review-weight-goal-paid-task-check{
+  width:20px;
+  height:20px;
+  flex-basis:20px;
+  font-size:10px;
+  border-color:var(--wg-paid-fg, #ff4d88);
+  background:var(--wg-paid-fg, #ff4d88);
+}
+.review-weight-goal-paid-task-detail{
+  background:#fff;
+  border-radius:11px;
+  padding:8px 10px;
+  font-size:12px;
+  line-height:1.47;
+  color:rgba(0,0,0,.6);
+}
+.review-weight-goal-paid-task-detail p{
+  margin:0;
+}
+.review-weight-goal-paid-task-detail small{
+  display:block;
+  margin-top:6px;
+  font-size:11.5px;
+  line-height:1.6;
+  color:rgba(0,0,0,.38);
+}
+.review-weight-goal-paid-task-link{
+  appearance:none;
+  display:inline-block;
+  border:0;
+  background:transparent;
+  margin-top:7px;
+  padding:0;
+  font-family:inherit;
+  font-size:12px;
+  line-height:1.29;
+  font-weight:500;
+  color:var(--wg-paid-fg, #ff4d88);
+  cursor:pointer;
+}
+.review-weight-manage-sample-badge{
   display:inline-flex;
   align-items:center;
   height:20px;
@@ -294,104 +2285,12 @@
 .review-detail-nav .review-weight-assess-entry:active{
   opacity:.72;
 }
-.review-weight-manage-chevron{
-  width:18px;
-  height:22px;
-  display:grid;
-  place-items:center;
-  color:#c9c9cc;
-}
-.review-weight-manage-status + .review-weight-manage-chevron{
-  margin-left:3px;
-}
-.review-weight-manage-chevron svg{
-  width:18px;
-  height:18px;
-  display:block;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-}
-.review-weight-manage-sample{
+.review-weight-manage-sample.is-combo{
   position:relative;
-  border-radius:8px;
   overflow:hidden;
 }
-.review-weight-manage-sample-body{
-  display:grid;
-  grid-template-columns:84px minmax(0,1fr);
-  min-height:112px;
-  background:#fff5ec;
-}
-.review-weight-manage-sample-side{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  padding:16px 10px;
-  color:#c97a3d;
-  text-align:center;
-}
-.review-weight-manage-sample-side span{
-  font-size:11px;
-  line-height:16px;
-  font-weight:400;
-  white-space:nowrap;
-}
-.review-weight-manage-sample-side strong{
-  font-size:26px;
-  line-height:1.1;
-  font-weight:500;
-}
-.review-weight-manage-sample-main{
-  padding:14px 14px 14px 12px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  min-width:0;
-  background:#fff;
-}
-.review-weight-manage-sample-weight{
-  margin:0;
-  display:flex;
-  align-items:baseline;
-  gap:4px;
-  color:rgba(0,0,0,.8);
-}
-.review-weight-manage-sample-weight b{
-  font-size:28px;
-  line-height:1.1;
-  font-weight:500;
-}
-.review-weight-manage-sample-weight span{
-  font-size:14px;
-  line-height:20px;
-  color:rgba(0,0,0,.6);
-}
-.review-weight-manage-sample-bar{
-  margin:12px 0 8px;
-  height:8px;
-  border-radius:80px;
-  background:#f2f2f5;
-  overflow:hidden;
-}
-.review-weight-manage-sample-bar-fill{
-  display:block;
-  height:100%;
-  border-radius:inherit;
-  background:#fe8a3f;
-}
-.review-weight-manage-sample-meta{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  font-size:12px;
-  line-height:17px;
-  color:rgba(0,0,0,.45);
+.review-weight-manage-sample.is-combo .review-weight-manage-sample-body{
+  pointer-events:none;
 }
 .review-weight-manage-sample-mask{
   position:absolute;
@@ -422,9 +2321,13 @@
 }
 .review-weight-manage-idle-foot p{
   margin:0;
+  min-width:0;
+  overflow:hidden;
   font-size:14px;
   line-height:20px;
   color:rgba(0,0,0,.8);
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
 .review-weight-manage-goal-link{
   flex:0 0 auto;
@@ -441,6 +2344,66 @@
   cursor:pointer;
 }
 .review-weight-manage-goal-link:active{
+  opacity:.88;
+}
+.review-weight-manage-card.is-idle.is-actionable{
+  cursor:pointer;
+}
+.review-weight-manage-card.is-idle .review-overview-chevron{
+  color:rgba(0,0,0,.28);
+}
+.review-weight-goal-detail.is-sample{
+  position:relative;
+}
+.review-weight-goal-detail.is-sample .review-weight-goal-nav-sample{
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  margin:0;
+}
+.review-weight-goal-detail.is-sample .review-detail-nav{
+  position:relative;
+  z-index:3;
+}
+.review-weight-goal-page-mask{
+  position:absolute;
+  left:0;
+  right:0;
+  top:44px;
+  bottom:0;
+  z-index:4;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  padding:24px 20px calc(24px + var(--my-safe-bottom, 0px));
+  background:rgba(255,255,255,.52);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.review-weight-goal-page-mask-label{
+  font-size:15px;
+  line-height:1.29;
+  font-weight:500;
+  color:rgba(0,0,0,.36);
+  letter-spacing:.04em;
+}
+.review-weight-goal-page-mask-btn{
+  height:40px;
+  padding:0 28px;
+  border:0;
+  border-radius:80px;
+  background:#ff8a3d;
+  color:#fff;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:500;
+  line-height:40px;
+  cursor:pointer;
+}
+.review-weight-goal-page-mask-btn:active{
   opacity:.88;
 }
 .review-weight-manage-goal-body{
@@ -528,120 +2491,112 @@
   color:#00cc99;
   white-space:nowrap;
 }
-.review-weight-manage-active{
-  display:grid;
-  grid-template-columns:84px minmax(0,1fr);
-  min-height:112px;
-  gap:0;
-  border-radius:8px;
-  overflow:hidden;
-  background:#fff5ec;
+.review-overview-body.is-weight-manage{
+  min-height:84px;
+  align-items:end;
 }
-.review-weight-manage-side{
+.review-overview-trend.is-weight-manage{
+  width:100%;
+}
+.review-weight-manage-track{
+  position:relative;
+  width:100%;
+  height:48px;
+  min-width:0;
+  box-sizing:border-box;
+}
+.review-weight-manage-track-rail{
+  position:absolute;
+  left:0;
+  right:0;
+  top:20px;
+  height:5px;
+  border-radius:3px;
+  background:#eceaee;
+}
+.review-weight-manage-track-fill{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  border-radius:3px;
+  background:linear-gradient(90deg,#ff9dbe,#ff4d88);
+}
+.review-weight-manage-track-dot{
+  position:absolute;
+  top:50%;
+  width:5px;
+  height:5px;
+  margin:-2.5px 0 0 -2.5px;
+  border-radius:50%;
+  background:#d4d0d7;
+}
+.review-weight-manage-track-marker{
+  position:absolute;
+  top:50%;
+  z-index:2;
+  transform:translate(-50%, -50%);
+}
+.review-weight-manage-track-flag{
+  position:absolute;
+  left:50%;
+  bottom:13px;
+  transform:translateX(-50%);
+  font-size:22px;
+  line-height:1;
+  color:#ff4d88;
+}
+.review-weight-manage-track-knob{
+  display:block;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#ff4d88;
+  box-shadow:0 0 0 3px #fff;
+}
+.review-weight-manage-track-goal{
+  position:absolute;
+  right:-1px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  line-height:1;
+}
+.review-weight-manage-track-labels{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
   display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  padding:16px 10px;
-  background:#fff5ec;
-  color:#c97a3d;
-  text-align:center;
-}
-.review-weight-manage-side span{
+  align-items:flex-end;
+  justify-content:space-between;
+  height:14px;
+  margin:0;
   font-size:11px;
-  line-height:16px;
+  line-height:14px;
+  font-weight:400;
+  color:rgba(0,0,0,.38);
+  font-variant-numeric:tabular-nums;
+}
+.review-weight-manage-track-labels .is-start,
+.review-weight-manage-track-labels .is-end{
+  position:relative;
+  z-index:1;
+  height:14px;
+  line-height:14px;
   font-weight:400;
   white-space:nowrap;
 }
-.review-weight-manage-side strong{
-  font-size:26px;
-  line-height:1.1;
-  font-weight:500;
-}
-.review-weight-manage-main{
-  padding:16px 14px 14px 12px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  min-width:0;
-  background:#fff;
-}
-.review-weight-manage-current-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-.review-weight-manage-current{
-  margin:0;
-  display:flex;
-  align-items:baseline;
-  gap:4px;
-  color:rgba(0,0,0,.8);
-}
-.review-weight-manage-current b{
-  font-size:26px;
-  line-height:1.1;
-  font-weight:500;
-  color:rgba(0,0,0,.8);
-}
-.review-weight-manage-current span{
-  font-size:14px;
-  line-height:20px;
-  color:rgba(0,0,0,.45);
-}
-.review-weight-manage-delta{
-  display:inline-flex;
-  align-items:center;
-  height:22px;
-  padding:0 8px;
-  border-radius:80px;
-  background:#e8f6f1;
-  font-size:12px;
-  line-height:22px;
-  font-weight:500;
-  color:#3f8f7a;
-  white-space:nowrap;
-}
-.review-weight-manage-bar{
-  position:relative;
-  margin:14px 0 12px;
-  height:8px;
-  border-radius:80px;
-  background:#f2f2f5;
-}
-.review-weight-manage-bar-fill{
-  display:block;
-  height:100%;
-  border-radius:inherit;
-  background:#fe8a3f;
-}
-.review-weight-manage-bar-tip{
+.review-weight-manage-track-labels .is-now{
   position:absolute;
-  top:50%;
-  transform:translate(-50%,-50%);
-  z-index:1;
-  min-width:36px;
-  height:20px;
-  padding:0 6px;
-  border-radius:80px;
-  background:#fff;
-  box-shadow:0 0 0 .5px rgba(0,0,0,.08);
-  color:rgba(0,0,0,.8);
-  font-size:11px;
-  line-height:20px;
-  font-weight:500;
-  text-align:center;
-}
-.review-weight-manage-meta{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  font-size:12px;
-  line-height:17px;
-  color:rgba(0,0,0,.45);
+  bottom:0;
+  z-index:2;
+  height:14px;
+  line-height:14px;
+  font-weight:400;
+  color:#ff4d88;
+  white-space:nowrap;
+  transform:translateX(-50%);
 }
 .review-overview-card{
   min-height:134px;
@@ -11121,14 +13076,42 @@
   width:100%;
   height:auto !important;
 }
+.review-symptom-trend-block .review-mood-trend-foot .review-mood-stat-card{
+  padding:10px 10px;
+}
+.review-symptom-trend-block .review-mood-trend-foot .review-mood-stat-card .review-mood-trend-record-card-title{
+  white-space:nowrap;
+  font-size:12px;
+  line-height:1.29;
+}
+.review-symptom-trend-block .review-mood-trend-foot .review-mood-stat-card > p{
+  margin-top:4px;
+  min-height:22px;
+}
 .review-symptom-trend-block .review-mood-stat-card.review-mood-trend-record-card p b,
 .review-symptom-trend-block .review-mood-stat-card.is-freq p.review-mood-freq-words b{
   color:#5b8fd9;
 }
-.review-symptom-trend-block .review-mood-stat-card.is-freq p.review-mood-freq-words b{
+.review-symptom-trend-block .review-mood-stat-card.is-longest p{
+  align-items:baseline;
+  gap:3px;
+  white-space:nowrap;
+}
+.review-symptom-trend-block .review-mood-stat-card.is-longest p b{
+  font-size:22px;
+  font-weight:500;
+  line-height:22px;
+  color:#5b8fd9;
+}
+.review-symptom-trend-block .review-mood-stat-card.is-longest p em{
+  font-size:13px;
+  line-height:22px;
+}
+.review-symptom-trend-block .review-mood-stat-card.is-longest p em.is-name{
   font-size:15px;
   font-weight:500;
   line-height:22px;
+  color:#5b8fd9;
 }
 .review-symptom-phase-card,
 .review-symptom-insight-card{
