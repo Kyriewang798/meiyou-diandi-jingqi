@@ -414,6 +414,8 @@ function DockPublisher({
   periodFeelLabel = '经期感受', periodFeelGuide = false,
   periodFeelGuideText = '这次经期有什么特别的感受么？试试把它记录下来',
   emptyPreviewGuideStep = 0, onEmptyPreviewGuideAdvance, onEmptyPreviewGuideDismiss, fabGuidePulse = false,
+  // 今日计划打卡：外部拉起记录方式 {key, kind:'weight'|'exercise'|'diet', preset}
+  externalRecordRequest = null, onExerciseConfirm, onExternalRecordCancel,
 }){
   const I = window.Icon;
   const DockMoodPicker = window.DockMoodPicker;
@@ -550,6 +552,19 @@ function DockPublisher({
   const closeWeightPicker = ()=>{
     setWeightPickerOpen(false);
     setClosingToMood(false);
+    onExternalRecordCancel?.('weight');
+  };
+
+  // —— 运动 picker（今日计划打卡拉起） ——
+  const QuickExercisePicker = window.QuickExercisePicker;
+  const [exercisePicker, setExercisePicker] = React.useState(null); // {key, preset}
+  const closeExercisePicker = ()=>{
+    setExercisePicker(null);
+    onExternalRecordCancel?.('exercise');
+  };
+  const handleExerciseSubmit = (payload)=>{
+    setExercisePicker(null);
+    onExerciseConfirm?.(payload);
   };
 
   const handleMoodFanTap = ()=>{
@@ -771,6 +786,7 @@ function DockPublisher({
   };
 
   const handleCameraCaptureSuccess = (payload)=>{
+    cameraCapturedRef.current = true;
     const normalized = {
       ...payload,
       type: payload?.type || 'capture',
@@ -782,14 +798,45 @@ function DockPublisher({
     else onCameraRecord?.(normalized);
   };
 
+  const cameraCapturedRef = React.useRef(false);
   const handleCameraClose = ()=>{
     setCameraOpen(false);
     setCameraPreferredMode(null);
+    if(!cameraCapturedRef.current) onExternalRecordCancel?.('diet');
+    cameraCapturedRef.current = false;
   };
 
+  // 外部（今日计划打卡）拉起：体重 picker / 运动 picker / 直接进拍照
   React.useEffect(()=>{
-    onDockExpandedChange?.(!!dockSheet || !!quickSelected || photoMenuOpen || dockKeyboardOpen || weightPickerOpen);
-  }, [dockSheet, quickSelected, photoMenuOpen, dockKeyboardOpen, weightPickerOpen, onDockExpandedChange]);
+    if(!externalRecordRequest?.key) return undefined;
+    const req = externalRecordRequest;
+    const timer = setTimeout(()=>{
+      setQuickOpen(false);
+      setQuickSelected(null);
+      setDockSheet(null);
+      if(req.kind === 'weight'){
+        setWeightPickerKey(k=>k + 1);
+        setWeightPickerOpen(true);
+      }else if(req.kind === 'exercise'){
+        setExercisePicker({ key:req.key, preset:req.preset || null });
+      }else if(req.kind === 'diet'){
+        const wrap = dockWrapRef.current;
+        const phone = wrap?.closest('.phone');
+        if(!wrap || !phone) return;
+        containerRef.current = phone;
+        const anchor = wrap.querySelector('.dock-camera-btn') || wrap;
+        setCameraSourceRect(measureElementRect?.(anchor, phone));
+        setCameraPreferredMode('diet');
+        cameraCapturedRef.current = false;
+        setCameraOpen(true);
+      }
+    }, 320);
+    return ()=>clearTimeout(timer);
+  }, [externalRecordRequest?.key]);
+
+  React.useEffect(()=>{
+    onDockExpandedChange?.(!!dockSheet || !!quickSelected || photoMenuOpen || dockKeyboardOpen || weightPickerOpen || !!exercisePicker);
+  }, [dockSheet, quickSelected, photoMenuOpen, dockKeyboardOpen, weightPickerOpen, exercisePicker, onDockExpandedChange]);
 
   React.useEffect(()=>{
     if(!dockSheet) return undefined;
@@ -1000,6 +1047,16 @@ function DockPublisher({
           key={weightPickerKey}
           onSubmit={handleQuickWeightSubmit}
           onCancel={closeWeightPicker}
+        />,
+        document.querySelector('.phone') || document.body
+      )}
+
+      {exercisePicker && QuickExercisePicker && ReactDOM.createPortal(
+        <QuickExercisePicker
+          key={exercisePicker.key}
+          preset={exercisePicker.preset}
+          onSubmit={handleExerciseSubmit}
+          onCancel={closeExercisePicker}
         />,
         document.querySelector('.phone') || document.body
       )}

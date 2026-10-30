@@ -1,0 +1,84 @@
+/* ===== 今日计划打卡闭环 ===== */
+
+/* —— 点滴卡片底部：计划进度反馈（替代「查看趋势」入口） —— */
+.plan-ci-feedback{
+  width:calc(100% + 24px);
+  margin:0 -12px -4px;
+  padding:12px;
+  border:0;
+  border-top:.5px solid rgba(0,0,0,.08);
+  background:linear-gradient(180deg, rgba(255,77,136,.05), rgba(255,77,136,0));
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  animation:plan-ci-in .36s ease-out both;
+}
+.plan-ci-feedback:active{ background:rgba(255,77,136,.07); }
+.diet-fb-card .plan-ci-feedback,
+.diet-fb-ai-panel-inner > .plan-ci-feedback{ width:100%; margin:0; padding:12px 16px; }
+@keyframes plan-ci-in{ from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none} }
+
+.plan-ci-feedback-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.plan-ci-feedback-top{ display:flex; align-items:center; gap:6px; font-size:14px; line-height:20px; color:rgba(0,0,0,.85); }
+.plan-ci-feedback-top b{ font-weight:500; }
+.plan-ci-feedback-badge{
+  width:16px; height:16px; border-radius:50%;
+  background:#ff4d88; color:#fff;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; line-height:1;
+}
+.plan-ci-feedback-count{ font-size:13px; color:rgba(0,0,0,.45); font-variant-numeric:tabular-nums; }
+.plan-ci-feedback-count em{ font-style:normal; font-weight:600; color:#ff4d88; font-size:15px; }
+.plan-ci-feedback-dots{ display:inline-flex; gap:3px; margin-left:2px; }
+.plan-ci-feedback-dots i{ width:12px; height:4px; border-radius:2px; background:rgba(0,0,0,.08); }
+.plan-ci-feedback-dots i.is-on{ background:#ffb3cc; }
+.plan-ci-feedback-dots i.is-on.is-current{ background:#ff4d88; animation:plan-ci-dot-pop .5s .2s ease-out both; }
+@keyframes plan-ci-dot-pop{ 0%{transform:scaleX(.2)} 60%{transform:scaleX(1.25)} 100%{transform:scaleX(1)} }
+.plan-ci-feedback-sub{ font-size:12px; line-height:17px; color:rgba(0,0,0,.5); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.plan-ci-feedback.is-all-done .plan-ci-feedback-sub{ color:#ff4d88; }
+.plan-ci-feedback-cta{ flex:none; display:inline-flex; align-items:center; gap:1px; font-size:13px; color:#ff4d88; font-weight:500; }
+.plan-ci-feedback-cta svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* —— 运动 picker —— */
+.exercise-picker-block{ margin:0 12px 12px; padding:14px 12px; border-radius:12px; background:#fff; }
+.exercise-picker-block:last-child{ margin-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
+.exercise-picker-label{ font-size:13px; color:rgba(0,0,0,.45); margin-bottom:10px; }
+.exercise-picker-types{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+.exercise-picker-type{
+  appearance:none; border:1px solid transparent; background:#f7f7f9; border-radius:10px;
+  padding:8px 0 7px; display:flex; flex-direction:column; align-items:center; gap:3px;
+  font:inherit; font-size:12px; color:rgba(0,0,0,.7); cursor:pointer;
+}
+.exercise-picker-type-emoji{ font-size:22px; line-height:26px; }
+.exercise-picker-type.is-on{ background:#fff0f5; border-color:#ff4d88; color:#ff4d88; font-weight:500; }
+.exercise-picker-stepper{ display:flex; align-items:center; justify-content:center; gap:24px; margin:2px 0 12px; }
+.exercise-picker-stepper button{
+  appearance:none; width:36px; height:36px; border-radius:50%;
+  border:.5px solid rgba(0,0,0,.12); background:#fff;
+  font-size:20px; line-height:1; color:rgba(0,0,0,.7); cursor:pointer;
+}
+.exercise-picker-stepper button:disabled{ opacity:.35; cursor:default; }
+.exercise-picker-minutes{ min-width:96px; text-align:center; color:rgba(0,0,0,.85); }
+.exercise-picker-minutes b{ font-size:34px; font-weight:600; font-variant-numeric:tabular-nums; }
+.exercise-picker-minutes span{ font-size:14px; margin-left:4px; color:rgba(0,0,0,.5); }
+.exercise-picker-chips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.exercise-picker-chip{ appearance:none; border:0; background:#f7f7f9; border-radius:14px; padding:5px 11px; font:inherit; font-size:12px; color:rgba(0,0,0,.6); cursor:pointer; }
+.exercise-picker-chip.is-on{ background:#fff0f5; color:#ff4d88; font-weight:500; }
+.exercise-picker-estimate{ margin-top:12px; text-align:center; font-size:12px; color:rgba(0,0,0,.45); }
+.exercise-picker-estimate b{ color:#ff4d88; font-weight:600; font-size:14px; }
+
+/* —— 体重管理二级页：刚打卡的计划项 —— */
+.review-weight-goal-paid-task.is-just-checked{ animation:plan-ci-row-flash 1.6s ease-out both; }
+.review-weight-goal-paid-task.is-just-checked .review-weight-goal-paid-task-check.is-on{
+  animation:plan-ci-check-pop .55s .3s cubic-bezier(.3,1.6,.5,1) both;
+}
+@keyframes plan-ci-row-flash{
+  0%{ box-shadow:0 0 0 0 rgba(255,77,136,0); }
+  25%{ box-shadow:0 0 0 2px rgba(255,77,136,.45); }
+  100%{ box-shadow:0 0 0 0 rgba(255,77,136,0); }
+}
+@keyframes plan-ci-check-pop{ 0%{transform:scale(0)} 70%{transform:scale(1.3)} 100%{transform:scale(1)} }

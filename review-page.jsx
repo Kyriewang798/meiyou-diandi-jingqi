@@ -772,7 +772,7 @@ function WeightManageCard({phase='none', onActivateGoal, onOpen}){
           className="review-weight-manage-goal-link"
           onClick={(event)=>{
             event.stopPropagation();
-            onOpen?.();
+            onActivateGoal?.();
           }}
         >
           制定目标
@@ -782,218 +782,616 @@ function WeightManageCard({phase='none', onActivateGoal, onOpen}){
   );
 }
 
-const WEIGHT_ASSESS_AGE_OPTIONS = ['34岁及以下', '35-39岁', '40岁及以上'];
+const WEIGHT_ASSESS_REC_W = 48.6;
+const WEIGHT_ASSESS_PROF_H = 155;
+const WEIGHT_ASSESS_MODES = [
+  {key:'lose', label:'减重'},
+  {key:'keep', label:'保持'},
+  {key:'gain', label:'增重'},
+];
 
-function WeightAssessRuler({value, min, max, step=0.1, unit, onChange, markerLabel, markerValue}){
-  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
-  const ticks = [];
-  for(let v = Math.ceil(min); v <= Math.floor(max); v += 1){
-    ticks.push(v);
+function weightAssessSeq(from, to, step){
+  const list = [];
+  for(let value = from; value <= to + 1e-9; value += step){
+    list.push(Number(value.toFixed(1)));
   }
+  return list;
+}
+
+function weightAssessNear(list, value){
+  let index = 0;
+  let best = Number.POSITIVE_INFINITY;
+  list.forEach((item, i)=>{
+    const dist = Math.abs(item - value);
+    if(dist < best){
+      best = dist;
+      index = i;
+    }
+  });
+  return index;
+}
+
+function weightAssessBmiRange(heightCm){
+  const hm = heightCm / 100;
+  return [
+    Number((18.5 * hm * hm).toFixed(1)),
+    Number((23.9 * hm * hm).toFixed(1)),
+  ];
+}
+
+function weightAssessMinWeeks(weightKg, targetKg){
+  return Math.max(1, Math.ceil(Math.abs(weightKg - targetKg) / 0.45));
+}
+
+function weightAssessRecWeeks(weightKg, targetKg){
+  const min = weightAssessMinWeeks(weightKg, targetKg);
+  return Math.max(min, Math.round(Math.abs(weightKg - targetKg) / 0.3));
+}
+
+function WeightAssessWheelPicker({open, title, subtitle, options, index, onIndexChange, onCancel, onConfirm, renderOption}){
+  const listRef = React.useRef(null);
+  const syncingRef = React.useRef(false);
+
+  React.useEffect(()=>{
+    if(!open || !listRef.current) return;
+    syncingRef.current = true;
+    listRef.current.scrollTop = index * 40;
+    const timer = window.setTimeout(()=>{ syncingRef.current = false; }, 40);
+    return ()=>window.clearTimeout(timer);
+  }, [open, index, options]);
+
+  const handleScroll = ()=>{
+    if(!listRef.current || syncingRef.current) return;
+    const next = Math.max(0, Math.min(options.length - 1, Math.round(listRef.current.scrollTop / 40)));
+    if(next !== index) onIndexChange?.(next);
+  };
+
+  if(!open) return null;
   return (
-    <div className="weight-assess-ruler">
-      <div className="weight-assess-ruler-value">
-        <b>{Number(value).toFixed(1)}</b>
-        <span>{unit}</span>
-      </div>
-      <div className="weight-assess-ruler-track-wrap">
-        <input
-          className="weight-assess-ruler-range"
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          aria-label={unit}
-          onChange={event=>onChange?.(Number(event.target.value))}
-        />
-        <div className="weight-assess-ruler-ticks" aria-hidden="true">
-          {ticks.filter((v, i)=>i % 5 === 0 || v === Math.round(min) || v === Math.round(max)).map(v=>(
-            <span key={v} style={{left: ((v - min) / (max - min)) * 100 + '%'}}>{v}</span>
-          ))}
+    <>
+      <button type="button" className="weight-assess-mask" aria-label="关闭选择器" onClick={onCancel}/>
+      <div className="weight-assess-picker" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="weight-assess-picker-head">
+          <button type="button" onClick={onCancel}>取消</button>
+          <b>{title}</b>
+          <button type="button" className="is-ok" onClick={onConfirm}>确定</button>
         </div>
-        {markerLabel != null && markerValue != null ? (
-          <span
-            className="weight-assess-ruler-marker"
-            style={{left: Math.max(0, Math.min(100, ((markerValue - min) / (max - min)) * 100)) + '%'}}
+        {subtitle ? <p className="weight-assess-picker-sub">{subtitle}</p> : null}
+        <div className="weight-assess-wheel">
+          <div className="weight-assess-wheel-bar" aria-hidden="true"/>
+          <div
+            ref={listRef}
+            className="weight-assess-wheel-list"
+            onScroll={handleScroll}
           >
-            {markerLabel}
-          </span>
-        ) : null}
-        <i className="weight-assess-ruler-pointer" style={{left: pct + '%'}} aria-hidden="true"/>
+            {options.map((item, i)=>(
+              <div
+                key={String(item) + '-' + i}
+                className={i === index ? 'is-on' : ''}
+                onClick={()=>{
+                  listRef.current?.scrollTo({top:i * 40, behavior:'smooth'});
+                  onIndexChange?.(i);
+                }}
+              >
+                {renderOption ? renderOption(item) : item}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 function WeightAssessPage({open, onClose, onComplete}){
-  const [step, setStep] = React.useState(0);
-  const [age, setAge] = React.useState(WEIGHT_ASSESS_AGE_OPTIONS[0]);
-  const [heightCm, setHeightCm] = React.useState(160);
-  const [weightKg, setWeightKg] = React.useState(50.2);
-  const [targetKg, setTargetKg] = React.useState(47);
-  const [weeks, setWeeks] = React.useState(11);
-  const totalSteps = 6;
-  const progress = ((step + 1) / totalSteps) * 100;
-  const heightM = heightCm / 100;
-  const bmi = heightM > 0 ? Math.round((weightKg / (heightM * heightM)) * 10) / 10 : 0;
-  const weeklyLoss = Math.max(0.05, +((weightKg - targetKg) / Math.max(weeks, 1)).toFixed(2));
+  const [weightKg, setWeightKg] = React.useState(WEIGHT_ASSESS_REC_W);
+  const [heightCm, setHeightCm] = React.useState(WEIGHT_ASSESS_PROF_H);
+  const [mode, setMode] = React.useState(null);
+  const [targetKg, setTargetKg] = React.useState(null);
+  const [weeks, setWeeks] = React.useState(null);
+  const [pickerKey, setPickerKey] = React.useState(null);
+  const [pickerIndex, setPickerIndex] = React.useState(0);
+  const [pickerOptions, setPickerOptions] = React.useState([]);
+  const [weightKeypadOpen, setWeightKeypadOpen] = React.useState(false);
+  const [toast, setToast] = React.useState('');
+  const toastTimer = React.useRef(null);
+  const QuickWeightPicker = window.QuickWeightPicker;
 
   React.useEffect(()=>{
     if(!open) return;
-    setStep(0);
+    setWeightKg(WEIGHT_ASSESS_REC_W);
+    setHeightCm(WEIGHT_ASSESS_PROF_H);
+    setMode(null);
+    setTargetKg(null);
+    setWeeks(null);
+    setPickerKey(null);
+    setPickerOptions([]);
+    setWeightKeypadOpen(false);
+    setToast('');
   }, [open]);
 
-  const goNext = ()=>{
-    if(step >= totalSteps - 1){
-      onComplete?.({ age, heightCm, weightKg, targetKg, weeks });
-      return;
-    }
-    setStep(v=>v + 1);
+  React.useEffect(()=>()=>{
+    if(toastTimer.current) window.clearTimeout(toastTimer.current);
+  }, []);
+
+  const showToast = (text)=>{
+    setToast(text);
+    if(toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(()=>setToast(''), 1500);
   };
-  const goPrev = ()=>{
-    if(step <= 0){
-      onClose?.();
+
+  const hasBase = weightKg != null && heightCm != null;
+  const [bmiLo, bmiHi] = heightCm != null ? weightAssessBmiRange(heightCm) : [0, 0];
+  const showTarget = Boolean(mode && hasBase);
+  const showWeeks = Boolean(mode && mode !== 'keep' && targetKg != null && hasBase);
+  const directionOk = targetKg == null
+    ? true
+    : (mode === 'lose' ? targetKg < weightKg : mode === 'gain' ? targetKg > weightKg : true);
+  const canSubmit = Boolean(
+    hasBase && mode && targetKg != null && (mode === 'keep' || weeks != null) && directionOk
+  );
+
+  const pickerMeta = React.useMemo(()=>{
+    if(pickerKey === 'h') return {title:'当前身高', subtitle:''};
+    if(pickerKey === 'g') return {title:'目标体重', subtitle:`建议范围 ${bmiLo}–${bmiHi} 公斤`};
+    if(pickerKey === 't'){
+      const rec = targetKg != null ? weightAssessRecWeeks(weightKg, targetKg) : 0;
+      return {
+        title:'计划时间',
+        subtitle:`推荐 ${rec} 周，每周约${mode === 'lose' ? '减' : '增'} 0.3 公斤`,
+      };
+    }
+    return {title:'', subtitle:''};
+  }, [pickerKey, bmiLo, bmiHi, weightKg, targetKg, mode]);
+
+  const openPicker = (key, overrides={})=>{
+    const nextWeight = overrides.weightKg ?? weightKg;
+    const nextHeight = overrides.heightCm ?? heightCm;
+    const nextMode = overrides.mode ?? mode;
+    const nextTarget = overrides.targetKg ?? targetKg;
+    const nextWeeks = overrides.weeks ?? weeks;
+    if((key === 'g' || key === 't') && !(nextWeight != null && nextHeight != null && nextMode)) return;
+    let options = [];
+    let def = 0;
+    if(key === 'h'){
+      options = weightAssessSeq(130, 200, 1);
+      def = weightAssessNear(options, nextHeight ?? 160);
+    }else if(key === 'g'){
+      let from = 30;
+      let to = 120;
+      if(nextMode === 'lose'){ from = 30; to = nextWeight - 0.5; }
+      else if(nextMode === 'gain'){ from = nextWeight + 0.5; to = 120; }
+      else { from = nextWeight - 5; to = nextWeight + 5; }
+      options = weightAssessSeq(from, to, 0.5);
+      const [lo, hi] = weightAssessBmiRange(nextHeight);
+      const fallback = nextMode === 'lose'
+        ? Math.max(lo, nextWeight - 3)
+        : nextMode === 'gain'
+          ? Math.min(hi, nextWeight + 3)
+          : nextWeight;
+      def = weightAssessNear(options, nextTarget ?? fallback);
+    }else if(key === 't'){
+      const min = weightAssessMinWeeks(nextWeight, nextTarget);
+      options = weightAssessSeq(min, Math.max(min + 20, 52), 1);
+      def = weightAssessNear(options, nextWeeks ?? weightAssessRecWeeks(nextWeight, nextTarget));
+    }
+    setPickerOptions(options);
+    setPickerKey(key);
+    setPickerIndex(def);
+  };
+
+  const closePicker = ()=>setPickerKey(null);
+
+  const confirmPicker = ()=>{
+    const value = pickerOptions[pickerIndex];
+    if(value == null){ closePicker(); return; }
+    if(pickerKey === 'h'){
+      setHeightCm(value);
+      closePicker();
       return;
     }
-    setStep(v=>v - 1);
+    if(pickerKey === 'g'){
+      setTargetKg(value);
+      setWeeks(null);
+      closePicker();
+      if(mode !== 'keep'){
+        window.setTimeout(()=>openPicker('t', {targetKg:value}), 380);
+      }
+      return;
+    }
+    if(pickerKey === 't'){
+      setWeeks(value);
+      closePicker();
+    }
+  };
+
+  const chooseMode = (nextMode)=>{
+    if(weightKg == null || heightCm == null){
+      showToast('请先添加' + (weightKg == null ? '体重' : '身高'));
+      return;
+    }
+    if(mode === nextMode) return;
+    setMode(nextMode);
+    setTargetKg(null);
+    setWeeks(null);
+  };
+
+  const renderRowValue = (value, unit, emptyText='请添加')=>{
+    if(value == null){
+      return (
+        <>
+          <span className="weight-assess-row-ph">{emptyText}</span>
+          <span className="weight-assess-row-add" aria-hidden="true">+</span>
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="weight-assess-row-val">{unit === '周' ? value : Number(value).toFixed(unit === '厘米' ? 0 : 1)} {unit}</span>
+        <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+      </>
+    );
+  };
+
+  const targetNote = (()=>{
+    if(!showTarget) return null;
+    if(targetKg != null && targetKg < bmiLo){
+      return {warn:true, text:`目标低于建议范围，建议不低于 ${bmiLo} 公斤`};
+    }
+    return {warn:false, text:`目标体重建议在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+  })();
+
+  const weeksNote = showWeeks
+    ? `建议计划不短于 ${weightAssessMinWeeks(weightKg, targetKg)} 周（每周${mode === 'lose' ? '减' : '增'}重不超过 0.45 公斤）`
+    : '';
+
+  const renderPickerOption = (item)=>{
+    if(pickerKey === 'g'){
+      return <>{Number(item).toFixed(1)}<small>公斤</small></>;
+    }
+    if(pickerKey === 'h'){
+      return <>{item}<small>厘米</small></>;
+    }
+    if(pickerKey === 't'){
+      const end = new Date(2026, 9, 30 + item * 7);
+      return <>{item} 周<small>{end.getMonth() + 1}月{end.getDate()}日完成</small></>;
+    }
+    return item;
+  };
+
+  const handleWeightKeypadSubmit = (payload)=>{
+    const raw = Number(payload?.value);
+    if(!Number.isFinite(raw)) return;
+    const kg = payload?.unit === 'jin' ? raw / 2 : raw;
+    setWeightKg(Number(kg.toFixed(1)));
+    setTargetKg(null);
+    setWeeks(null);
+    setWeightKeypadOpen(false);
   };
 
   return (
     <section
-      className={'review-cycle-detail is-fullscreen-detail weight-assess-page' + (open ? ' is-open' : '')}
+      className={'review-cycle-detail is-fullscreen-detail weight-assess-page is-simple' + (open ? ' is-open' : '')}
       aria-hidden={!open}
-      aria-label="体重测评"
+      aria-label="体重管理测评"
     >
       <div className="weight-assess-nav">
-        <button type="button" className="weight-assess-back" aria-label="返回" onClick={goPrev}>
+        <button type="button" className="weight-assess-back" aria-label="返回" onClick={onClose}>
           <ReviewBackIcon/>
         </button>
-        <span className="weight-assess-nav-title">测评</span>
+        <span className="weight-assess-nav-title">体重管理测评</span>
       </div>
-      <div className="weight-assess-shell">
-        <p className="weight-assess-lead">完成测评，为你生成专属方案</p>
-        <div className="weight-assess-progress" role="progressbar" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={step + 1}>
-          <span style={{width: progress + '%'}}/>
+      <div className="weight-assess-simple-body">
+        <p className="weight-assess-simple-intro">美柚将根据以下信息为你制定体重计划</p>
+        <button type="button" className="weight-assess-row" onClick={()=>setWeightKeypadOpen(true)}>
+          <span className="weight-assess-row-key">当前体重</span>
+          <span className="weight-assess-row-v">{renderRowValue(weightKg, '公斤')}</span>
+        </button>
+        <button type="button" className="weight-assess-row" onClick={()=>openPicker('h')}>
+          <span className="weight-assess-row-key">当前身高</span>
+          <span className="weight-assess-row-v">{renderRowValue(heightCm, '厘米')}</span>
+        </button>
+        <div className="weight-assess-simple-gap"/>
+        <div className="weight-assess-row is-static">
+          <span className="weight-assess-row-key">你的计划</span>
+          <span className="weight-assess-seg" role="group" aria-label="计划类型">
+            {WEIGHT_ASSESS_MODES.map(item=>(
+              <button
+                key={item.key}
+                type="button"
+                className={mode === item.key ? 'is-on' : ''}
+                onClick={()=>chooseMode(item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </span>
         </div>
-
-        {step === 0 ? (
-          <div className="weight-assess-panel">
-            <h2 className="weight-assess-question">目前属于以下哪个年龄段？</h2>
-            <div className="weight-assess-choices">
-              {WEIGHT_ASSESS_AGE_OPTIONS.map(item=>(
-                <button
-                  key={item}
-                  type="button"
-                  className={'weight-assess-choice' + (age === item ? ' is-active' : '')}
-                  onClick={()=>setAge(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {step === 1 ? (
-          <div className="weight-assess-panel">
-            <h2 className="weight-assess-question">请选择你的身高体重</h2>
-            <p className="weight-assess-sub">用于计算 BMI 与目标建议</p>
-            <WeightAssessRuler value={heightCm} min={140} max={185} step={0.5} unit="厘米" onChange={setHeightCm}/>
-            <WeightAssessRuler value={weightKg} min={35} max={90} step={0.1} unit="公斤" onChange={setWeightKg}/>
-          </div>
-        ) : null}
-
-        {step === 2 ? (
-          <div className="weight-assess-panel">
-            <h2 className="weight-assess-question">你的体重是？</h2>
-            <p className="weight-assess-sub">精准体重数据将用于计算你的 BMI</p>
-            <WeightAssessRuler value={weightKg} min={35} max={90} step={0.1} unit="公斤" onChange={setWeightKg}/>
-            <div className="weight-assess-bmi-card">
-              <div className="weight-assess-bmi-head">
-                <span>你的 BMI</span>
-                <em>{bmi.toFixed(1)} {bmi < 18.5 ? '偏瘦' : bmi < 24 ? '理想' : bmi < 28 ? '偏胖' : '肥胖'}</em>
-              </div>
-              <div className="weight-assess-bmi-bar" aria-hidden="true">
-                <i style={{left: Math.max(4, Math.min(96, ((bmi - 14) / 20) * 100)) + '%'}}/>
-              </div>
-              <p>标准体重，进阶管理需注意提升代谢水平，可采取 16:8 饮食法，配合运动。</p>
-            </div>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
-          <div className="weight-assess-panel">
-            <h2 className="weight-assess-question">你的目标体重是？</h2>
-            <WeightAssessRuler
-              value={targetKg}
-              min={35}
-              max={Math.max(36, weightKg)}
-              step={0.1}
-              unit="公斤"
-              onChange={setTargetKg}
-              markerLabel="最新体重"
-              markerValue={weightKg}
-            />
-          </div>
-        ) : null}
-
-        {step === 4 ? (
-          <div className="weight-assess-panel">
-            <h2 className="weight-assess-question">你希望多久达到目标体重？</h2>
-            <div className="weight-assess-week-picker" role="group" aria-label="计划周数">
-              {[8, 11, 16, 24].map(item=>(
-                <button
-                  key={item}
-                  type="button"
-                  className={'weight-assess-choice' + (weeks === item ? ' is-active' : '')}
-                  onClick={()=>setWeeks(item)}
-                >
-                  约 {item} 周
-                </button>
-              ))}
-            </div>
-            <div className="weight-assess-summary-card">
-              <p>需要约 <b>{weeks}</b> 周</p>
-              <p>每周减 <b>{weeklyLoss}</b> 公斤</p>
-              <span>适中模式：黄金减肥速度，适合绝大多数人，你也一定可以的！</span>
-            </div>
-          </div>
-        ) : null}
-
-        {step === 5 ? (
-          <div className="weight-assess-panel is-result">
-            <h2 className="weight-assess-question">你将达到的体重变化趋势</h2>
-            <div className="weight-assess-trend-card">
-              <svg viewBox="0 0 280 120" className="weight-assess-trend-svg" aria-hidden="true">
-                <path d="M20 28 C80 34 140 62 260 92" fill="none" stroke="#ff8a3d" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="20" cy="28" r="4" fill="#4f7cae"/>
-                <circle cx="260" cy="92" r="4" fill="#ff8a3d"/>
-              </svg>
-              <ul className="weight-assess-trend-meta">
-                <li><span>年龄</span><em>{age}</em></li>
-                <li><span>当前 BMI</span><em>{bmi.toFixed(1)}</em></li>
-                <li><span>代谢水平</span><em>适中</em></li>
-                <li><span>体重目标</span><em>{targetKg.toFixed(1)}公斤</em></li>
-                <li><span>减肥难度</span><em>适中</em></li>
-              </ul>
-            </div>
-            <div className="weight-assess-cheer">
-              <strong>太棒了！</strong>
-              <p>我们一起陪你达成体重管理目标</p>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="weight-assess-foot">
-          {step > 0 && step < totalSteps - 1 ? (
-            <button type="button" className="weight-assess-prev" onClick={goPrev}>上一题</button>
-          ) : <span/>}
-          <button type="button" className="weight-assess-next" onClick={goNext}>
-            {step >= totalSteps - 1 ? '生成我的计划' : '下一步'}
+        <div className={'weight-assess-simple-block' + (showTarget ? ' is-show' : '')}>
+          <div className="weight-assess-simple-gap is-sm"/>
+          <button type="button" className="weight-assess-row" onClick={()=>openPicker('g')}>
+            <span className="weight-assess-row-key">目标体重</span>
+            <span className="weight-assess-row-v">
+              {targetKg == null ? (
+                <>
+                  <span className="weight-assess-row-ph">请选择</span>
+                  <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
+                </>
+              ) : (
+                <>
+                  <span className="weight-assess-row-val">{Number(targetKg).toFixed(1)} 公斤</span>
+                  <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+                </>
+              )}
+            </span>
           </button>
+          {targetNote ? (
+            <p className={'weight-assess-simple-note' + (targetNote.warn ? ' is-warn' : '')}>{targetNote.text}</p>
+          ) : null}
+        </div>
+        <div className={'weight-assess-simple-block' + (showWeeks ? ' is-show' : '')}>
+          <button type="button" className="weight-assess-row" onClick={()=>openPicker('t')}>
+            <span className="weight-assess-row-key">计划时间</span>
+            <span className="weight-assess-row-v">
+              {weeks == null ? (
+                <>
+                  <span className="weight-assess-row-ph">请选择</span>
+                  <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
+                </>
+              ) : (
+                <>
+                  <span className="weight-assess-row-val">{weeks} 周</span>
+                  <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+                </>
+              )}
+            </span>
+          </button>
+          {weeksNote ? <p className="weight-assess-simple-note">{weeksNote}</p> : null}
         </div>
       </div>
+      <div className="weight-assess-simple-foot">
+        <button
+          type="button"
+          className={'weight-assess-simple-btn' + (canSubmit ? ' is-on' : '')}
+          disabled={!canSubmit}
+          onClick={()=>{
+            if(!canSubmit) return;
+            onComplete?.({
+              weightKg,
+              heightCm,
+              mode,
+              targetKg,
+              weeks: mode === 'keep' ? null : weeks,
+            });
+          }}
+        >
+          完成
+        </button>
+      </div>
+      <WeightAssessWheelPicker
+        open={Boolean(pickerKey)}
+        title={pickerMeta.title}
+        subtitle={pickerMeta.subtitle}
+        options={pickerOptions}
+        index={pickerIndex}
+        onIndexChange={setPickerIndex}
+        onCancel={closePicker}
+        onConfirm={confirmPicker}
+        renderOption={renderPickerOption}
+      />
+      {weightKeypadOpen && QuickWeightPicker ? (
+        <QuickWeightPicker
+          onSubmit={handleWeightKeypadSubmit}
+          onCancel={()=>setWeightKeypadOpen(false)}
+        />
+      ) : null}
+      {toast ? <div className="weight-assess-toast" role="status">{toast}</div> : null}
+    </section>
+  );
+}
+
+const WEIGHT_DEEP_PARTS = [
+  {title:'第一部分：基本信息', sub:'了解你的身体情况，判断目标是否合理', icon:'📋'},
+  {title:'第二部分：饮食偏好', sub:'了解你怎么吃，为你推荐食谱', icon:'🥗'},
+  {title:'第三部分：运动偏好', sub:'了解你方便怎么动，为你安排运动', icon:'👟'},
+  {title:'最后一步：确认方案', sub:'确认信息后生成你的专属方案', icon:'✨'},
+];
+
+const WEIGHT_DEEP_QUESTIONS = [
+  {id:'basic', part:0, title:'确认你的基本信息', sub:'已有信息会自动带入', type:'basic'},
+  {id:'plan', part:0, title:'你的体重计划是？', type:'one', options:[['减重','降低体重'],['保持','稳定在当前体重'],['增重','适当增加体重']]},
+  {id:'way', part:0, title:'你更想怎么减？', sub:'没有对错，选更容易坚持的', type:'one', options:[['以调整饮食为主','运动少一点也没关系'],['以增加运动为主','吃得照常，多动一些'],['饮食和运动都调整','推荐，效果更稳']], when:answers=>answers.plan === 0},
+  {id:'meal', part:1, title:'你的三餐习惯是？', type:'one', options:[['三餐比较规律'],['经常不吃早餐'],['经常吃夜宵'],['三餐不太固定']]},
+  {id:'where', part:1, title:'你平时主要在哪吃？', type:'one', options:[['自己做'],['食堂 / 单位餐'],['外卖为主'],['经常聚餐']]},
+  {id:'hard', part:1, title:'你觉得最难控制的是？', sub:'可多选', type:'multi', exclusive:4, options:[['奶茶饮料'],['零食甜品'],['主食吃得多'],['夜宵'],['都还好']]},
+  {id:'avoid', part:1, title:'你有忌口吗？', sub:'可多选，推荐食谱会避开', type:'multi', exclusive:0, options:[['没有忌口'],['素食'],['不吃辣'],['不吃海鲜'],['乳糖不耐']]},
+  {id:'days', part:2, title:'每周能运动几天？', type:'one', options:[['1 天以内','先从走路开始'],['2–3 天'],['4–5 天'],['几乎每天']]},
+  {id:'mins', part:2, title:'每次大概能运动多久？', type:'one', options:[['10 分钟','碎片时间也可以'],['20 分钟'],['30 分钟'],['45 分钟以上']]},
+  {id:'place', part:2, title:'你方便在哪运动？', sub:'可多选', type:'multi', options:[['在家，没有器械'],['户外走路 / 跑步'],['健身房'],['膝盖不太好','需要低冲击动作']]},
+];
+
+function WeightDeepAssessPage({open, onClose, onComplete}){
+  const initialAnswers = {birth:1996, height:160, weight:48.6};
+  const [answers, setAnswers] = React.useState(initialAnswers);
+  const [index, setIndex] = React.useState(0);
+  const [pickerKey, setPickerKey] = React.useState(null);
+  const [pickerIndex, setPickerIndex] = React.useState(0);
+  const [pickerOptions, setPickerOptions] = React.useState([]);
+  const [starting, setStarting] = React.useState(false);
+  const visibleQuestions = WEIGHT_DEEP_QUESTIONS.filter(item=>!item.when || item.when(answers));
+  const done = index >= visibleQuestions.length;
+  const question = done ? null : visibleQuestions[index];
+  const part = done ? 3 : question.part;
+  const partMeta = WEIGHT_DEEP_PARTS[part];
+
+  React.useEffect(()=>{
+    if(!open) return;
+    setAnswers(initialAnswers);
+    setIndex(0);
+    setPickerKey(null);
+    setStarting(false);
+  }, [open]);
+
+  const next = ()=>setIndex(value=>Math.min(visibleQuestions.length, value + 1));
+  const back = ()=>{
+    if(index <= 0){ onClose?.(); return; }
+    setIndex(value=>Math.max(0, value - 1));
+  };
+  const pickOne = optionIndex=>{
+    setAnswers(value=>({...value, [question.id]:optionIndex}));
+    window.setTimeout(next, 180);
+  };
+  const toggleMulti = optionIndex=>{
+    const selected = Array.isArray(answers[question.id]) ? answers[question.id] : [];
+    let nextSelected;
+    if(optionIndex === question.exclusive){
+      nextSelected = selected.includes(optionIndex) ? [] : [optionIndex];
+    }else{
+      const withoutExclusive = selected.filter(value=>value !== question.exclusive);
+      nextSelected = withoutExclusive.includes(optionIndex)
+        ? withoutExclusive.filter(value=>value !== optionIndex)
+        : [...withoutExclusive, optionIndex];
+    }
+    setAnswers(value=>({...value, [question.id]:nextSelected}));
+  };
+  const answerText = id=>{
+    const item = WEIGHT_DEEP_QUESTIONS.find(entry=>entry.id === id);
+    const value = answers[id];
+    if(!item || value == null) return '—';
+    return Array.isArray(value)
+      ? value.map(option=>item.options[option]?.[0]).filter(Boolean).join('、')
+      : item.options[value]?.[0] || '—';
+  };
+  const openPicker = key=>{
+    let options = [];
+    let value = 0;
+    if(key === 'birth'){ options = weightAssessSeq(1960, 2008, 1); value = answers.birth; }
+    if(key === 'height'){ options = weightAssessSeq(140, 190, 1); value = answers.height; }
+    if(key === 'weight'){ options = weightAssessSeq(35, 100, .1); value = answers.weight; }
+    setPickerOptions(options);
+    setPickerIndex(weightAssessNear(options, value));
+    setPickerKey(key);
+  };
+  const confirmPicker = ()=>{
+    const value = pickerOptions[pickerIndex];
+    if(value != null) setAnswers(current=>({...current, [pickerKey]:value}));
+    setPickerKey(null);
+  };
+  const pickerTitle = pickerKey === 'birth' ? '出生年份' : pickerKey === 'height' ? '身高' : '体重';
+  const pickerUnit = pickerKey === 'birth' ? '年' : pickerKey === 'height' ? '厘米' : '公斤';
+  const planMode = answers.plan ?? 0;
+  const planTitle = planMode === 1 ? '稳定在 48.6 公斤' : planMode === 2 ? '12 周增 3.0 公斤' : '12 周减 3.6 公斤';
+  const planRoute = planMode === 1 ? '48.6kg · 保持稳定' : planMode === 2 ? '48.6kg → 51.6kg' : '48.6kg → 45.0kg';
+  const dailyKcal = planMode === 1 ? 1800 : planMode === 2 ? 2050 : 1450;
+  const daysMap = ['1','2–3','4–5','6–7'];
+  const minsMap = ['10','20','30','45'];
+
+  const renderBody = ()=>{
+    if(done){
+      const rows = [
+        ['方式', planMode === 0 ? answerText('way') : answerText('plan')],
+        ['饮食', answerText('where') + ' · ' + answerText('meal')],
+        ['难控制', answerText('hard')],
+        ['忌口', answerText('avoid')],
+        ['运动', answerText('place')],
+      ];
+      return (
+        <div className="weight-deep-result">
+          <small>你的专属方案</small>
+          <h2>{planTitle}</h2>
+          <p>{planRoute}</p>
+          <div className="weight-deep-kpis">
+            <div><span>每日热量</span><b>{dailyKcal}</b><i>kcal</i></div>
+            <div><span>每周运动</span><b>{daysMap[answers.days ?? 1]}</b><i>次</i></div>
+            <div><span>每次</span><b>{minsMap[answers.mins ?? 1]}</b><i>分钟</i></div>
+          </div>
+          <div className="weight-deep-summary">
+            <header><b>你的偏好</b><button type="button" onClick={()=>setIndex(3)}>修改 ›</button></header>
+            {rows.map(row=><div key={row[0]}><span>{row[0]}</span><b>{row[1]}</b></div>)}
+          </div>
+        </div>
+      );
+    }
+    const selected = answers[question.id];
+    return (
+      <div className="weight-deep-card">
+        <div className="weight-deep-question">
+          <b>{question.title}</b>
+          {question.sub ? <small>{question.sub}</small> : null}
+        </div>
+        {question.type === 'basic' ? (
+          <>
+            <div className="weight-deep-basic">
+              <button type="button" onClick={()=>openPicker('birth')}><span>出生日期</span><b>{answers.birth}年9月27日</b></button>
+              <button type="button" onClick={()=>openPicker('height')}><span>身高</span><b>{answers.height} 厘米</b></button>
+              <button type="button" onClick={()=>openPicker('weight')}><span>体重</span><b>{Number(answers.weight).toFixed(1)} 公斤</b></button>
+            </div>
+            <p className="weight-deep-source">来自个人资料和最近一次记录，有变化可点击修改</p>
+            <button type="button" className="weight-deep-next" onClick={next}>确认，下一题</button>
+          </>
+        ) : (
+          <>
+            <div className={'weight-deep-options' + (question.type === 'multi' ? ' is-multi' : '')}>
+              {question.options.map((option, optionIndex)=>{
+                const isOn = question.type === 'multi'
+                  ? (Array.isArray(selected) && selected.includes(optionIndex))
+                  : selected === optionIndex;
+                return (
+                  <button
+                    key={option[0]}
+                    type="button"
+                    className={isOn ? 'is-on' : ''}
+                    onClick={()=>question.type === 'multi' ? toggleMulti(optionIndex) : pickOne(optionIndex)}
+                  >
+                    <b>{option[0]}</b>
+                    {option[1] ? <small>{option[1]}</small> : null}
+                  </button>
+                );
+              })}
+            </div>
+            {question.type === 'multi' ? (
+              <button type="button" className="weight-deep-next" disabled={!Array.isArray(selected) || !selected.length} onClick={next}>下一题</button>
+            ) : null}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <section className={'review-cycle-detail is-fullscreen-detail weight-deep-page' + (open ? ' is-open' : '')} aria-hidden={!open} aria-label="会员体重管理深度测评">
+      <div className="weight-deep-nav">
+        <button type="button" aria-label="返回" onClick={back}><ReviewBackIcon/></button>
+        {done ? <b>测评结果</b> : null}
+        <span/>
+      </div>
+      <div className="weight-deep-progress" aria-label={'第' + (part + 1) + '部分，共4部分'}>
+        {WEIGHT_DEEP_PARTS.map((item, partIndex)=><i key={item.title}><b style={{width:partIndex < part || (done && partIndex === 3) ? '100%' : partIndex > part ? '0%' : '55%'}}/></i>)}
+        <span>{done ? '完成' : (index + 1) + '/' + visibleQuestions.length}</span>
+      </div>
+      <header className="weight-deep-hero">
+        <div><h2>{partMeta.title}</h2><p>{partMeta.sub}</p></div>
+        <span aria-hidden="true">{partMeta.icon}</span>
+      </header>
+      <div className="weight-deep-stage">{renderBody()}</div>
+      {done ? (
+        <div className="weight-deep-foot">
+          <button type="button" disabled={starting} onClick={()=>{
+            setStarting(true);
+            window.setTimeout(()=>onComplete?.(answers), 700);
+          }}>{starting ? '正在开启方案…' : '开始执行方案'}</button>
+        </div>
+      ) : index > 0 ? <button type="button" className="weight-deep-prev" onClick={back}>上一题</button> : null}
+      <WeightAssessWheelPicker
+        open={Boolean(pickerKey)}
+        title={pickerTitle}
+        options={pickerOptions}
+        index={pickerIndex}
+        onIndexChange={setPickerIndex}
+        onCancel={()=>setPickerKey(null)}
+        onConfirm={confirmPicker}
+        renderOption={item=><>{pickerKey === 'weight' ? Number(item).toFixed(1) : item}<small>{pickerUnit}</small></>}
+      />
     </section>
   );
 }
@@ -1007,6 +1405,8 @@ const WEIGHT_GOAL_WEEK_PLAN_TASKS = [
     title:'运动 30 分钟',
     tip:'晚饭后快走 30 分钟，可拆成两次',
     count:'本周 4/5',
+    checkKind:'exercise',
+    exercisePreset:{type:'walk', minutes:30},
     done:false,
   },
   {
@@ -1016,8 +1416,9 @@ const WEIGHT_GOAL_WEEK_PLAN_TASKS = [
     fg:'#8E74E6',
     title:'称体重',
     tip:'早起空腹、排便后称，更能看清趋势',
-    count:'本周 7/7',
-    done:true,
+    count:'本周 6/7',
+    checkKind:'weight',
+    done:false,
   },
   {
     id:'diet',
@@ -1027,7 +1428,8 @@ const WEIGHT_GOAL_WEEK_PLAN_TASKS = [
     title:'拍下三餐',
     tip:'拍下就好，不用精确算热量',
     count:'本周 5/7',
-    done:true,
+    checkKind:'diet',
+    done:false,
   },
 ];
 
@@ -1610,6 +2012,7 @@ const WEIGHT_GOAL_PAID_PLAN_TASKS = [
     bg:'#FFF3EA',
     fg:'#F08A4B',
     title:'晚餐 · 清蒸鲈鱼 + 西兰花 + 半碗糙米',
+    checkKind:'diet',
     done:false,
     sub:'约 430 kcal · 15 分钟做好',
     det:'鲈鱼 150g 清蒸 8 分钟；西兰花焯水；糙米饭半碗。外食可点：清蒸鱼 + 白灼青菜，米饭减半',
@@ -1621,6 +2024,8 @@ const WEIGHT_GOAL_PAID_PLAN_TASKS = [
     bg:'#EAF8F1',
     fg:'#3FB385',
     title:'20 分钟燃脂操',
+    checkKind:'exercise',
+    exercisePreset:{type:'hiit', minutes:20},
     done:false,
     sub:'跟练视频 · 预计消耗 150 kcal',
     det:'低冲击，不跳跃，适合晚饭 1 小时后在家做',
@@ -1632,8 +2037,9 @@ const WEIGHT_GOAL_PAID_PLAN_TASKS = [
     bg:'#F4F0FF',
     fg:'#8E74E6',
     title:'称体重',
-    done:true,
-    sub:'今天 48.6kg · 较昨天 −0.2',
+    checkKind:'weight',
+    done:false,
+    sub:'早起空腹称，看清这周趋势',
   },
   {
     id:'breakfast',
@@ -1655,11 +2061,41 @@ const WEIGHT_GOAL_PAID_PLAN_TASKS = [
   },
 ];
 
-function WeightGoalPaidExclusiveCard({onGoCheckIn}){
+function bumpPlanWeekCount(count, checked){
+  if(!count || !checked) return count;
+  return String(count).replace(/(\d+)\/(\d+)/, (_, a, b)=>Math.min(Number(b), Number(a) + 1) + '/' + b);
+}
+
+function usePlanTasksWithCheckIn(planType, open){
+  window.usePlanCheckInVersion?.();
+  const [justChecked, setJustChecked] = React.useState(null);
+  React.useEffect(()=>{
+    if(!open) return undefined;
+    const id = window.planCheckInStore?.consumeLastChecked(planType);
+    if(!id) return undefined;
+    setJustChecked(id);
+    const timer = setTimeout(()=>setJustChecked(null), 2200);
+    return ()=>clearTimeout(timer);
+  }, [open, planType]);
+  const base = planType === 'paid' ? WEIGHT_GOAL_PAID_PLAN_TASKS : WEIGHT_GOAL_WEEK_PLAN_TASKS;
+  const tasks = base.map(item=>{
+    const checked = !item.done && !!window.planCheckInStore?.isChecked(planType, item.id);
+    return {
+      ...item,
+      done: item.done || checked,
+      count: bumpPlanWeekCount(item.count, checked),
+      sub: checked && item.checkedSub ? item.checkedSub : item.sub,
+    };
+  });
+  return {tasks, justChecked};
+}
+
+function WeightGoalPaidExclusiveCard({onGoCheckIn, open}){
   const eaten = 940;
   const burn = 0;
   const left = WEIGHT_GOAL_PAID_BUDGET - eaten + burn;
-  const tasks = [...WEIGHT_GOAL_PAID_PLAN_TASKS].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
+  const {tasks:paidTasks, justChecked} = usePlanTasksWithCheckIn('paid', open);
+  const tasks = [...paidTasks].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
   const ringR = 34;
   const ringC = 2 * Math.PI * ringR;
   const eatenPct = Math.min(1, eaten / WEIGHT_GOAL_PAID_BUDGET);
@@ -1714,10 +2150,10 @@ function WeightGoalPaidExclusiveCard({onGoCheckIn}){
           return (
             <div
               key={item.id}
-              className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo')}
+              className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo') + (justChecked === item.id ? ' is-just-checked' : '')}
               style={{'--wg-paid-bg':item.bg, '--wg-paid-fg':item.fg}}
               role="listitem"
-              onClick={item.done ? undefined : onGoCheckIn}
+              onClick={item.done || !onGoCheckIn ? undefined : ()=>onGoCheckIn(item, 'paid')}
             >
               <div className="review-weight-goal-paid-task-main">
                 <span className="review-weight-goal-paid-task-emoji" aria-hidden="true">{item.emoji}</span>
@@ -1746,8 +2182,9 @@ function WeightGoalPaidExclusiveCard({onGoCheckIn}){
   );
 }
 
-function WeightGoalWeekPlanCard({onGoCheckIn, onAssess}){
-  const tasks = [...WEIGHT_GOAL_WEEK_PLAN_TASKS].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
+function WeightGoalWeekPlanCard({onGoCheckIn, onUpgrade, open}){
+  const {tasks:freeTasks, justChecked} = usePlanTasksWithCheckIn('free', open);
+  const tasks = [...freeTasks].sort((a, b)=>(a.done === b.done ? 0 : (a.done ? 1 : -1)));
   return (
     <section className="review-detail-card review-weight-goal-week-plan-card is-today" aria-label="今日计划">
       <header className="review-weight-goal-week-plan-head is-compact">
@@ -1758,10 +2195,10 @@ function WeightGoalWeekPlanCard({onGoCheckIn, onAssess}){
         {tasks.map(item=>(
           <div
             key={item.id}
-            className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo')}
+            className={'review-weight-goal-paid-task' + (item.done ? ' is-done' : ' is-todo') + (justChecked === item.id ? ' is-just-checked' : '')}
             style={{'--wg-paid-bg':item.bg, '--wg-paid-fg':item.fg}}
             role="listitem"
-            onClick={item.done ? undefined : onGoCheckIn}
+            onClick={item.done || !onGoCheckIn ? undefined : ()=>onGoCheckIn(item, 'free')}
           >
             <div className="review-weight-goal-paid-task-main">
               <span className="review-weight-goal-paid-task-emoji" aria-hidden="true">{item.emoji}</span>
@@ -1781,7 +2218,7 @@ function WeightGoalWeekPlanCard({onGoCheckIn, onAssess}){
           </div>
         ))}
       </div>
-      <WeightGoalAssessBanner onAssess={onAssess}/>
+      <WeightGoalAssessBanner onAssess={onUpgrade}/>
     </section>
   );
 }
@@ -2223,6 +2660,185 @@ function WeightGoalTrendDiscovery({units, range}){
   );
 }
 
+// ===== 付费 · 体重波动解读：看到上涨时先对照原因，减少焦虑 =====
+const WEIGHT_FLUCT_CAUSES = {
+  salty:{label:'吃咸 / 外食', mech:'钠摄入多，身体会暂时多留住一些水', watch:' 1～3 天内回落', fat:false},
+  carb:{label:'碳水回补', mech:'少吃碳水后再吃，糖原补回来时会带着水一起储存', watch:' 1～3 天内回落', fat:false},
+  period:{label:'经期 / 黄体期', mech:'激素变化让身体储水、容易腹胀，食欲也会变', watch:'几天到一周内回落', fat:false},
+  exercise:{label:'运动后储水', mech:'肌肉修复和糖原储备会暂时多带一些水分', watch:' 2～5 天内回落', fat:false},
+  volume:{label:'食物重量大', mech:'蔬菜、汤水热量低但有重量，还没消化排出', watch:' 1～2 天内回落', fat:false},
+  surplus:{label:'连续吃超了', mech:'多天摄入都高于消耗，才可能真的长了一点脂肪', watch:'会持续一周以上', fat:true},
+  unknown:{label:'水分 / 排便波动', mech:'没睡好、排便少都会让体重卡住或小涨，这次没有明显的饮食运动原因', watch:' 1～2 天内回落', fat:false},
+};
+const WEIGHT_FLUCT_OTHER_HINTS = [
+  {key:'sleep', label:'没睡好 / 熬夜', text:'压力和睡眠不足会影响水分调节，饿感也更强，通常 1～3 天恢复。'},
+  {key:'stool', label:'排便少', text:'肠道里的内容物也有重量，排出后就回来了，这部分不是脂肪。'},
+  {key:'soup', label:'汤水喝得多', text:'汤、粥、饮料会直接加在秤上，第二天基本就消掉了。'},
+];
+const WEIGHT_FLUCT_SALTY = ['hotpot', 'noodle', 'beef'];
+const WEIGHT_FLUCT_CARB = ['rice', 'noodle', 'corn'];
+const WEIGHT_FLUCT_PERIOD_START = Math.round((Date.UTC(2026, 4, 19) - Date.UTC(2024, 11, 1)) / 864e5);
+
+function weightFluctCycleDay(day){
+  return ((day.idx - WEIGHT_FLUCT_PERIOD_START) % 29 + 29) % 29;
+}
+
+function weightFluctFoodsOf(day){
+  return (day?.meals || []).filter(Boolean).map(meal=>meal[0]);
+}
+
+function weightFluctCauses(day, prev, prev2){
+  const causes = [];
+  const prevFoods = weightFluctFoodsOf(prev);
+  const prev2Foods = weightFluctFoodsOf(prev2);
+  const cd = weightFluctCycleDay(day);
+  if(prev && prev.st === 'over' && prev2 && prev2.st === 'over'){
+    causes.push({key:'surplus', ev:<>前两天摄入都超出预算（<b>{prev2.in}</b>、<b>{prev.in} kcal</b>）</>});
+  }
+  if(prevFoods.some(food=>WEIGHT_FLUCT_SALTY.includes(food))){
+    const name = prevFoods.includes('hotpot') ? '火锅' : (prevFoods.includes('noodle') ? '面食外卖' : '红烧/卤味');
+    causes.push({key:'salty', ev:<>前一天吃了<b>{name}</b>，口味偏咸</>});
+  }
+  if(prev && prevFoods.some(food=>WEIGHT_FLUCT_CARB.includes(food)) && prev2 && (prev2.in < 900 || !prev2Foods.some(food=>WEIGHT_FLUCT_CARB.includes(food)))){
+    causes.push({key:'carb', ev:<>前天只吃了 <b>{prev2.in || 0} kcal</b>、几乎没碳水，前一天主食恢复了</>});
+  }
+  if(cd < 5){
+    causes.push({key:'period', ev:<>正处在<b>经期第 {cd + 1} 天</b></>});
+  }else if(cd >= 22){
+    causes.push({key:'period', ev:<>处在<b>黄体期</b>，离下次月经约 {29 - cd} 天</>});
+  }
+  if(prev?.ex && (prev.ex[0] === '力量' || prev.ex[2] >= 180)){
+    causes.push({key:'exercise', ev:<>前一天做了<b>{prev.ex[0]} {prev.ex[1]} 分钟</b></>});
+  }else if(day.ex && day.ex[0] === '力量'){
+    causes.push({key:'exercise', ev:<>当天做了<b>{day.ex[0]}训练</b>，肌肉在修复</>});
+  }
+  if(prev && prev.st === 'low' && prevFoods.includes('salad')){
+    causes.push({key:'volume', ev:<>前一天热量不高，但<b>蔬菜沙拉</b>分量足</>});
+  }
+  if(!causes.length) causes.push({key:'unknown', ev:<>饮食和运动都在正常范围</>});
+  return causes.slice(0, 2);
+}
+
+function weightFluctEvents(units, range){
+  const all = WEIGHT_GOAL_ALL_DAYS;
+  let days = units.flatMap(unit=>unit.days || []);
+  if(weightGoalIsAllTab(range)) days = days.slice(-28);
+  const events = [];
+  days.forEach(day=>{
+    if(day.wt == null) return;
+    let p = day.idx - 1;
+    while(p >= 0 && all[p].wt == null && day.idx - p <= 3) p -= 1;
+    const base = all[p];
+    if(!base || base.wt == null) return;
+    const delta = Number((day.wt - base.wt).toFixed(1));
+    if(delta <= 0) return;
+    let back = null;
+    for(let k = day.idx + 1; k < all.length && k <= day.idx + 5; k++){
+      if(all[k].wt != null && all[k].wt <= base.wt){ back = {days:k - day.idx, wt:all[k].wt}; break; }
+    }
+    const isRecent = !back && day.idx >= all.length - 3;
+    events.push({
+      day, base, delta, back, isRecent,
+      causes:weightFluctCauses(day, all[day.idx - 1], all[day.idx - 2]),
+    });
+  });
+  return events.reverse();
+}
+
+function WeightGoalFluctuationCard({units, range}){
+  const events = React.useMemo(()=>weightFluctEvents(units, range), [units, range]);
+  const [expanded, setExpanded] = React.useState(false);
+  const [hint, setHint] = React.useState(null);
+  const summary = React.useMemo(()=>weightGoalRangeSummary(units, range), [units, range]);
+  const isAll = weightGoalIsAllTab(range);
+  const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range];
+  const label = isAll ? '近 4 周' : ((weekIndex ?? WEIGHT_GOAL_CURRENT_WEEK) === WEIGHT_GOAL_CURRENT_WEEK ? '这周' : '第' + (weekIndex + 1) + '周');
+  const shown = expanded ? events : events.slice(0, 2);
+  const recovered = events.filter(event=>event.back).length;
+  const fatRisk = events.some(event=>event.causes.some(cause=>WEIGHT_FLUCT_CAUSES[cause.key].fat));
+  const trendText = summary.change == null
+    ? ''
+    : (summary.change < 0 ? '，整体仍下降 ' + Math.abs(summary.change).toFixed(1) + 'kg' : (summary.change > 0 ? '，整体小涨 ' + summary.change.toFixed(1) + 'kg' : '，整体持平'));
+  const otherHints = WEIGHT_FLUCT_OTHER_HINTS;
+  return (
+    <div className="review-weight-goal-discovery wg-fluct">
+      <div className="review-love-trend-title review-cycle-discovery-title">体重波动解读</div>
+      <section className="review-detail-card wg-fluct-card" aria-label="体重波动解读">
+        {events.length ? (
+          <div className={'wg-fluct-verdict' + (fatRisk ? ' is-warn' : '')}>
+            <span className="wg-fluct-verdict-icon" aria-hidden="true">{fatRisk ? '!' : '✓'}</span>
+            <p>
+              {label}体重上涨 <b>{events.length}</b> 次
+              {recovered ? <>，其中 <b>{recovered}</b> 次已在几天内回落</> : null}
+              {trendText}。
+              {fatRisk
+                ? <>有一次和连续吃超有关，值得留意，其余多是<b>水分波动</b>。</>
+                : <>大多是<b>水分波动，不是长胖</b>，不用因为一两天的数字焦虑。</>}
+            </p>
+          </div>
+        ) : (
+          <div className="wg-fluct-verdict">
+            <span className="wg-fluct-verdict-icon" aria-hidden="true">✓</span>
+            <p>{label}没有出现体重上涨，节奏很稳。之后如果某天突然变重，这里会帮你找原因。</p>
+          </div>
+        )}
+
+        {shown.map(event=>{
+          const main = WEIGHT_FLUCT_CAUSES[event.causes[0].key];
+          return (
+            <article className="wg-fluct-event" key={event.day.idx}>
+              <header className="wg-fluct-event-head">
+                <span className="wg-fluct-event-date">{event.day.d.replace('-', '/')} {event.day.today ? '今天' : event.day.w}</span>
+                <span className="wg-fluct-event-delta">+{event.delta.toFixed(1)}kg</span>
+                {event.back ? (
+                  <span className="wg-fluct-event-back is-ok">{event.back.days} 天后已回落</span>
+                ) : event.isRecent ? (
+                  <span className="wg-fluct-event-back is-watch">观察中</span>
+                ) : null}
+              </header>
+              <p className="wg-fluct-event-main">
+                大概率是<b>{main.label}</b>：{event.causes[0].ev}。{main.mech}。
+              </p>
+              {event.causes[1] ? (
+                <p className="wg-fluct-event-also">
+                  同时{event.causes[1].ev}，也会让体重偏高一点。
+                </p>
+              ) : null}
+              <footer className="wg-fluct-event-foot">
+                <span>{main.fat ? '' : '通常'}{main.watch}</span>
+                <span className={'wg-fluct-fat' + (main.fat ? ' is-fat' : '')}>{main.fat ? '可能是脂肪，需要调整' : '不是长胖'}</span>
+              </footer>
+            </article>
+          );
+        })}
+        {events.length > 2 ? (
+          <button type="button" className="wg-fluct-more" onClick={()=>setExpanded(value=>!value)}>
+            {expanded ? '收起' : '查看全部 ' + events.length + ' 次波动'}
+          </button>
+        ) : null}
+
+        <div className="wg-fluct-other">
+          <div className="wg-fluct-other-title">数据里看不到，但也常见</div>
+          <div className="wg-fluct-other-chips">
+            {otherHints.map(item=>(
+              <button
+                key={item.key}
+                type="button"
+                className={'wg-fluct-chip' + (hint === item.key ? ' is-on' : '')}
+                onClick={()=>setHint(value=>value === item.key ? null : item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {hint ? <p className="wg-fluct-other-text">{otherHints.find(item=>item.key === hint)?.text}</p> : null}
+          <p className="wg-fluct-other-tip">在点滴里顺手记下睡眠和便便，下次能判断得更准。</p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 const WEIGHT_GOAL_BASE_WT = (WEIGHT_GOAL_ALL_DAYS.find(day=>day.wt != null) || {wt:WEIGHT_GOAL_START}).wt;
 
 function weightGoalRecordsRows(){
@@ -2236,19 +2852,180 @@ function weightGoalRecordsRows(){
   return [...days].reverse();
 }
 
-function WeightGoalRecordsPage({open, onClose}){
-  const [limit, setLimit] = React.useState(60);
-  const rows = React.useMemo(()=>weightGoalRecordsRows(), []);
-  React.useEffect(()=>{ if(open) setLimit(60); }, [open]);
-  const visible = rows.slice(0, limit);
-  const byMonth = {};
-  WEIGHT_GOAL_ALL_DAYS.forEach(day=>{
-    const key = day.y + '-' + day.m;
-    (byMonth[key] = byMonth[key] || []).push(day);
-  });
+const WEIGHT_GOAL_SHEET_MEALS = ['早餐', '午餐', '晚餐', '加餐'];
+
+function weightGoalSheetMonthStats(byMonth, monthKey){
+  const monthDays = byMonth[monthKey] || [];
+  const monthWeights = monthDays.filter(item=>item.wt != null);
+  const change = monthWeights.length > 1
+    ? Number((monthWeights[0].wt - monthWeights[monthWeights.length - 1].wt).toFixed(1))
+    : 0;
+  return {change, ex:monthDays.filter(item=>item.ex).length};
+}
+
+function WeightGoalSheetDelta({delta}){
+  if(delta == null) return <span className="wg-sheet-delta is-eq">—</span>;
+  const cls = delta < 0 ? 'is-dn' : (delta > 0 ? 'is-up' : 'is-eq');
+  const text = delta < 0 ? '−' + (-delta).toFixed(1) : (delta > 0 ? '+' + delta.toFixed(1) : '0.0');
+  return <span className={'wg-sheet-delta ' + cls}>{text}</span>;
+}
+
+// 所有记录表格：左侧日期+体重冻结，右侧饮食/运动可横滑；landscape 时一屏铺满
+function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateChange}){
+  const scrollRef = React.useRef(null);
+  const headRef = React.useRef(null);
+  const [viewW, setViewW] = React.useState(0);
+  const [scrollState, setScrollState] = React.useState({atStart:true, atEnd:false});
+  const sync = ()=>{
+    const el = scrollRef.current;
+    if(!el) return;
+    if(headRef.current) headRef.current.scrollLeft = el.scrollLeft;
+    const next = {atStart:el.scrollLeft <= 2, atEnd:el.scrollLeft + el.clientWidth >= el.scrollWidth - 2};
+    setScrollState(prev=>(prev.atStart === next.atStart && prev.atEnd === next.atEnd ? prev : next));
+  };
+  React.useEffect(()=>{
+    const el = scrollRef.current;
+    if(!el) return undefined;
+    const measure = ()=>{ setViewW(el.clientWidth); sync(); };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return ()=>ro?.disconnect();
+  }, [landscape]);
+  React.useEffect(()=>{ onScrollStateChange?.(scrollState); }, [scrollState]);
   let lastMonth = '';
   return (
+    <div
+      className={'wg-sheet' + (landscape ? ' is-landscape' : '') + (scrollState.atStart ? '' : ' is-scrolled') + (scrollState.atEnd ? ' is-at-end' : '')}
+      style={{'--wg-sheet-vw':viewW ? viewW + 'px' : '100%'}}
+    >
+      <div className="wg-sheet-head-wrap" ref={headRef} aria-hidden="true">
+        <div className="wg-sheet-head">
+          <div className="wg-sheet-cell wg-sheet-sticky wg-sheet-head-fixed">
+            <span className="wg-sheet-col-date">日期</span>
+            <span className="wg-sheet-col-wt">体重 kg</span>
+          </div>
+          <div className="wg-sheet-cell wg-sheet-col-in">摄入</div>
+          <div className="wg-sheet-head-group">
+            <span className="wg-sheet-head-group-label">饮食</span>
+            <div className="wg-sheet-head-group-cols">
+              {WEIGHT_GOAL_SHEET_MEALS.map(label=><span key={label} className="wg-sheet-col-meal">{label}</span>)}
+            </div>
+          </div>
+          <div className="wg-sheet-cell wg-sheet-col-ex">运动</div>
+          <div className="wg-sheet-cell wg-sheet-col-cum">累计减重</div>
+        </div>
+      </div>
+      <div className="wg-sheet-body" ref={scrollRef} onScroll={sync}>
+        {rows.map(day=>{
+          const monthKey = day.y + '-' + day.m;
+          const showMonth = monthKey !== lastMonth;
+          lastMonth = monthKey;
+          const month = showMonth ? weightGoalSheetMonthStats(byMonth, monthKey) : null;
+          const meals = [...day.meals, day.sn];
+          const status = WEIGHT_GOAL_STATUS[day.st] || WEIGHT_GOAL_STATUS.none;
+          const recorded = meals.some(Boolean);
+          return (
+            <React.Fragment key={day.d + '-' + day.y}>
+              {showMonth ? (
+                <div className="wg-sheet-month">
+                  <div className="wg-sheet-month-inner">
+                    <b>{day.y}年{day.m}月</b>
+                    <small>
+                      {month.change >= 0 ? '减' : '增'} <b>{Math.abs(month.change).toFixed(1)}kg</b>
+                      {' · 运动 '}<b>{month.ex}</b>{' 天'}
+                    </small>
+                  </div>
+                </div>
+              ) : null}
+              <div className={'wg-sheet-row' + (day.today ? ' is-today' : '')}>
+                <div className="wg-sheet-cell wg-sheet-sticky">
+                  <div className="wg-sheet-col-date">
+                    <b>{day.d}</b>
+                    <small>{day.today ? '今天' : day.w}</small>
+                  </div>
+                  <div className={'wg-sheet-col-wt' + (day.wt == null ? ' is-empty' : '')}>
+                    <b>{day.wt != null ? day.wt.toFixed(1) : '未称'}</b>
+                    {day.wt != null ? <WeightGoalSheetDelta delta={day.delta}/> : null}
+                  </div>
+                </div>
+                <div className={'wg-sheet-cell wg-sheet-col-in' + (recorded ? '' : ' is-empty')}>
+                  {recorded ? (
+                    <>
+                      <b style={{color:status.text}}>{day.in}</b>
+                      <small className={'wg-sheet-status is-' + day.st}>{day.n < 3 ? (day.n + '/3 餐') : status.label}</small>
+                    </>
+                  ) : <small>未记录</small>}
+                </div>
+                <div className="wg-sheet-meals">
+                  {meals.map((meal, index)=>(
+                    <div key={index} className={'wg-sheet-col-meal' + (meal ? '' : ' is-empty')}>
+                      {meal ? (
+                        <>
+                          <span className="wg-sheet-meal-photo">
+                            <WeightGoalFoodPlate foodKey={meal[0]} seed={day.idx * 10 + index + 1 + (landscape ? 500 : 0)}/>
+                          </span>
+                          <small>{meal[1]}</small>
+                        </>
+                      ) : (
+                        <>
+                          <span className="wg-sheet-meal-photo is-empty" aria-label={WEIGHT_GOAL_SHEET_MEALS[index] + '未记录'}/>
+                          <small>—</small>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className={'wg-sheet-cell wg-sheet-col-ex' + (day.ex ? '' : ' is-empty')}>
+                  {day.ex ? <><b>{day.burn}</b><small>{day.ex[0]} {day.ex[1]}′</small></> : <small>—</small>}
+                </div>
+                <div className={'wg-sheet-cell wg-sheet-col-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
+                  {day.cum == null ? <small>—</small> : <b>{day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1)}</b>}
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeightGoalRecordsPage({open, onClose}){
+  const [limit, setLimit] = React.useState(60);
+  const [landscape, setLandscape] = React.useState(false);
+  const [phoneSize, setPhoneSize] = React.useState(null);
+  const [swipeHint, setSwipeHint] = React.useState(true);
+  const pageRef = React.useRef(null);
+  const rows = React.useMemo(()=>weightGoalRecordsRows(), []);
+  const byMonth = React.useMemo(()=>{
+    const map = {};
+    WEIGHT_GOAL_ALL_DAYS.forEach(day=>{
+      const key = day.y + '-' + day.m;
+      (map[key] = map[key] || []).push(day);
+    });
+    return map;
+  }, []);
+  React.useEffect(()=>{
+    if(open){ setLimit(60); setSwipeHint(true); }
+    else setLandscape(false);
+  }, [open]);
+  const visible = rows.slice(0, limit);
+  const openLandscape = ()=>{
+    const phone = pageRef.current?.closest('.phone');
+    const rect = phone?.getBoundingClientRect();
+    const height = Math.min(rect?.height || window.innerHeight, window.innerHeight);
+    setPhoneSize({w:rect?.width || 390, h:height});
+    setLandscape(true);
+  };
+  const moreButton = rows.length > limit ? (
+    <button type="button" className="review-weight-goal-sheet-more" onClick={()=>setLimit(value=>value + 60)}>
+      查看更早的记录（还有 {rows.length - limit} 天）
+    </button>
+  ) : null;
+  return (
     <section
+      ref={pageRef}
       className={'review-cycle-detail is-fullscreen-detail review-weight-goal-records-page' + (open ? ' is-open' : '')}
       aria-hidden={!open}
       aria-label="所有记录"
@@ -2258,100 +3035,60 @@ function WeightGoalRecordsPage({open, onClose}){
           <ReviewBackIcon/>
         </button>
         <span className="review-detail-title">所有记录</span>
+        <button type="button" className="wg-sheet-rotate-btn" aria-label="横屏查看" onClick={openLandscape}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="7" width="18" height="11" rx="2.2"/>
+            <path d="M8 3.5h3.2M15.5 3.5 18 6l-2.5 2.5" />
+            <path d="M18 6h-4.5a4 4 0 0 0-4 4"/>
+          </svg>
+          <span>横屏</span>
+        </button>
       </div>
       <div className="review-detail-content review-weight-goal-detail-content">
         <div className="review-weight-goal-sheet-card" aria-label="所有记录列表">
-          <div className="review-weight-goal-sheet-head" aria-hidden="true">
-            <span>日期</span>
-            <span>体重</span>
-            <span>较前一天</span>
-            <span>累计减重</span>
-            <span className="is-left">饮食</span>
-            <span>运动</span>
-          </div>
-          {visible.map(day=>{
-            const monthKey = day.y + '-' + day.m;
-            const showMonth = monthKey !== lastMonth;
-            lastMonth = monthKey;
-            const monthDays = byMonth[monthKey] || [];
-            const monthWeights = monthDays.filter(item=>item.wt != null);
-            const monthChange = monthWeights.length > 1
-              ? Number((monthWeights[0].wt - monthWeights[monthWeights.length - 1].wt).toFixed(1))
-              : 0;
-            const monthEx = monthDays.filter(item=>item.ex).length;
-            const meals = [...day.meals, day.sn].map((meal, index)=>meal ? {meal, index} : null).filter(Boolean);
-            const status = WEIGHT_GOAL_STATUS[day.st];
-            const kcalColor = day.st === 'over' ? '#D2465E' : (day.st === 'none' ? '#BBB' : '#2E9E70');
-            return (
-              <React.Fragment key={day.d + '-' + day.y}>
-                {showMonth ? (
-                  <div className="review-weight-goal-sheet-month">
-                    <b>{day.y}年{day.m}月</b>
-                    <small>
-                      {monthChange >= 0 ? '减' : '增'} <b>{Math.abs(monthChange).toFixed(1)}kg</b>
-                      {' · 运动 '}
-                      <b>{monthEx}</b>
-                      {' 天'}
-                    </small>
-                  </div>
-                ) : null}
-                <div className={'review-weight-goal-sheet-row' + (day.today ? ' is-today' : '')}>
-                  <div className="review-weight-goal-sheet-date">
-                    <b>{day.d}</b>
-                    <small>{day.today ? '今天' : day.w}</small>
-                  </div>
-                  <div className={'review-weight-goal-sheet-wt' + (day.wt == null ? ' is-empty' : '')}>
-                    {day.wt != null ? day.wt.toFixed(1) : '未称'}
-                  </div>
-                  <div className="review-weight-goal-sheet-delta">
-                    {day.delta == null ? (
-                      <span className="is-eq">—</span>
-                    ) : (
-                      <span className={day.delta < 0 ? 'is-dn' : (day.delta > 0 ? 'is-up' : 'is-eq')}>
-                        {day.delta < 0 ? '−' + (-day.delta).toFixed(1) : (day.delta > 0 ? '+' + day.delta.toFixed(1) : '0.0')}
-                      </span>
-                    )}
-                  </div>
-                  <div className={'review-weight-goal-sheet-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
-                    {day.cum == null
-                      ? <span className="is-empty">—</span>
-                      : (day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1))}
-                  </div>
-                  <div className="review-weight-goal-sheet-food">
-                    {meals.length ? (
-                      <>
-                        <div className="review-weight-goal-sheet-thumbs">
-                          {meals.map(item=>(
-                            <span key={item.index}>
-                              <WeightGoalFoodPlate foodKey={item.meal[0]} seed={day.idx * 10 + item.index + 1}/>
-                            </span>
-                          ))}
-                        </div>
-                        <div className="review-weight-goal-sheet-kcal" style={{color:kcalColor}}>
-                          {day.in}
-                          <small>{day.n < 3 ? (day.n + '/3 餐') : status.label}</small>
-                        </div>
-                      </>
-                    ) : <span className="is-empty">未记录</span>}
-                  </div>
-                  <div className={'review-weight-goal-sheet-ex' + (day.ex ? '' : ' is-empty')}>
-                    {day.ex ? <>{day.burn}<small>{day.ex[0]}{day.ex[1]}′</small></> : '—'}
-                  </div>
-                </div>
-              </React.Fragment>
-            );
-          })}
-          {rows.length > limit ? (
-            <button
-              type="button"
-              className="review-weight-goal-sheet-more"
-              onClick={()=>setLimit(value=>value + 60)}
-            >
-              查看更早的记录（还有 {rows.length - limit} 天）
-            </button>
+          <WeightGoalSheetTable
+            rows={visible}
+            byMonth={byMonth}
+            onScrollStateChange={(state)=>{ if(!state.atStart) setSwipeHint(false); }}
+          />
+          {moreButton}
+          {swipeHint ? (
+            <div className="wg-sheet-swipe-hint" aria-hidden="true">
+              <span>左滑看每餐和运动</span>
+              <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+            </div>
           ) : null}
         </div>
       </div>
+      {landscape && phoneSize ? ReactDOM.createPortal(
+        <div className="wg-sheet-landscape-mask" role="dialog" aria-modal="true" aria-label="所有记录 · 横屏">
+          <div
+            className="wg-sheet-landscape"
+            style={{width:phoneSize.h, height:phoneSize.w, '--wg-land-w':phoneSize.h + 'px', '--wg-land-h':phoneSize.w + 'px'}}
+          >
+            <div className="wg-sheet-landscape-bar">
+              <span className="wg-sheet-landscape-title">所有记录</span>
+              <span className="wg-sheet-landscape-legend">
+                <i className="is-ok"/>合适 <i className="is-over"/>超量 <i className="is-low"/>偏低
+              </span>
+              <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="3" width="11" height="18" rx="2.2"/>
+                  <path d="M3.5 9.5V6.3M3.5 6.3 6 3.8"/>
+                </svg>
+                <span>退出横屏</span>
+              </button>
+            </div>
+            <div className="wg-sheet-landscape-scroll">
+              <div className="review-weight-goal-sheet-card">
+                <WeightGoalSheetTable rows={visible} byMonth={byMonth} landscape/>
+                {moreButton}
+              </div>
+            </div>
+          </div>
+        </div>,
+        pageRef.current?.closest('.phone') || document.body
+      ) : null}
     </section>
   );
 }
@@ -2389,7 +3126,7 @@ function WeightGoalGradientDefs(){
   );
 }
 
-function WeightGoalDetailPage({open, onClose, onAssess, onGoCheckIn, phase='none', isPaid=false}){
+function WeightGoalDetailPage({open, onClose, onAssess, onUpgrade, onGoCheckIn, phase='none', isPaid=false}){
   const [recordsOpen, setRecordsOpen] = React.useState(false);
   const weekTabsRef = React.useRef(null);
   const currentWeekKey = 'w' + WEIGHT_GOAL_PLAN_WEEKS;
@@ -2466,11 +3203,12 @@ function WeightGoalDetailPage({open, onClose, onAssess, onGoCheckIn, phase='none
           <WeightGoalProgressCard range={range} onAdjustGoal={onAssess}/>
           {range === currentWeekKey ? (
             !isSample && isPaid ? (
-              <WeightGoalPaidExclusiveCard onGoCheckIn={onGoCheckIn}/>
+              <WeightGoalPaidExclusiveCard open={open} onGoCheckIn={onGoCheckIn}/>
             ) : (
               <WeightGoalWeekPlanCard
+                open={open}
                 onGoCheckIn={isSample ? undefined : onGoCheckIn}
-                onAssess={isSample ? undefined : onAssess}
+                onUpgrade={isSample ? undefined : onUpgrade}
               />
             )
           ) : null}
@@ -2482,7 +3220,10 @@ function WeightGoalDetailPage({open, onClose, onAssess, onGoCheckIn, phase='none
             isPaid={!isSample && isPaid}
           />
           {!isSample && isPaid ? (
-            <WeightGoalTrendDiscovery units={units} range={range}/>
+            <>
+              <WeightGoalTrendDiscovery units={units} range={range}/>
+              <WeightGoalFluctuationCard units={units} range={range}/>
+            </>
           ) : null}
         </div>
         {isSample ? (
@@ -15329,7 +16070,7 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
@@ -15338,6 +16079,7 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
   const [weightDetailOpen, setWeightDetailOpen] = useState(false);
   const [weightGoalDetailOpen, setWeightGoalDetailOpen] = useState(false);
   const [weightAssessOpen, setWeightAssessOpen] = useState(false);
+  const [weightDeepAssessOpen, setWeightDeepAssessOpen] = useState(false);
   const [stoolDetailOpen, setStoolDetailOpen] = useState(false);
   const [loveDetailOpen, setLoveDetailOpen] = useState(false);
   const [beverageDetailOpen, setBeverageDetailOpen] = useState(false);
@@ -15401,7 +16143,7 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
         <ReviewPeriodOverview
           cycleUpdated={cycleUpdated}
           weightManagePhase={weightManagePhase}
-          onWeightManageActivateGoal={()=>onWeightManageChange?.('goal')}
+          onWeightManageActivateGoal={()=>setWeightAssessOpen(true)}
           onOpenWeightGoal={()=>setWeightGoalDetailOpen(true)}
           onOpenCycle={()=>{
             setCycleUpdated(false);
@@ -15518,9 +16260,10 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
         phase={weightManagePhase}
         isPaid={isMember}
         onAssess={()=>setWeightAssessOpen(true)}
-        onGoCheckIn={()=>{
+        onUpgrade={()=>setWeightDeepAssessOpen(true)}
+        onGoCheckIn={(task, planType)=>{
           setWeightGoalDetailOpen(false);
-          onWeightGoalGoCheckIn?.();
+          onWeightGoalGoCheckIn?.(task, planType);
         }}
         onClose={()=>{
           setWeightGoalDetailOpen(false);
@@ -15536,6 +16279,16 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
           setWeightGoalDetailOpen(true);
         }}
       />
+      <WeightDeepAssessPage
+        open={weightDeepAssessOpen}
+        onClose={()=>setWeightDeepAssessOpen(false)}
+        onComplete={()=>{
+          setWeightDeepAssessOpen(false);
+          onWeightManageChange?.('plan');
+          onMemberChange?.(true);
+          setWeightGoalDetailOpen(true);
+        }}
+      />
       <StoolDetailPage open={stoolDetailOpen} onClose={()=>setStoolDetailOpen(false)}/>
       <LoveDetailPage open={loveDetailOpen} onClose={()=>setLoveDetailOpen(false)}/>
       <BeverageDetailPage open={beverageDetailOpen} onClose={()=>setBeverageDetailOpen(false)}/>
@@ -15548,3 +16301,5 @@ function ReviewPage({mode='经期', isMember=false, weightManagePhase='none', on
 window.DietBudgetSettingsPage = DietBudgetSettingsPage;
 window.DIET_TARGET_GOAL = DIET_TARGET_GOAL;
 window.ReviewPage = ReviewPage;
+window.WEIGHT_GOAL_WEEK_PLAN_TASKS = WEIGHT_GOAL_WEEK_PLAN_TASKS;
+window.WEIGHT_GOAL_PAID_PLAN_TASKS = WEIGHT_GOAL_PAID_PLAN_TASKS;

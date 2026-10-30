@@ -258,6 +258,107 @@ function QuickWeightPicker({ onSubmit, onCancel }){
   );
 }
 
+/* ============ 运动 picker（今日计划打卡 / 快捷记录） ============ */
+const QUICK_EXERCISE_TYPES = [
+  { id:'walk', label:'快走', emoji:'🚶‍♀️', kcalPerMin:4 },
+  { id:'run', label:'跑步', emoji:'🏃‍♀️', kcalPerMin:9 },
+  { id:'hiit', label:'燃脂操', emoji:'🔥', kcalPerMin:7.5 },
+  { id:'yoga', label:'瑜伽', emoji:'🧘‍♀️', kcalPerMin:3 },
+  { id:'cycle', label:'骑行', emoji:'🚴‍♀️', kcalPerMin:6 },
+  { id:'rope', label:'跳绳', emoji:'🪢', kcalPerMin:10 },
+  { id:'swim', label:'游泳', emoji:'🏊‍♀️', kcalPerMin:8 },
+  { id:'strength', label:'力量训练', emoji:'🏋️‍♀️', kcalPerMin:5 },
+];
+const QUICK_EXERCISE_MINUTES = [10, 20, 30, 45, 60, 90];
+
+function estimateExerciseKcal(typeId, minutes){
+  const type = QUICK_EXERCISE_TYPES.find(t=>t.id === typeId) || QUICK_EXERCISE_TYPES[0];
+  return Math.round(type.kcalPerMin * minutes / 5) * 5;
+}
+
+function QuickExercisePicker({ onSubmit, onCancel, preset = null }){
+  const [typeId, setTypeId] = React.useState(preset?.type || 'walk');
+  const [minutes, setMinutes] = React.useState(preset?.minutes || 30);
+  const type = QUICK_EXERCISE_TYPES.find(t=>t.id === typeId) || QUICK_EXERCISE_TYPES[0];
+  const kcal = estimateExerciseKcal(typeId, minutes);
+  const step = (delta)=>setMinutes(m=>Math.max(5, Math.min(180, m + delta)));
+  const submit = ()=>onSubmit?.({ type:type.id, label:type.label, emoji:type.emoji, minutes, kcal });
+  return (
+    <div className="weight-keypad-sheet exercise-picker-sheet" role="dialog" aria-modal="true" aria-label="运动">
+      <button type="button" className="weight-keypad-sheet-mask" aria-label="关闭" onClick={onCancel}/>
+      <div className="weight-keypad-sheet-panel">
+        <div className="weight-keypad-sheet-hd">
+          <button type="button" className="weight-keypad-sheet-cancel" onClick={onCancel}>取消</button>
+          <h2 className="weight-keypad-sheet-title">运动</h2>
+          <button type="button" className="weight-keypad-sheet-confirm is-ready" onClick={submit}>确定</button>
+        </div>
+        <div className="exercise-picker-block">
+          <div className="exercise-picker-label">运动类型</div>
+          <div className="exercise-picker-types" role="radiogroup" aria-label="运动类型">
+            {QUICK_EXERCISE_TYPES.map(item=>(
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={item.id === typeId}
+                className={'exercise-picker-type' + (item.id === typeId ? ' is-on' : '')}
+                onClick={()=>setTypeId(item.id)}
+              >
+                <span className="exercise-picker-type-emoji" aria-hidden="true">{item.emoji}</span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="exercise-picker-block">
+          <div className="exercise-picker-label">时长</div>
+          <div className="exercise-picker-stepper">
+            <button type="button" aria-label="减少 5 分钟" onClick={()=>step(-5)} disabled={minutes <= 5}>−</button>
+            <div className="exercise-picker-minutes"><b>{minutes}</b><span>分钟</span></div>
+            <button type="button" aria-label="增加 5 分钟" onClick={()=>step(5)} disabled={minutes >= 180}>+</button>
+          </div>
+          <div className="exercise-picker-chips">
+            {QUICK_EXERCISE_MINUTES.map(m=>(
+              <button
+                key={m}
+                type="button"
+                className={'exercise-picker-chip' + (m === minutes ? ' is-on' : '')}
+                onClick={()=>setMinutes(m)}
+              >
+                {m} 分钟
+              </button>
+            ))}
+          </div>
+          <div className="exercise-picker-estimate">预计消耗约 <b>{kcal}</b> 千卡</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function createExerciseRecordEntry({ label, minutes, kcal }){
+  const gid = 'e-ex-' + Date.now();
+  const time = window.formatNowTime();
+  const riceBowls = Math.max(0.5, Math.round(kcal / 116 * 2) / 2);
+  return {
+    kind:'record-group',
+    id:gid + '-g',
+    isNew:true,
+    primary:{
+      id:gid,
+      time,
+      kind:'text',
+      text:`${label} ${minutes} 分钟，消耗约 ${kcal} 千卡`,
+      tags:[{ cat:'运动', icon:'run' }],
+    },
+    ai:{
+      title:'AI 分析',
+      note:`这次${label}约消耗 ${kcal} 千卡，差不多抵掉 ${riceBowls} 碗米饭。饭后 1 小时内动一动，对平稳餐后血糖也有帮助。`,
+    },
+    aiDefaultOpen:true,
+  };
+}
+
 /** @deprecated 已改为底部数字键盘弹层 */
 function DockWeightPicker({onConfirm, onCancel}){
   return <QuickWeightPicker onSubmit={onConfirm} onCancel={onCancel}/>;
@@ -949,6 +1050,9 @@ Object.assign(window, {
   SYMPTOM_QUICK_OPTIONS,
   QuickSymptomPicker,
   QuickWeightPicker,
+  QuickExercisePicker,
+  createExerciseRecordEntry,
+  estimateExerciseKcal,
   QuickFoodPicker,
   QUICK_FOOD_OPTIONS,
   createFoodRecordEntry,

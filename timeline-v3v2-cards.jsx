@@ -792,7 +792,13 @@ function WeightAnalysisNote({ noteParts, note }){
   return <div className="v3-weight-curve-note">{note}</div>;
 }
 
+function usePlanCheckInCtx(){
+  return window.usePlanCheckIn ? window.usePlanCheckIn() : null;
+}
+
 function TimelineReviewEntry({label, eventName}){
+  const planCtx = usePlanCheckInCtx();
+  if(planCtx && window.PlanCheckInFeedback) return <window.PlanCheckInFeedback/>;
   return (
     <button
       type="button"
@@ -809,6 +815,8 @@ function TimelineReviewEntry({label, eventName}){
 }
 
 function WeightTrendReviewEntry(){
+  const planCtx = usePlanCheckInCtx();
+  if(planCtx && window.PlanCheckInFeedback) return <window.PlanCheckInFeedback/>;
   return (
     <button
       type="button"
@@ -1566,6 +1574,7 @@ function normalizeV3Entry(raw){
 }
 
 function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = false, entryId}){
+  const planCtx = usePlanCheckInCtx();
   const cardRef = React.useRef(null);
   const aiPanelRef = React.useRef(null);
   const [revealStep, setRevealStep] = React.useState(() => (staggerReveal && isNew ? 0 : 2));
@@ -1799,7 +1808,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
                 footer={
                   a.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> :
                   a.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> :
-                  null
+                  (planCtx && window.PlanCheckInFeedback ? <window.PlanCheckInFeedback/> : null)
                 }
               >
                 {a.chartType && (

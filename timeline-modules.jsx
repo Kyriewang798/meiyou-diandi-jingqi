@@ -1084,7 +1084,11 @@ function TimelineItem({item, sisterItem, isNew, phaseKind, isFeedLast, sisterPla
       onDropLand={isDropTarget ? onFirstDropLand : undefined}
       onDropComplete={isDropTarget ? onFirstDropComplete : undefined}
     >
-      <TimelineItemWrap item={item}>{body}</TimelineItemWrap>
+      <TimelineItemWrap item={item}>
+        {item.planCheckIn && window.PlanCheckInContext ? (
+          <window.PlanCheckInContext.Provider value={item.planCheckIn}>{body}</window.PlanCheckInContext.Provider>
+        ) : body}
+      </TimelineItemWrap>
     </TimelineRailNode>
   );
 }

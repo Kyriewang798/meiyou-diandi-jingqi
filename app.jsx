@@ -431,6 +431,9 @@ function App(){
   const [periodFeelModalOpen, setPeriodFeelModalOpen] = useState(false);
   const [dockExpanded, setDockExpanded] = useState(false);
   const [showSearchPage, setShowSearchPage] = useState(false);
+  // 今日计划打卡：从体重管理二级页跳来，拉起对应记录方式；记完给卡片挂计划进度
+  const [planRecordRequest, setPlanRecordRequest] = useState(null);
+  const planCheckInPendingRef = React.useRef(null);
   const [babyFeedingPanelMode, setBabyFeedingPanelMode] = useState(null);
   const [searchCriteria, setSearchCriteria] = useState(null);
 
@@ -2156,9 +2159,34 @@ function App(){
     if(activeTab !== 'note') setNoteTabUnread(true);
   };
 
+  const attachPlanCheckIn = (entry, kind)=>{
+    const pending = planCheckInPendingRef.current;
+    if(!entry || !pending || pending.kind !== kind) return entry;
+    planCheckInPendingRef.current = null;
+    window.planCheckInStore?.check(pending.planType, pending.taskId);
+    entry.planCheckIn = { planType:pending.planType, taskId:pending.taskId };
+    return entry;
+  };
+
+  const cancelPlanCheckIn = (kind)=>{
+    if(planCheckInPendingRef.current?.kind === kind) planCheckInPendingRef.current = null;
+  };
+
+  const submitExerciseRecord = (payload)=>{
+    markUserRecorded();
+    const entry = window.createExerciseRecordEntry?.(payload);
+    if(!entry) return;
+    attachPlanCheckIn(entry, 'exercise');
+    const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
+      || window.resolveEntryDayId('', timeline);
+    setTimeline(blocks=>window.appendTimelineEntry(blocks, entry, { dayId }));
+    setTimeout(()=>scrollTimelineToBottom('smooth'), 360);
+  };
+
   const submitWeightRecord = (payload)=>{
     markUserRecorded();
     const entry = window.createWeightRecordEntry(payload);
+    attachPlanCheckIn(entry, 'weight');
     if(payload?.source === 'camera' || payload?.photoUrl){
       entry.weightSource = 'camera';
       entry.photoUrl = payload.photoUrl || null;
@@ -2204,6 +2232,7 @@ function App(){
     });
     if(!entry) return;
     entry.isNew = true;
+    attachPlanCheckIn(entry, 'diet');
     if (payload?.recognitionState) {
       entry.recognitionState = payload.recognitionState;
     }
@@ -2926,6 +2955,7 @@ function App(){
         <ReviewPage
           mode={recordLifeMode}
           isMember={isMember}
+          onMemberChange={setIsMember}
           weightManagePhase={weightManagePhase}
           onWeightManageChange={changeWeightManagePhase}
           openCycleDetailRequest={reviewCycleOpenRequest}
@@ -2952,9 +2982,13 @@ function App(){
             setReviewWeightGoalReturnTab(null);
             setActiveTab(returnTab);
           }}
-          onWeightGoalGoCheckIn={()=>{
+          onWeightGoalGoCheckIn={(task, planType)=>{
             setReviewWeightGoalReturnTab(null);
             setActiveTab('note');
+            const kind = window.resolvePlanCheckInKind?.(task);
+            if(!task || !kind) return;
+            planCheckInPendingRef.current = { kind, planType:planType || 'free', taskId:task.id };
+            setPlanRecordRequest({ key:Date.now(), kind, preset:task.exercisePreset || null });
           }}
           openDietDetailRequest={reviewDietOpenRequest}
           onDietDetailRequestHandled={()=>setReviewDietOpenRequest(0)}
@@ -3023,6 +3057,9 @@ function App(){
           onMoodConfirm={submitMoodRecord}
           onSymptomConfirm={submitSymptomRecord}
           onWeightConfirm={submitWeightRecord}
+          onExerciseConfirm={submitExerciseRecord}
+          externalRecordRequest={planRecordRequest}
+          onExternalRecordCancel={cancelPlanCheckIn}
           onFoodConfirm={submitFoodRecord}
           onDietCapture={submitDietCapture}
           onCameraRecord={submitCameraRecord}
@@ -3139,6 +3176,9 @@ function App(){
           onMoodConfirm={submitMoodRecord}
           onSymptomConfirm={submitSymptomRecord}
           onWeightConfirm={submitWeightRecord}
+          onExerciseConfirm={submitExerciseRecord}
+          externalRecordRequest={planRecordRequest}
+          onExternalRecordCancel={cancelPlanCheckIn}
           onFoodConfirm={submitFoodRecord}
           onDietCapture={submitDietCapture}
           onCameraRecord={submitCameraRecord}
