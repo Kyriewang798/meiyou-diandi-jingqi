@@ -1073,13 +1073,13 @@ function WeightAssessPage({open, onClose, onComplete}){
     <section
       className={'review-cycle-detail is-fullscreen-detail weight-assess-page is-simple' + (open ? ' is-open' : '')}
       aria-hidden={!open}
-      aria-label="体重管理测评"
+      aria-label="目标体重制定"
     >
       <div className="weight-assess-nav">
         <button type="button" className="weight-assess-back" aria-label="返回" onClick={onClose}>
           <ReviewBackIcon/>
         </button>
-        <span className="weight-assess-nav-title">体重管理测评</span>
+        <span className="weight-assess-nav-title">目标体重制定</span>
       </div>
       <div className="weight-assess-simple-body">
         <p className="weight-assess-simple-intro">美柚将根据以下信息为你制定体重计划</p>
