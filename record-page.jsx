@@ -1364,7 +1364,7 @@ function formatAddPlanDate(date){
   return y + '年 ' + m + '月' + d + '日 ' + week;
 }
 
-function AddPlanSheet({ open, onCancel, onConfirm, initialDate }) {
+function AddPlanSheet({ open, onCancel, onConfirm, initialDate, initialText = '' }) {
   const [portalTarget] = useState(() => document.querySelector('.phone'));
   const [text, setText] = useState('');
   const [calendarType, setCalendarType] = useState('solar');
@@ -1373,16 +1373,17 @@ function AddPlanSheet({ open, onCancel, onConfirm, initialDate }) {
   const inputRef = useRef(null);
   const dateText = formatAddPlanDate(initialDate || new Date(2026, 9, 28));
   const canSubmit = text.trim().length > 0;
+  const isViewing = Boolean(initialText);
 
   useEffect(() => {
     if (!open) return;
-    setText('');
+    setText(initialText || '');
     setCalendarType('solar');
     const timer = window.setTimeout(() => {
-      inputRef.current?.focus?.();
+      if (!initialText) inputRef.current?.focus?.();
     }, 50);
     return () => window.clearTimeout(timer);
-  }, [open]);
+  }, [open, initialText]);
 
   useEffect(() => {
     const phone = portalTarget;
@@ -1396,10 +1397,10 @@ function AddPlanSheet({ open, onCancel, onConfirm, initialDate }) {
 
   const sheet = (
     <div className="add-plan-mask">
-      <div className="add-plan-sheet" role="dialog" aria-modal="true" aria-label="添加计划">
+      <div className="add-plan-sheet" role="dialog" aria-modal="true" aria-label={isViewing ? '计划详情' : '添加计划'}>
         <header className="add-plan-bar">
           <button type="button" className="add-plan-cancel" onClick={onCancel}>取消</button>
-          <h2 className="add-plan-title">添加计划</h2>
+          <h2 className="add-plan-title">{isViewing ? '计划详情' : '添加计划'}</h2>
           <button
             type="button"
             className="add-plan-done"
@@ -1422,16 +1423,19 @@ function AddPlanSheet({ open, onCancel, onConfirm, initialDate }) {
               inputMode="text"
             />
             <div className="add-plan-tags" role="list">
-              {ADD_PLAN_QUICK_TAGS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className="add-plan-tag"
-                  onClick={() => setText((prev) => (prev ? prev : tag))}
-                >
-                  {tag}
-                </button>
-              ))}
+              {ADD_PLAN_QUICK_TAGS.map((tag) => {
+                const weightActive = tag === '体重管理' && /减重|增重|体重/.test(text);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={'add-plan-tag' + (weightActive ? ' is-active' : '')}
+                    onClick={() => setText((prev) => (prev ? prev : tag))}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -2937,6 +2941,32 @@ function HealthMorphRecordPane({
     );
   }
 
+  if (item.id === 'plan') {
+    const currentValue = healthRecordValues?.plan;
+    return (
+      <div className="list-period-detail-actions">
+        {currentValue ? (
+          <button
+            type="button"
+            className="list-record-value is-goal-text"
+            onClick={() => onHealthItemAdd?.('plan')}
+            aria-label="查看计划"
+          >
+            {currentValue}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="list-add"
+          onClick={() => onHealthItemAdd?.('plan')}
+          aria-label={'新增' + item.label}
+        >
+          <PlusIcon/>
+        </button>
+      </div>
+    );
+  }
+
   if (['love', 'stool', 'goal'].includes(item.id)) {
     const currentValue = item.id === 'stool' && healthRecordValues?.[item.id]
       ? '1次'
@@ -3380,6 +3410,7 @@ function RecordPage({
   onEmptyPreviewEnter,
   weightManagePhase = 'none',
   onWeightManagePhaseChange,
+  weightGoalPlanSeed = null,
 }) {
   const settledPeriodDays = React.useMemo(
     () => periodEndRecordCompleted ? [...PERIOD_DAYS, ...PERIOD_END_DAYS] : PERIOD_DAYS,
@@ -3409,6 +3440,7 @@ function RecordPage({
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
   const [goalSheetOpen, setGoalSheetOpen] = useState(false);
   const [goalByDay, setGoalByDay] = useState({});
+  const [planByDay, setPlanByDay] = useState({ 31: '减重至45公斤' });
   const [emptyPreviewOpen, setEmptyPreviewOpen] = useState(false);
   const dragAreaRef = useRef(null);
   const gridRef = useRef(null);
@@ -3431,6 +3463,14 @@ function RecordPage({
     setPeriodFlowPhase('settled');
     setPeriodPickerOpen(false);
   }, [clearTimers, periodEndRecordReady, settledPeriodDays]);
+
+  useEffect(() => {
+    if (!weightGoalPlanSeed?.day || !weightGoalPlanSeed?.text) return;
+    setPlanByDay((prev) => ({
+      ...prev,
+      [weightGoalPlanSeed.day]: weightGoalPlanSeed.text,
+    }));
+  }, [weightGoalPlanSeed]);
 
   const resetPeriod = useCallback(() => {
     clearTimers();
@@ -3572,6 +3612,11 @@ function RecordPage({
   const confirmAddPlan = (payload) => {
     setPlanSheetOpen(false);
     if (!payload?.text) return;
+    setPlanByDay((prev) => ({ ...prev, [selectedDay]: payload.text }));
+    setHealthRecordValues((prev) => ({
+      ...prev,
+      plan: payload.text,
+    }));
     onHealthRecordSubmit?.({
       type: 'plan',
       label: '计划',
@@ -3580,6 +3625,7 @@ function RecordPage({
       dateText: payload.dateText,
       repeatLabel: payload.repeatLabel,
       remindLabel: payload.remindLabel,
+      day: selectedDay,
     });
   };
 
@@ -3798,6 +3844,7 @@ function RecordPage({
             healthRecordValues={{
               ...healthRecordValues,
               goal: goalByDay[selectedDay] || null,
+              plan: planByDay[selectedDay] || null,
             }}
             showPlanEmptyPreviewLink={false}
             onPlanEmptyPreview={() => setEmptyPreviewOpen(true)}
@@ -3888,7 +3935,8 @@ function RecordPage({
       />
       <AddPlanSheet
         open={planSheetOpen}
-        initialDate={new Date(2026, 9, 28)}
+        initialDate={new Date(2026, 9, selectedDay)}
+        initialText={planByDay[selectedDay] || ''}
         onCancel={() => setPlanSheetOpen(false)}
         onConfirm={confirmAddPlan}
       />

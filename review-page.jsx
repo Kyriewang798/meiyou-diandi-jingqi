@@ -18011,6 +18011,9 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
           setWeightAssessOpen(false);
           onWeightManageChange?.('plan');
           setWeightDetailOpen(true);
+          if(data?.endYmd && data?.targetKg != null && data?.mode !== 'keep'){
+            window.dispatchEvent(new CustomEvent('diandi:weight-goal-plan', { detail: data }));
+          }
         }}
       />
       <WeightDeepAssessPage

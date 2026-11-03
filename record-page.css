@@ -4779,7 +4779,8 @@
   line-height:1.47;
   color:rgba(0,0,0,.8);
 }
-.record-page-root .list-period-detail-value.is-goal-text{
+.record-page-root .list-period-detail-value.is-goal-text,
+.record-page-root .list-record-value.is-goal-text{
   max-width:140px;
 }
 .phone .add-plan-segment{

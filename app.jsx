@@ -393,6 +393,7 @@ function App(){
   const [reviewMoodReturnTab, setReviewMoodReturnTab] = useState(null);
   const [isMember, setIsMember] = useState(false);
   const [weightManagePhase, setWeightManagePhase] = useState('none');
+  const [weightGoalPlanSeed, setWeightGoalPlanSeed] = useState(null);
   const goalTimelinePostedRef = useRef(false);
   const [recordLifeMode, setRecordLifeMode] = useState('经期');
   const [reviewShareState, setReviewShareState] = useState(DEFAULT_REVIEW_SHARE_STATE);
@@ -880,6 +881,27 @@ function App(){
       appendWeightGoalToTimeline(buildWeightGoalRecord(100));
     }
   }, [weightManagePhase]);
+
+  React.useEffect(()=>{
+    const onWeightGoalPlan = (event)=>{
+      const data = event?.detail || {};
+      if(!data.endYmd || data.targetKg == null || data.mode === 'keep') return;
+      const todayN = 14;
+      const weeks = Math.max(1, Number(data.weeks) || 1);
+      let day = Number(data.endYmd.d);
+      // 日历 demo 以 14 号为今天：达成日若落在今天及之前，按周数落到未来格子
+      if(!Number.isFinite(day) || day <= todayN || day > 31){
+        day = Math.min(31, todayN + weeks * 7);
+      }
+      const kgNum = Number(data.targetKg);
+      if(!Number.isFinite(kgNum)) return;
+      const kgText = Number.isInteger(kgNum) ? String(kgNum) : kgNum.toFixed(1);
+      const text = data.mode === 'gain' ? `增重至${kgText}公斤` : `减重至${kgText}公斤`;
+      setWeightGoalPlanSeed({ day, text, key: Date.now() });
+    };
+    window.addEventListener('diandi:weight-goal-plan', onWeightGoalPlan);
+    return ()=>window.removeEventListener('diandi:weight-goal-plan', onWeightGoalPlan);
+  }, []);
 
   const submitHealthRecordDraftsToTimeline = ()=>{
     if(!healthRecordDrafts.length) return false;
@@ -2944,6 +2966,7 @@ function App(){
           onEmptyPreviewEnter={handleEmptyPreviewEnter}
           weightManagePhase={weightManagePhase}
           onWeightManagePhaseChange={changeWeightManagePhase}
+          weightGoalPlanSeed={weightGoalPlanSeed}
         />
       )}
 
