@@ -745,7 +745,7 @@ function SegmentedRecordCard({entry, isNew, animateAnalysis, typewriterAiNote, t
           onClick={(e)=>{
             e.stopPropagation();
             const link = entry.detailLink;
-            window.dispatchEvent(new CustomEvent(link.event || 'openReviewWeightGoalDetail', {
+            window.dispatchEvent(new CustomEvent(link.event || 'openReviewWeightDetail', {
               detail: link.detail || { activateGoal:true, returnTab:'note' },
             }));
           }}

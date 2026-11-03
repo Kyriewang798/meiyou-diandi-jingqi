@@ -821,7 +821,7 @@ function WeightTrendReviewEntry(){
     <button
       type="button"
       className="tl-card-review-entry"
-      onClick={()=>window.dispatchEvent(new CustomEvent('openReviewWeightGoalDetail', {
+      onClick={()=>window.dispatchEvent(new CustomEvent('openReviewWeightDetail', {
         detail: { activateGoal: true, returnTab: 'note' },
       }))}
       aria-label="定个小目标，减重更有方向"

@@ -759,9 +759,10 @@ function WeightAssessEntry({onAssess}){
 function WeightManageProgressBody(){
   const totLost = weightGoalTotLost();
   const progress = weightGoalTotPct();
-  const weekNo = WEIGHT_GOAL_CURRENT_WEEK + 1;
-  const markerLeft = Math.max(8, Math.min(86, progress));
-  const remainDots = [30, 55, 78].filter(pos=>pos > markerLeft + 8);
+  const dayNo = WEIGHT_GOAL_PLAN_WEEKS * 7;
+  const totalDays = WEIGHT_GOAL_EST_WEEKS * 7;
+  const markerLeft = Math.max(4, Math.min(96, progress));
+  const remainDots = [25, 50, 75].filter(pos=>Math.abs(pos - progress) >= 8);
   return (
     <div className="review-overview-body is-weight-manage">
       <div className="review-overview-metric">
@@ -773,8 +774,8 @@ function WeightManageProgressBody(){
       </div>
       <div className="review-overview-trend is-weight-manage">
         <div className="review-overview-trend-label">
-          <span>第{weekNo}周</span>
-          <b>/ {WEIGHT_GOAL_EST_WEEKS}周</b>
+          <span>第{dayNo}天</span>
+          <b>/ {totalDays}天</b>
         </div>
         <div className="review-weight-manage-track" aria-hidden="true">
           <div className="review-weight-manage-track-rail">
@@ -783,10 +784,11 @@ function WeightManageProgressBody(){
               <span key={pos} className="review-weight-manage-track-dot" style={{left:pos + '%'}}/>
             ))}
             <span className="review-weight-manage-track-marker" style={{left:markerLeft + '%'}}>
-              <span className="review-weight-manage-track-flag">⚑</span>
               <span className="review-weight-manage-track-knob"/>
             </span>
-            <span className="review-weight-manage-track-goal">🏁</span>
+            <span className="review-weight-manage-track-flag" aria-hidden="true">
+              <svg viewBox="0 0 16 16"><path d="M4 14V2.5"/><path d="M4.5 3h7.2l-1.6 2.6 1.6 2.6H4.5z"/></svg>
+            </span>
           </div>
           <div className="review-weight-manage-track-labels">
             <span className="is-start">{WEIGHT_GOAL_START.toFixed(1)}</span>
@@ -888,6 +890,20 @@ function weightAssessBmiRange(heightCm){
     Number((18.5 * hm * hm).toFixed(1)),
     Number((23.9 * hm * hm).toFixed(1)),
   ];
+}
+
+function weightAssessBmi(weightKg, heightCm){
+  if(weightKg == null || heightCm == null || heightCm <= 0) return null;
+  const hm = heightCm / 100;
+  return Number((weightKg / (hm * hm)).toFixed(1));
+}
+
+function weightAssessBmiLabel(bmi){
+  if(bmi == null) return '';
+  if(bmi < 18.5) return '偏瘦';
+  if(bmi < 24) return '正常';
+  if(bmi < 28) return '超重';
+  return '肥胖';
 }
 
 function weightAssessMinWeeks(weightKg, targetKg){
@@ -1109,7 +1125,22 @@ function WeightAssessDatePicker({open, title, value, minYmd, maxYmd, onCancel, o
   );
 }
 
-function WeightAssessPage({open, onClose, onComplete}){
+function weightAssessPrefillFromPlan(saved){
+  if(saved) return saved;
+  const remainWeeks = Math.max(1, WEIGHT_GOAL_EST_WEEKS - WEIGHT_GOAL_PLAN_WEEKS);
+  return {
+    birthYmd: WEIGHT_ASSESS_BIRTH,
+    weightKg: WEIGHT_GOAL_CUR,
+    heightCm: WEIGHT_ASSESS_PROF_H,
+    mode: 'lose',
+    targetKg: WEIGHT_GOAL_WEIGHT_TARGET,
+    keepLo: null,
+    keepHi: null,
+    endYmd: weightAssessYmd(weightAssessAddDays(weightAssessToday(), remainWeeks * 7)),
+  };
+}
+
+function WeightAssessPage({open, onClose, onComplete, prefill=false, initialValues=null}){
   const [birthYmd, setBirthYmd] = React.useState(WEIGHT_ASSESS_BIRTH);
   const [weightKg, setWeightKg] = React.useState(WEIGHT_ASSESS_REC_W);
   const [heightCm, setHeightCm] = React.useState(WEIGHT_ASSESS_PROF_H);
@@ -1126,24 +1157,27 @@ function WeightAssessPage({open, onClose, onComplete}){
   const [weightKeypadField, setWeightKeypadField] = React.useState(null);
   const [toast, setToast] = React.useState('');
   const toastTimer = React.useRef(null);
+  const initialRef = React.useRef(initialValues);
+  initialRef.current = initialValues;
   const QuickWeightPicker = window.QuickWeightPicker;
 
   React.useEffect(()=>{
     if(!open) return;
-    setBirthYmd(WEIGHT_ASSESS_BIRTH);
-    setWeightKg(WEIGHT_ASSESS_REC_W);
-    setHeightCm(WEIGHT_ASSESS_PROF_H);
-    setMode('lose');
-    setTargetKg(null);
-    setKeepLo(null);
-    setKeepHi(null);
-    setEndYmd(null);
+    const seed = prefill ? weightAssessPrefillFromPlan(initialRef.current) : null;
+    setBirthYmd(seed?.birthYmd ?? WEIGHT_ASSESS_BIRTH);
+    setWeightKg(seed?.weightKg ?? WEIGHT_ASSESS_REC_W);
+    setHeightCm(seed?.heightCm ?? WEIGHT_ASSESS_PROF_H);
+    setMode(seed?.mode ?? 'lose');
+    setTargetKg(seed?.targetKg ?? null);
+    setKeepLo(seed?.keepLo ?? null);
+    setKeepHi(seed?.keepHi ?? null);
+    setEndYmd(seed?.endYmd ?? null);
     setPickerKey(null);
     setPickerOptions([]);
     setDatePickerKey(null);
     setWeightKeypadField(null);
     setToast('');
-  }, [open]);
+  }, [open, prefill]);
 
   React.useEffect(()=>()=>{
     if(toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -1230,21 +1264,11 @@ function WeightAssessPage({open, onClose, onComplete}){
     }
   };
 
-  const renderBoundValue = (value)=>{
+  const renderKeepBound = (value, emptyText='请填写')=>{
     if(value == null){
-      return (
-        <>
-          <span className="weight-assess-row-ph">请填写</span>
-          <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
-        </>
-      );
+      return <span className="weight-assess-row-ph">{emptyText}</span>;
     }
-    return (
-      <>
-        <span className="weight-assess-row-val">{Number(value).toFixed(1)} 公斤</span>
-        <span className="weight-assess-row-arr" aria-hidden="true">›</span>
-      </>
-    );
+    return <span className="weight-assess-row-val">{Number(value).toFixed(1)}</span>;
   };
 
   const chooseMode = (nextMode)=>{
@@ -1279,22 +1303,35 @@ function WeightAssessPage({open, onClose, onComplete}){
   };
 
   const targetNote = (()=>{
-    if(!showTarget) return null;
+    if(!showTarget || heightCm == null) return null;
     if(mode === 'keep'){
-      if(keepLo != null && keepHi != null && (keepLo < bmiLo || keepHi > bmiHi)){
-        return {warn:true, text:`建议保持范围落在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+      if(keepLo == null || keepHi == null) return null;
+      const mid = Number(((keepLo + keepHi) / 2).toFixed(1));
+      const bmi = weightAssessBmi(mid, heightCm);
+      if(bmi == null) return null;
+      if(bmi < 18.5){
+        return {warn:true, text:`保持范围 BMI ${bmi}，偏瘦，建议不低于 ${bmiLo} 公斤`};
       }
-      return {warn:false, text:`建议保持范围在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+      return {warn:false, text:`保持范围 BMI ${bmi}（${weightAssessBmiLabel(bmi)}）`};
     }
-    if(targetKg != null && targetKg < bmiLo){
-      return {warn:true, text:`目标低于建议范围，建议不低于 ${bmiLo} 公斤`};
+    if(targetKg == null) return null;
+    const bmi = weightAssessBmi(targetKg, heightCm);
+    if(bmi == null) return null;
+    if(bmi < 18.5){
+      return {warn:true, text:`目标 BMI ${bmi}，偏瘦，建议目标体重不低于 ${bmiLo} 公斤`};
     }
-    return {warn:false, text:`目标体重建议在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+    return {warn:false, text:`目标 BMI ${bmi}（${weightAssessBmiLabel(bmi)}）`};
   })();
 
   const endDateNote = showEndDate
-    ? `建议不早于 ${weightAssessFormatYmd(endDateBounds.min, false)}（每周${mode === 'lose' ? '减' : '增'}重不超过 0.45 公斤）`
+    ? `按每周约${mode === 'lose' ? '减' : '增'} 0.3 公斤估算，建议不早于 ${weightAssessFormatYmd(endDateBounds.min, false)}`
     : '';
+
+  const calcExpectedEndYmd = (fromKg, toKg)=>{
+    if(fromKg == null || toKg == null) return null;
+    const weeks = weightAssessRecWeeks(fromKg, toKg);
+    return weightAssessYmd(weightAssessAddDays(weightAssessToday(), weeks * 7));
+  };
 
   const handleWeightKeypadSubmit = (payload)=>{
     const raw = Number(payload?.value);
@@ -1305,7 +1342,7 @@ function WeightAssessPage({open, onClose, onComplete}){
     setWeightKeypadField(null);
     if(field === 'target'){
       setTargetKg(next);
-      setEndYmd(null);
+      setEndYmd(calcExpectedEndYmd(weightKg, next));
       return;
     }
     if(field === 'keepLo'){
@@ -1400,16 +1437,29 @@ function WeightAssessPage({open, onClose, onComplete}){
           </div>
           <div className={'weight-assess-simple-block' + (showTarget ? ' is-show' : '')}>
             {mode === 'keep' ? (
-              <>
-                <button type="button" className="weight-assess-row is-nested" onClick={()=>openKeepBound('keepLo')}>
-                  <span className="weight-assess-row-key">最低体重</span>
-                  <span className="weight-assess-row-v">{renderBoundValue(keepLo)}</span>
-                </button>
-                <button type="button" className="weight-assess-row is-nested" onClick={()=>openKeepBound('keepHi')}>
-                  <span className="weight-assess-row-key">最高体重</span>
-                  <span className="weight-assess-row-v">{renderBoundValue(keepHi)}</span>
-                </button>
-              </>
+              <div className="weight-assess-row is-nested is-static is-keep-range">
+                <span className="weight-assess-row-key">目标体重</span>
+                <span className="weight-assess-row-v is-keep-range">
+                  <button
+                    type="button"
+                    className="weight-assess-keep-bound"
+                    onClick={()=>openKeepBound('keepLo')}
+                    aria-label="填写目标体重下限"
+                  >
+                    {renderKeepBound(keepLo)}
+                  </button>
+                  <span className="weight-assess-keep-sep" aria-hidden="true">~</span>
+                  <button
+                    type="button"
+                    className="weight-assess-keep-bound"
+                    onClick={()=>openKeepBound('keepHi')}
+                    aria-label="填写目标体重上限"
+                  >
+                    {renderKeepBound(keepHi)}
+                  </button>
+                  <span className="weight-assess-keep-unit">公斤</span>
+                </span>
+              </div>
             ) : (
               <button type="button" className="weight-assess-row is-nested" onClick={openTargetEditor}>
                 <span className="weight-assess-row-key">目标体重</span>
@@ -1434,11 +1484,11 @@ function WeightAssessPage({open, onClose, onComplete}){
           </div>
           <div className={'weight-assess-simple-block' + (showEndDate ? ' is-show' : '')}>
             <button type="button" className="weight-assess-row is-nested" onClick={openEndDatePicker}>
-              <span className="weight-assess-row-key">目标达成日期</span>
+              <span className="weight-assess-row-key">预期达成日期</span>
               <span className="weight-assess-row-v">
                 {endYmd == null ? (
                   <>
-                    <span className="weight-assess-row-ph">请选择</span>
+                    <span className="weight-assess-row-ph">自动计算</span>
                     <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
                   </>
                 ) : (
@@ -1500,7 +1550,7 @@ function WeightAssessPage({open, onClose, onComplete}){
       />
       <WeightAssessDatePicker
         open={datePickerKey === 'end'}
-        title="目标达成日期"
+        title="预期达成日期"
         value={endYmd || endDateBounds.rec}
         minYmd={endDateBounds.min}
         maxYmd={endDateBounds.max}
@@ -5074,24 +5124,28 @@ const WEIGHT_RANGE_META = {
     dateText:'2026年7月4日至8月2日',
     recordTimes:32,
     recordDays:28,
+    compareDays:29,
   },
   half:{
     label:'近半年',
     dateText:'2026年2月2日至8月2日',
     recordTimes:168,
     recordDays:142,
+    compareDays:182,
   },
   year:{
     label:'近一年',
     dateText:'2025年8月3日至2026年8月2日',
     recordTimes:320,
     recordDays:286,
+    compareDays:364,
   },
   all:{
     label:'全部',
     dateText:'2025年6月29日至2026年8月2日',
     recordTimes:412,
     recordDays:360,
+    compareDays:399,
   },
 };
 
@@ -5443,17 +5497,11 @@ function WeightPlanGuideBanner({phase='none', onCreatePlan}){
       onClick={(event)=>{ event.stopPropagation(); onCreatePlan?.(); }}
       aria-label={copy.action}
     >
-      <span className="review-weight-plan-guide-badge" aria-hidden="true">
-        <svg viewBox="0 0 16 16"><path d="M4 14V2.5"/><path d="M4.5 3h7.2l-1.6 2.6 1.6 2.6H4.5z"/></svg>
-      </span>
       <span className="review-weight-plan-guide-copy">
         <strong>{copy.title}</strong>
         <span>{copy.subtitle}</span>
       </span>
-      <em className="review-weight-plan-guide-action">
-        {copy.action}
-        <i className="review-weight-plan-guide-chevron" aria-hidden="true"><ReviewChevron/></i>
-      </em>
+      <em className="review-weight-plan-guide-action">{copy.action}</em>
     </button>
   );
 }
@@ -5470,7 +5518,10 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
   const avgKg = kgValues.length ? kgValues.reduce((sum, v)=>sum + v, 0) / kgValues.length : latestKg;
   const bmi = weightJinToBmi(latestKg * 2);
   const deltaKg = Math.round((latestKg - firstKg) * 10) / 10;
-  const deltaText = (deltaKg > 0 ? '+' : deltaKg < 0 ? '−' : '') + Math.abs(deltaKg).toFixed(1);
+  const deltaText = deltaKg === 0
+    ? '0.0'
+    : ((deltaKg > 0 ? '+' : '-') + Math.abs(deltaKg).toFixed(1));
+  const compareDays = meta.compareDays || Math.max(1, (series.values?.length || 2) - 1);
   return (
     <ReviewDetailSectionCard
       iconClass="is-weight"
@@ -5508,13 +5559,13 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
           </div>
           <div className="review-mood-trend-record-card review-weight-stat-card">
             <span className="review-mood-trend-record-card-title">平均体重</span>
-            <p><b>{avgKg.toFixed(1)}</b><em>kg</em></p>
+            <p><b>{avgKg.toFixed(1)}</b><em>公斤</em></p>
           </div>
-          <div className={'review-mood-trend-record-card review-weight-stat-card'}>
-            <span className="review-mood-trend-record-card-title">{meta.label}变化</span>
+          <div className="review-mood-trend-record-card review-weight-stat-card">
+            <span className="review-mood-trend-record-card-title">比{compareDays}天前</span>
             <p>
               <b>{deltaText}</b>
-              <em>kg</em>
+              <em>公斤</em>
             </p>
           </div>
         </div>
@@ -17716,6 +17767,8 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
   const [weightDetailOpen, setWeightDetailOpen] = useState(false);
   const [weightGoalDetailOpen, setWeightGoalDetailOpen] = useState(false);
   const [weightAssessOpen, setWeightAssessOpen] = useState(false);
+  const [weightAssessPrefill, setWeightAssessPrefill] = useState(false);
+  const [weightAssessValues, setWeightAssessValues] = useState(null);
   const [weightDeepAssessOpen, setWeightDeepAssessOpen] = useState(false);
   const [stoolDetailOpen, setStoolDetailOpen] = useState(false);
   const [loveDetailOpen, setLoveDetailOpen] = useState(false);
@@ -17881,8 +17934,14 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <WeightDetailPage
         open={weightDetailOpen}
         planGuidePhase={weightManagePhase}
-        onCreatePlan={()=>setWeightAssessOpen(true)}
-        onAdjustGoal={()=>setWeightAssessOpen(true)}
+        onCreatePlan={()=>{
+          setWeightAssessPrefill(false);
+          setWeightAssessOpen(true);
+        }}
+        onAdjustGoal={()=>{
+          setWeightAssessPrefill(true);
+          setWeightAssessOpen(true);
+        }}
         onClose={()=>{
           setWeightDetailOpen(false);
           onWeightDetailReturn?.();
@@ -17892,7 +17951,10 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         open={weightGoalDetailOpen}
         phase={weightManagePhase}
         isPaid={isMember}
-        onAssess={()=>setWeightAssessOpen(true)}
+        onAssess={()=>{
+          setWeightAssessPrefill(weightManagePhase === 'plan');
+          setWeightAssessOpen(true);
+        }}
         onUpgrade={()=>setWeightDeepAssessOpen(true)}
         onGoCheckIn={(task, planType)=>{
           setWeightGoalDetailOpen(false);
@@ -17905,8 +17967,11 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       />
       <WeightAssessPage
         open={weightAssessOpen}
+        prefill={weightAssessPrefill}
+        initialValues={weightAssessValues}
         onClose={()=>setWeightAssessOpen(false)}
-        onComplete={()=>{
+        onComplete={(data)=>{
+          setWeightAssessValues(data || null);
           setWeightAssessOpen(false);
           onWeightManageChange?.('plan');
           setWeightDetailOpen(true);

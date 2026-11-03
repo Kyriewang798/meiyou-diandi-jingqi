@@ -444,9 +444,13 @@ function App(){
       setRecordLifeMode('经期');
       setActiveTab('cash');
     };
-    const handleOpenReviewWeight = ()=>{
+    const handleOpenReviewWeight = (event)=>{
+      if(event?.detail?.activatePlan) setWeightManagePhase('plan');
+      else if(event?.detail?.activateGoal){
+        setWeightManagePhase((prev)=>prev === 'plan' ? 'plan' : 'goal');
+      }
       setReviewWeightOpenRequest(request=>request + 1);
-      setReviewWeightReturnTab('note');
+      setReviewWeightReturnTab(event?.detail?.returnTab || 'note');
       setActiveTab('cash');
     };
     const handleOpenReviewWeightGoal = (event)=>{
@@ -1891,7 +1895,7 @@ function App(){
     }
 
     const goalBundle = photos.length ? null : window.tryCreateGoalTextEntry?.(text, opts);
-    if (goalBundle?.textEntry && goalBundle?.structuredEntry) {
+    if (goalBundle?.textEntry) {
       setDraft('');
       markUserRecorded();
       if(goalBundle.isWeightGoal){
@@ -1901,12 +1905,7 @@ function App(){
       const entryText = goalBundle.textEntry.body || goalBundle.textEntry.voiceText || text;
       const dayId = timeline.find(b=>b.type==='day' && b.isToday)?.id
         || window.resolveEntryDayId(entryText, timeline);
-      setTimeline(blocks=>{
-        // 结构化目标卡在上，原文卡（含文字链）在下
-        let next = window.appendTimelineEntry(blocks, goalBundle.structuredEntry, { dayId });
-        next = window.appendTimelineEntry(next, goalBundle.textEntry, { dayId });
-        return next;
-      });
+      setTimeline(blocks=>window.appendTimelineEntry(blocks, goalBundle.textEntry, { dayId }));
       requestAnimationFrame(()=>{
         setTimeout(()=>scrollTimelineToLastItem?.('smooth'), 160);
       });

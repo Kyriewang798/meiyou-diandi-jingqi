@@ -656,7 +656,7 @@ function createGoalRecordEntriesFromText(text, opts = {}){
   if(parsed.isWeightGoal){
     textEntry.detailLink = {
       label:'定个小目标，减重更有方向',
-      event:'openReviewWeightGoalDetail',
+      event:'openReviewWeightDetail',
       detail:{ activateGoal:true, returnTab:'note' },
     };
   }
@@ -666,28 +666,10 @@ function createGoalRecordEntriesFromText(text, opts = {}){
   }else{
     textEntry.body = parsed.text;
   }
-  const structuredEntry = {
-    kind:'record-group',
-    id:'e-goal-struct-'+now+'-g',
-    isNew:true,
-    primary:{
-      id:'e-goal-struct-'+now,
-      time,
-      kind:'daily-record',
-      recordType:'goal',
-      recordLabel: parsed.label,
-      recordValue: parsed.value,
-      recordDetail: parsed.value,
-      icon:'goal',
-      text: `${parsed.label}：${parsed.value}`,
-      tags:[],
-    },
-  };
   return {
     isWeightGoal: !!parsed.isWeightGoal,
     textEntry,
-    structuredEntry,
-    entries:[textEntry, structuredEntry],
+    entries:[textEntry],
   };
 }
 
