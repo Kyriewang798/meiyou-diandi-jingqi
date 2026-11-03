@@ -195,7 +195,7 @@ function WeightKeypadDeleteIcon(){
   );
 }
 
-function QuickWeightPicker({ onSubmit, onCancel }){
+function QuickWeightPicker({ onSubmit, onCancel, title = '体重' }){
   const w = useWeightInput();
 
   const submit = ()=>{
@@ -204,12 +204,12 @@ function QuickWeightPicker({ onSubmit, onCancel }){
   };
 
   return (
-    <div className="weight-keypad-sheet" role="dialog" aria-modal="true" aria-label="体重">
+    <div className="weight-keypad-sheet" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" className="weight-keypad-sheet-mask" aria-label="关闭" onClick={onCancel}/>
       <div className="weight-keypad-sheet-panel">
         <div className="weight-keypad-sheet-hd">
           <button type="button" className="weight-keypad-sheet-cancel" onClick={onCancel}>取消</button>
-          <h2 className="weight-keypad-sheet-title">体重</h2>
+          <h2 className="weight-keypad-sheet-title">{title}</h2>
           <button
             type="button"
             className={'weight-keypad-sheet-confirm'+(w.canSubmit ? ' is-ready' : '')}

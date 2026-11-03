@@ -824,9 +824,9 @@ function WeightTrendReviewEntry(){
       onClick={()=>window.dispatchEvent(new CustomEvent('openReviewWeightGoalDetail', {
         detail: { activateGoal: true, returnTab: 'note' },
       }))}
-      aria-label="1 分钟测评，定适合你的目标"
+      aria-label="定个小目标，减重更有方向"
     >
-      <span>1 分钟测评，定适合你的目标</span>
+      <span>定个小目标，减重更有方向</span>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 6l6 6-6 6"/>
       </svg>

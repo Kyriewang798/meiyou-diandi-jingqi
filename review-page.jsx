@@ -632,6 +632,8 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
   const metricValueText = valueText != null
     ? valueText
     : (typeof value === 'string' || typeof value === 'number' ? value : '');
+  const showTrendLabel = Boolean(trendPrefix || trendText);
+  const ariaTrend = showTrendLabel ? ('，' + (trendPrefix || '') + (trendText || '')) : '';
   return (
     <article
       className={'review-overview-card' + (cardClass ? ' ' + cardClass : '') + (isActionable ? ' is-actionable' : '') + (sample ? ' is-sample' : '')}
@@ -639,7 +641,7 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
       tabIndex={isActionable ? 0 : undefined}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      aria-label={(sample ? '示例数据，' : '') + title + '，' + metricLabel + metricValueText + (unit || '') + '，' + trendPrefix + trendText}
+      aria-label={(sample ? '示例数据，' : '') + title + '，' + metricLabel + metricValueText + (unit || '') + ariaTrend}
     >
       <header className="review-overview-head">
         <span className={'review-overview-icon ' + iconClass} aria-hidden="true">{icon}</span>
@@ -653,7 +655,9 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
           <strong>{value}{unit ? <small>{unit}</small> : null}</strong>
         </div>
         <div className="review-overview-trend">
-          <div className="review-overview-trend-label"><span>{trendPrefix}</span><b>{trendText}</b></div>
+          {showTrendLabel ? (
+            <div className="review-overview-trend-label"><span>{trendPrefix}</span><b>{trendText}</b></div>
+          ) : null}
           <div className="review-overview-chart">{chart}</div>
         </div>
         {sample ? <ReviewSampleMark/> : null}
@@ -747,7 +751,7 @@ function WeightAssessEntry({onAssess}){
         onAssess();
       }}
     >
-      测评
+      制定目标
     </button>
   );
 }
@@ -847,13 +851,15 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight}){
   );
 }
 
-const WEIGHT_ASSESS_REC_W = 48.6;
-const WEIGHT_ASSESS_PROF_H = 155;
+const WEIGHT_ASSESS_REC_W = 47.86;
+const WEIGHT_ASSESS_PROF_H = 158;
+const WEIGHT_ASSESS_BIRTH = {y:2008, m:1, d:1};
 const WEIGHT_ASSESS_MODES = [
   {key:'lose', label:'减重'},
   {key:'keep', label:'保持'},
   {key:'gain', label:'增重'},
 ];
+const WEIGHT_ASSESS_WHEEL_H = 40;
 
 function weightAssessSeq(from, to, step){
   const list = [];
@@ -893,24 +899,86 @@ function weightAssessRecWeeks(weightKg, targetKg){
   return Math.max(min, Math.round(Math.abs(weightKg - targetKg) / 0.3));
 }
 
-function WeightAssessWheelPicker({open, title, subtitle, options, index, onIndexChange, onCancel, onConfirm, renderOption}){
+function weightAssessDaysInMonth(year, month){
+  return new Date(year, month, 0).getDate();
+}
+
+function weightAssessClampDay(year, month, day){
+  return Math.min(day, weightAssessDaysInMonth(year, month));
+}
+
+function weightAssessAddDays(base, days){
+  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function weightAssessToday(){
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+function weightAssessYmd(date){
+  return {y:date.getFullYear(), m:date.getMonth() + 1, d:date.getDate()};
+}
+
+function weightAssessFromYmd(ymd){
+  if(!ymd) return null;
+  return new Date(ymd.y, ymd.m - 1, weightAssessClampDay(ymd.y, ymd.m, ymd.d));
+}
+
+function weightAssessFormatYmd(ymd, withYear=true){
+  if(!ymd) return '';
+  return (withYear ? (ymd.y + '年') : '') + ymd.m + '月' + ymd.d + '日';
+}
+
+function weightAssessWeekDiff(fromDate, toDate){
+  const ms = toDate.getTime() - fromDate.getTime();
+  return Math.max(1, Math.round(ms / (7 * 24 * 3600 * 1000)));
+}
+
+function WeightAssessWheelColumn({items, index, onIndexChange, renderItem}){
   const listRef = React.useRef(null);
   const syncingRef = React.useRef(false);
+  const h = WEIGHT_ASSESS_WHEEL_H;
 
   React.useEffect(()=>{
-    if(!open || !listRef.current) return;
+    if(!listRef.current) return;
     syncingRef.current = true;
-    listRef.current.scrollTop = index * 40;
+    listRef.current.scrollTop = index * h;
     const timer = window.setTimeout(()=>{ syncingRef.current = false; }, 40);
     return ()=>window.clearTimeout(timer);
-  }, [open, index, options]);
+  }, [index, items, h]);
 
   const handleScroll = ()=>{
     if(!listRef.current || syncingRef.current) return;
-    const next = Math.max(0, Math.min(options.length - 1, Math.round(listRef.current.scrollTop / 40)));
+    const next = Math.max(0, Math.min(items.length - 1, Math.round(listRef.current.scrollTop / h)));
     if(next !== index) onIndexChange?.(next);
   };
 
+  return (
+    <div
+      ref={listRef}
+      className="weight-assess-wheel-list is-col"
+      onScroll={handleScroll}
+    >
+      {items.map((item, i)=>(
+        <div
+          key={String(item) + '-' + i}
+          className={i === index ? 'is-on' : ''}
+          onClick={()=>{
+            listRef.current?.scrollTo({top:i * h, behavior:'smooth'});
+            onIndexChange?.(i);
+          }}
+        >
+          {renderItem ? renderItem(item, i) : item}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WeightAssessPickerShell({open, title, subtitle, onCancel, onConfirm, children}){
   if(!open) return null;
   return (
     <>
@@ -922,56 +990,158 @@ function WeightAssessWheelPicker({open, title, subtitle, options, index, onIndex
           <button type="button" className="is-ok" onClick={onConfirm}>确定</button>
         </div>
         {subtitle ? <p className="weight-assess-picker-sub">{subtitle}</p> : null}
-        <div className="weight-assess-wheel">
-          <div className="weight-assess-wheel-bar" aria-hidden="true"/>
-          <div
-            ref={listRef}
-            className="weight-assess-wheel-list"
-            onScroll={handleScroll}
-          >
-            {options.map((item, i)=>(
-              <div
-                key={String(item) + '-' + i}
-                className={i === index ? 'is-on' : ''}
-                onClick={()=>{
-                  listRef.current?.scrollTo({top:i * 40, behavior:'smooth'});
-                  onIndexChange?.(i);
-                }}
-              >
-                {renderOption ? renderOption(item) : item}
-              </div>
-            ))}
-          </div>
-        </div>
+        {children}
       </div>
     </>
   );
 }
 
+function WeightAssessWheelPicker({open, title, subtitle, options, index, onIndexChange, onCancel, onConfirm, renderOption}){
+  return (
+    <WeightAssessPickerShell open={open} title={title} subtitle={subtitle} onCancel={onCancel} onConfirm={onConfirm}>
+      <div className="weight-assess-wheel">
+        <div className="weight-assess-wheel-bar is-fill" aria-hidden="true"/>
+        <WeightAssessWheelColumn
+          items={options}
+          index={index}
+          onIndexChange={onIndexChange}
+          renderItem={renderOption}
+        />
+      </div>
+    </WeightAssessPickerShell>
+  );
+}
+
+function WeightAssessDatePicker({open, title, value, minYmd, maxYmd, onCancel, onConfirm}){
+  const min = minYmd || {y:1950, m:1, d:1};
+  const max = maxYmd || {y:weightAssessToday().getFullYear() + 2, m:12, d:31};
+  const init = value || weightAssessYmd(weightAssessToday());
+  const [yIdx, setYIdx] = React.useState(0);
+  const [mIdx, setMIdx] = React.useState(0);
+  const [dIdx, setDIdx] = React.useState(0);
+
+  const years = React.useMemo(()=>{
+    const list = [];
+    for(let y = min.y; y <= max.y; y++) list.push(y);
+    return list;
+  }, [min.y, max.y]);
+
+  const year = years[yIdx] ?? min.y;
+  const months = React.useMemo(()=>{
+    const lo = year === min.y ? min.m : 1;
+    const hi = year === max.y ? max.m : 12;
+    const list = [];
+    for(let m = lo; m <= hi; m++) list.push(m);
+    return list;
+  }, [year, min.y, min.m, max.y, max.m]);
+
+  const month = months[mIdx] ?? months[0] ?? 1;
+  const days = React.useMemo(()=>{
+    const dim = weightAssessDaysInMonth(year, month);
+    let lo = 1;
+    let hi = dim;
+    if(year === min.y && month === min.m) lo = min.d;
+    if(year === max.y && month === max.m) hi = Math.min(hi, max.d);
+    const list = [];
+    for(let d = lo; d <= hi; d++) list.push(d);
+    return list;
+  }, [year, month, min, max]);
+
+  React.useEffect(()=>{
+    if(!open) return;
+    const next = value || weightAssessYmd(weightAssessToday());
+    const yi = Math.max(0, years.indexOf(next.y));
+    setYIdx(yi < 0 ? 0 : yi);
+    const y = years[yi < 0 ? 0 : yi] ?? next.y;
+    const mLo = y === min.y ? min.m : 1;
+    const mHi = y === max.y ? max.m : 12;
+    const m = Math.min(mHi, Math.max(mLo, next.m));
+    setMIdx(m - mLo);
+    const dim = weightAssessDaysInMonth(y, m);
+    let dLo = 1;
+    let dHi = dim;
+    if(y === min.y && m === min.m) dLo = min.d;
+    if(y === max.y && m === max.m) dHi = Math.min(dHi, max.d);
+    const d = Math.min(dHi, Math.max(dLo, next.d));
+    setDIdx(d - dLo);
+  }, [open, value, years, min, max]);
+
+  React.useEffect(()=>{
+    if(mIdx > months.length - 1) setMIdx(Math.max(0, months.length - 1));
+  }, [months, mIdx]);
+
+  React.useEffect(()=>{
+    if(dIdx > days.length - 1) setDIdx(Math.max(0, days.length - 1));
+  }, [days, dIdx]);
+
+  const handleConfirm = ()=>{
+    onConfirm?.({
+      y: years[yIdx] ?? year,
+      m: months[mIdx] ?? month,
+      d: days[dIdx] ?? days[0] ?? 1,
+    });
+  };
+
+  return (
+    <WeightAssessPickerShell open={open} title={title} onCancel={onCancel} onConfirm={handleConfirm}>
+      <div className="weight-assess-wheel is-multi">
+        <div className="weight-assess-wheel-bar is-fill" aria-hidden="true"/>
+        <WeightAssessWheelColumn
+          items={years}
+          index={yIdx}
+          onIndexChange={setYIdx}
+          renderItem={(item)=>item + '年'}
+        />
+        <WeightAssessWheelColumn
+          items={months}
+          index={Math.min(mIdx, months.length - 1)}
+          onIndexChange={setMIdx}
+          renderItem={(item)=>item + '月'}
+        />
+        <WeightAssessWheelColumn
+          items={days}
+          index={Math.min(dIdx, days.length - 1)}
+          onIndexChange={setDIdx}
+          renderItem={(item)=>item + '日'}
+        />
+      </div>
+    </WeightAssessPickerShell>
+  );
+}
+
 function WeightAssessPage({open, onClose, onComplete}){
+  const [birthYmd, setBirthYmd] = React.useState(WEIGHT_ASSESS_BIRTH);
   const [weightKg, setWeightKg] = React.useState(WEIGHT_ASSESS_REC_W);
   const [heightCm, setHeightCm] = React.useState(WEIGHT_ASSESS_PROF_H);
-  const [mode, setMode] = React.useState(null);
+  const [mode, setMode] = React.useState('lose');
   const [targetKg, setTargetKg] = React.useState(null);
-  const [weeks, setWeeks] = React.useState(null);
+  const [keepLo, setKeepLo] = React.useState(null);
+  const [keepHi, setKeepHi] = React.useState(null);
+  const [endYmd, setEndYmd] = React.useState(null);
   const [pickerKey, setPickerKey] = React.useState(null);
   const [pickerIndex, setPickerIndex] = React.useState(0);
   const [pickerOptions, setPickerOptions] = React.useState([]);
-  const [weightKeypadOpen, setWeightKeypadOpen] = React.useState(false);
+  const [datePickerKey, setDatePickerKey] = React.useState(null); // 'birth' | 'end'
+  // null | 'weight' | 'target' | 'keepLo' | 'keepHi'
+  const [weightKeypadField, setWeightKeypadField] = React.useState(null);
   const [toast, setToast] = React.useState('');
   const toastTimer = React.useRef(null);
   const QuickWeightPicker = window.QuickWeightPicker;
 
   React.useEffect(()=>{
     if(!open) return;
+    setBirthYmd(WEIGHT_ASSESS_BIRTH);
     setWeightKg(WEIGHT_ASSESS_REC_W);
     setHeightCm(WEIGHT_ASSESS_PROF_H);
-    setMode(null);
+    setMode('lose');
     setTargetKg(null);
-    setWeeks(null);
+    setKeepLo(null);
+    setKeepHi(null);
+    setEndYmd(null);
     setPickerKey(null);
     setPickerOptions([]);
-    setWeightKeypadOpen(false);
+    setDatePickerKey(null);
+    setWeightKeypadField(null);
     setToast('');
   }, [open]);
 
@@ -985,64 +1155,45 @@ function WeightAssessPage({open, onClose, onComplete}){
     toastTimer.current = window.setTimeout(()=>setToast(''), 1500);
   };
 
-  const hasBase = weightKg != null && heightCm != null;
+  const hasBase = birthYmd != null && weightKg != null && heightCm != null;
   const [bmiLo, bmiHi] = heightCm != null ? weightAssessBmiRange(heightCm) : [0, 0];
   const showTarget = Boolean(mode && hasBase);
-  const showWeeks = Boolean(mode && mode !== 'keep' && targetKg != null && hasBase);
+  const showEndDate = Boolean(mode && mode !== 'keep' && targetKg != null && hasBase);
   const directionOk = targetKg == null
     ? true
     : (mode === 'lose' ? targetKg < weightKg : mode === 'gain' ? targetKg > weightKg : true);
+  const keepOk = keepLo != null && keepHi != null && keepHi > keepLo;
   const canSubmit = Boolean(
-    hasBase && mode && targetKg != null && (mode === 'keep' || weeks != null) && directionOk
+    hasBase && mode && (
+      mode === 'keep'
+        ? keepOk
+        : (targetKg != null && endYmd != null && directionOk)
+    )
   );
 
-  const pickerMeta = React.useMemo(()=>{
-    if(pickerKey === 'h') return {title:'当前身高', subtitle:''};
-    if(pickerKey === 'g') return {title:'目标体重', subtitle:`建议范围 ${bmiLo}–${bmiHi} 公斤`};
-    if(pickerKey === 't'){
-      const rec = targetKg != null ? weightAssessRecWeeks(weightKg, targetKg) : 0;
+  const endDateBounds = React.useMemo(()=>{
+    const today = weightAssessToday();
+    if(targetKg == null || weightKg == null){
       return {
-        title:'计划时间',
-        subtitle:`推荐 ${rec} 周，每周约${mode === 'lose' ? '减' : '增'} 0.3 公斤`,
+        min: weightAssessYmd(weightAssessAddDays(today, 7)),
+        max: weightAssessYmd(weightAssessAddDays(today, 52 * 7)),
+        rec: weightAssessYmd(weightAssessAddDays(today, 28)),
       };
     }
-    return {title:'', subtitle:''};
-  }, [pickerKey, bmiLo, bmiHi, weightKg, targetKg, mode]);
+    const minW = weightAssessMinWeeks(weightKg, targetKg);
+    const recW = weightAssessRecWeeks(weightKg, targetKg);
+    return {
+      min: weightAssessYmd(weightAssessAddDays(today, minW * 7)),
+      max: weightAssessYmd(weightAssessAddDays(today, Math.max(minW + 20, 52) * 7)),
+      rec: weightAssessYmd(weightAssessAddDays(today, recW * 7)),
+    };
+  }, [weightKg, targetKg]);
 
-  const openPicker = (key, overrides={})=>{
-    const nextWeight = overrides.weightKg ?? weightKg;
-    const nextHeight = overrides.heightCm ?? heightCm;
-    const nextMode = overrides.mode ?? mode;
-    const nextTarget = overrides.targetKg ?? targetKg;
-    const nextWeeks = overrides.weeks ?? weeks;
-    if((key === 'g' || key === 't') && !(nextWeight != null && nextHeight != null && nextMode)) return;
-    let options = [];
-    let def = 0;
-    if(key === 'h'){
-      options = weightAssessSeq(130, 200, 1);
-      def = weightAssessNear(options, nextHeight ?? 160);
-    }else if(key === 'g'){
-      let from = 30;
-      let to = 120;
-      if(nextMode === 'lose'){ from = 30; to = nextWeight - 0.5; }
-      else if(nextMode === 'gain'){ from = nextWeight + 0.5; to = 120; }
-      else { from = nextWeight - 5; to = nextWeight + 5; }
-      options = weightAssessSeq(from, to, 0.5);
-      const [lo, hi] = weightAssessBmiRange(nextHeight);
-      const fallback = nextMode === 'lose'
-        ? Math.max(lo, nextWeight - 3)
-        : nextMode === 'gain'
-          ? Math.min(hi, nextWeight + 3)
-          : nextWeight;
-      def = weightAssessNear(options, nextTarget ?? fallback);
-    }else if(key === 't'){
-      const min = weightAssessMinWeeks(nextWeight, nextTarget);
-      options = weightAssessSeq(min, Math.max(min + 20, 52), 1);
-      def = weightAssessNear(options, nextWeeks ?? weightAssessRecWeeks(nextWeight, nextTarget));
-    }
+  const openHeightPicker = ()=>{
+    const options = weightAssessSeq(130, 200, 1);
     setPickerOptions(options);
-    setPickerKey(key);
-    setPickerIndex(def);
+    setPickerIndex(weightAssessNear(options, heightCm ?? 160));
+    setPickerKey('h');
   };
 
   const closePicker = ()=>setPickerKey(null);
@@ -1053,21 +1204,47 @@ function WeightAssessPage({open, onClose, onComplete}){
     if(pickerKey === 'h'){
       setHeightCm(value);
       closePicker();
-      return;
     }
-    if(pickerKey === 'g'){
-      setTargetKg(value);
-      setWeeks(null);
-      closePicker();
-      if(mode !== 'keep'){
-        window.setTimeout(()=>openPicker('t', {targetKg:value}), 380);
-      }
-      return;
+  };
+
+  const openTargetEditor = ()=>{
+    if(!(weightKg != null && heightCm != null && mode)) return;
+    setWeightKeypadField('target');
+  };
+
+  const openKeepBound = (field)=>{
+    if(!(weightKg != null && heightCm != null && mode === 'keep')) return;
+    setWeightKeypadField(field);
+  };
+
+  const openEndDatePicker = ()=>{
+    if(!(weightKg != null && heightCm != null && mode && targetKg != null)) return;
+    setDatePickerKey('end');
+  };
+
+  const syncKeepTarget = (lo, hi)=>{
+    if(lo != null && hi != null){
+      setTargetKg(Number((((lo + hi) / 2)).toFixed(1)));
+    }else{
+      setTargetKg(null);
     }
-    if(pickerKey === 't'){
-      setWeeks(value);
-      closePicker();
+  };
+
+  const renderBoundValue = (value)=>{
+    if(value == null){
+      return (
+        <>
+          <span className="weight-assess-row-ph">请填写</span>
+          <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
+        </>
+      );
     }
+    return (
+      <>
+        <span className="weight-assess-row-val">{Number(value).toFixed(1)} 公斤</span>
+        <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+      </>
+    );
   };
 
   const chooseMode = (nextMode)=>{
@@ -1078,10 +1255,12 @@ function WeightAssessPage({open, onClose, onComplete}){
     if(mode === nextMode) return;
     setMode(nextMode);
     setTargetKg(null);
-    setWeeks(null);
+    setKeepLo(null);
+    setKeepHi(null);
+    setEndYmd(null);
   };
 
-  const renderRowValue = (value, unit, emptyText='请添加')=>{
+  const renderRowValue = (value, unit, emptyText='请添加', digits)=>{
     if(value == null){
       return (
         <>
@@ -1090,9 +1269,10 @@ function WeightAssessPage({open, onClose, onComplete}){
         </>
       );
     }
+    const precision = digits != null ? digits : (unit === '厘米' ? 1 : unit === '公斤' ? 2 : 1);
     return (
       <>
-        <span className="weight-assess-row-val">{unit === '周' ? value : Number(value).toFixed(unit === '厘米' ? 0 : 1)} {unit}</span>
+        <span className="weight-assess-row-val is-muted">{Number(value).toFixed(precision)}{unit}</span>
         <span className="weight-assess-row-arr" aria-hidden="true">›</span>
       </>
     );
@@ -1100,38 +1280,66 @@ function WeightAssessPage({open, onClose, onComplete}){
 
   const targetNote = (()=>{
     if(!showTarget) return null;
+    if(mode === 'keep'){
+      if(keepLo != null && keepHi != null && (keepLo < bmiLo || keepHi > bmiHi)){
+        return {warn:true, text:`建议保持范围落在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+      }
+      return {warn:false, text:`建议保持范围在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
+    }
     if(targetKg != null && targetKg < bmiLo){
       return {warn:true, text:`目标低于建议范围，建议不低于 ${bmiLo} 公斤`};
     }
     return {warn:false, text:`目标体重建议在 ${bmiLo}–${bmiHi} 公斤内（由你的身高计算得出）`};
   })();
 
-  const weeksNote = showWeeks
-    ? `建议计划不短于 ${weightAssessMinWeeks(weightKg, targetKg)} 周（每周${mode === 'lose' ? '减' : '增'}重不超过 0.45 公斤）`
+  const endDateNote = showEndDate
+    ? `建议不早于 ${weightAssessFormatYmd(endDateBounds.min, false)}（每周${mode === 'lose' ? '减' : '增'}重不超过 0.45 公斤）`
     : '';
-
-  const renderPickerOption = (item)=>{
-    if(pickerKey === 'g'){
-      return <>{Number(item).toFixed(1)}<small>公斤</small></>;
-    }
-    if(pickerKey === 'h'){
-      return <>{item}<small>厘米</small></>;
-    }
-    if(pickerKey === 't'){
-      const end = new Date(2026, 9, 30 + item * 7);
-      return <>{item} 周<small>{end.getMonth() + 1}月{end.getDate()}日完成</small></>;
-    }
-    return item;
-  };
 
   const handleWeightKeypadSubmit = (payload)=>{
     const raw = Number(payload?.value);
     if(!Number.isFinite(raw)) return;
     const kg = payload?.unit === 'jin' ? raw / 2 : raw;
-    setWeightKg(Number(kg.toFixed(1)));
+    const next = Number(kg.toFixed(1));
+    const field = weightKeypadField;
+    setWeightKeypadField(null);
+    if(field === 'target'){
+      setTargetKg(next);
+      setEndYmd(null);
+      return;
+    }
+    if(field === 'keepLo'){
+      if(keepHi != null && next >= keepHi){
+        showToast('最低体重需小于最高体重');
+        return;
+      }
+      setKeepLo(next);
+      syncKeepTarget(next, keepHi);
+      return;
+    }
+    if(field === 'keepHi'){
+      if(keepLo != null && next <= keepLo){
+        showToast('最高体重需大于最低体重');
+        return;
+      }
+      setKeepHi(next);
+      syncKeepTarget(keepLo, next);
+      return;
+    }
+    setWeightKg(next);
     setTargetKg(null);
-    setWeeks(null);
-    setWeightKeypadOpen(false);
+    setKeepLo(null);
+    setKeepHi(null);
+    setEndYmd(null);
+  };
+
+  const handleDateConfirm = (ymd)=>{
+    if(datePickerKey === 'birth'){
+      setBirthYmd(ymd);
+    }else if(datePickerKey === 'end'){
+      setEndYmd(ymd);
+    }
+    setDatePickerKey(null);
   };
 
   return (
@@ -1147,71 +1355,102 @@ function WeightAssessPage({open, onClose, onComplete}){
         <span className="weight-assess-nav-title">目标体重制定</span>
       </div>
       <div className="weight-assess-simple-body">
-        <p className="weight-assess-simple-intro">美柚将根据以下信息为你制定体重计划</p>
-        <button type="button" className="weight-assess-row" onClick={()=>setWeightKeypadOpen(true)}>
-          <span className="weight-assess-row-key">当前体重</span>
-          <span className="weight-assess-row-v">{renderRowValue(weightKg, '公斤')}</span>
-        </button>
-        <button type="button" className="weight-assess-row" onClick={()=>openPicker('h')}>
-          <span className="weight-assess-row-key">当前身高</span>
-          <span className="weight-assess-row-v">{renderRowValue(heightCm, '厘米')}</span>
-        </button>
+        <div className="weight-assess-basic-group">
+          <button type="button" className="weight-assess-row" onClick={()=>setDatePickerKey('birth')}>
+            <span className="weight-assess-row-key">出生日期</span>
+            <span className="weight-assess-row-v">
+              {birthYmd ? (
+                <>
+                  <span className="weight-assess-row-val is-muted">{weightAssessFormatYmd(birthYmd)}</span>
+                  <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+                </>
+              ) : (
+                <>
+                  <span className="weight-assess-row-ph">请添加</span>
+                  <span className="weight-assess-row-add" aria-hidden="true">+</span>
+                </>
+              )}
+            </span>
+          </button>
+          <button type="button" className="weight-assess-row" onClick={openHeightPicker}>
+            <span className="weight-assess-row-key">身高</span>
+            <span className="weight-assess-row-v">{renderRowValue(heightCm, '厘米')}</span>
+          </button>
+          <button type="button" className="weight-assess-row" onClick={()=>setWeightKeypadField('weight')}>
+            <span className="weight-assess-row-key">体重</span>
+            <span className="weight-assess-row-v">{renderRowValue(weightKg, '公斤')}</span>
+          </button>
+        </div>
         <div className="weight-assess-simple-gap"/>
-        <div className="weight-assess-row is-static">
-          <span className="weight-assess-row-key">你的计划</span>
-          <span className="weight-assess-seg" role="group" aria-label="计划类型">
-            {WEIGHT_ASSESS_MODES.map(item=>(
-              <button
-                key={item.key}
-                type="button"
-                className={mode === item.key ? 'is-on' : ''}
-                onClick={()=>chooseMode(item.key)}
-              >
-                {item.label}
+        <div className="weight-assess-goal-group">
+          <div className="weight-assess-row is-static">
+            <span className="weight-assess-row-key">你的目标</span>
+            <span className="weight-assess-seg" role="group" aria-label="目标类型">
+              {WEIGHT_ASSESS_MODES.map(item=>(
+                <button
+                  key={item.key}
+                  type="button"
+                  className={mode === item.key ? 'is-on' : ''}
+                  onClick={()=>chooseMode(item.key)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </span>
+          </div>
+          <div className={'weight-assess-simple-block' + (showTarget ? ' is-show' : '')}>
+            {mode === 'keep' ? (
+              <>
+                <button type="button" className="weight-assess-row is-nested" onClick={()=>openKeepBound('keepLo')}>
+                  <span className="weight-assess-row-key">最低体重</span>
+                  <span className="weight-assess-row-v">{renderBoundValue(keepLo)}</span>
+                </button>
+                <button type="button" className="weight-assess-row is-nested" onClick={()=>openKeepBound('keepHi')}>
+                  <span className="weight-assess-row-key">最高体重</span>
+                  <span className="weight-assess-row-v">{renderBoundValue(keepHi)}</span>
+                </button>
+              </>
+            ) : (
+              <button type="button" className="weight-assess-row is-nested" onClick={openTargetEditor}>
+                <span className="weight-assess-row-key">目标体重</span>
+                <span className="weight-assess-row-v">
+                  {targetKg == null ? (
+                    <>
+                      <span className="weight-assess-row-ph">请选择</span>
+                      <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="weight-assess-row-val">{Number(targetKg).toFixed(1)} 公斤</span>
+                      <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+                    </>
+                  )}
+                </span>
               </button>
-            ))}
-          </span>
-        </div>
-        <div className={'weight-assess-simple-block' + (showTarget ? ' is-show' : '')}>
-          <div className="weight-assess-simple-gap is-sm"/>
-          <button type="button" className="weight-assess-row" onClick={()=>openPicker('g')}>
-            <span className="weight-assess-row-key">目标体重</span>
-            <span className="weight-assess-row-v">
-              {targetKg == null ? (
-                <>
-                  <span className="weight-assess-row-ph">请选择</span>
-                  <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
-                </>
-              ) : (
-                <>
-                  <span className="weight-assess-row-val">{Number(targetKg).toFixed(1)} 公斤</span>
-                  <span className="weight-assess-row-arr" aria-hidden="true">›</span>
-                </>
-              )}
-            </span>
-          </button>
-          {targetNote ? (
-            <p className={'weight-assess-simple-note' + (targetNote.warn ? ' is-warn' : '')}>{targetNote.text}</p>
-          ) : null}
-        </div>
-        <div className={'weight-assess-simple-block' + (showWeeks ? ' is-show' : '')}>
-          <button type="button" className="weight-assess-row" onClick={()=>openPicker('t')}>
-            <span className="weight-assess-row-key">计划时间</span>
-            <span className="weight-assess-row-v">
-              {weeks == null ? (
-                <>
-                  <span className="weight-assess-row-ph">请选择</span>
-                  <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
-                </>
-              ) : (
-                <>
-                  <span className="weight-assess-row-val">{weeks} 周</span>
-                  <span className="weight-assess-row-arr" aria-hidden="true">›</span>
-                </>
-              )}
-            </span>
-          </button>
-          {weeksNote ? <p className="weight-assess-simple-note">{weeksNote}</p> : null}
+            )}
+            {targetNote ? (
+              <p className={'weight-assess-simple-note is-nested' + (targetNote.warn ? ' is-warn' : '')}>{targetNote.text}</p>
+            ) : null}
+          </div>
+          <div className={'weight-assess-simple-block' + (showEndDate ? ' is-show' : '')}>
+            <button type="button" className="weight-assess-row is-nested" onClick={openEndDatePicker}>
+              <span className="weight-assess-row-key">目标达成日期</span>
+              <span className="weight-assess-row-v">
+                {endYmd == null ? (
+                  <>
+                    <span className="weight-assess-row-ph">请选择</span>
+                    <span className="weight-assess-row-add is-on" aria-hidden="true">+</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="weight-assess-row-val">{weightAssessFormatYmd(endYmd)}</span>
+                    <span className="weight-assess-row-arr" aria-hidden="true">›</span>
+                  </>
+                )}
+              </span>
+            </button>
+            {endDateNote ? <p className="weight-assess-simple-note is-nested">{endDateNote}</p> : null}
+          </div>
         </div>
       </div>
       <div className="weight-assess-simple-foot">
@@ -1221,12 +1460,19 @@ function WeightAssessPage({open, onClose, onComplete}){
           disabled={!canSubmit}
           onClick={()=>{
             if(!canSubmit) return;
+            const weeks = mode === 'keep' || !endYmd
+              ? null
+              : weightAssessWeekDiff(weightAssessToday(), weightAssessFromYmd(endYmd));
             onComplete?.({
+              birthYmd,
               weightKg,
               heightCm,
               mode,
-              targetKg,
-              weeks: mode === 'keep' ? null : weeks,
+              targetKg: mode === 'keep' ? Number((((keepLo + keepHi) / 2)).toFixed(1)) : targetKg,
+              keepLo: mode === 'keep' ? keepLo : null,
+              keepHi: mode === 'keep' ? keepHi : null,
+              endYmd: mode === 'keep' ? null : endYmd,
+              weeks,
             });
           }}
         >
@@ -1234,20 +1480,37 @@ function WeightAssessPage({open, onClose, onComplete}){
         </button>
       </div>
       <WeightAssessWheelPicker
-        open={Boolean(pickerKey)}
-        title={pickerMeta.title}
-        subtitle={pickerMeta.subtitle}
+        open={pickerKey === 'h'}
+        title="身高"
         options={pickerOptions}
         index={pickerIndex}
         onIndexChange={setPickerIndex}
         onCancel={closePicker}
         onConfirm={confirmPicker}
-        renderOption={renderPickerOption}
+        renderOption={(item)=>(<>{item}<small>厘米</small></>)}
       />
-      {weightKeypadOpen && QuickWeightPicker ? (
+      <WeightAssessDatePicker
+        open={datePickerKey === 'birth'}
+        title="选择出生日期"
+        value={birthYmd}
+        minYmd={{y:1950, m:1, d:1}}
+        maxYmd={weightAssessYmd(weightAssessToday())}
+        onCancel={()=>setDatePickerKey(null)}
+        onConfirm={handleDateConfirm}
+      />
+      <WeightAssessDatePicker
+        open={datePickerKey === 'end'}
+        title="目标达成日期"
+        value={endYmd || endDateBounds.rec}
+        minYmd={endDateBounds.min}
+        maxYmd={endDateBounds.max}
+        onCancel={()=>setDatePickerKey(null)}
+        onConfirm={handleDateConfirm}
+      />
+      {weightKeypadField && QuickWeightPicker ? (
         <QuickWeightPicker
           onSubmit={handleWeightKeypadSubmit}
-          onCancel={()=>setWeightKeypadOpen(false)}
+          onCancel={()=>setWeightKeypadField(null)}
         />
       ) : null}
       {toast ? <div className="weight-assess-toast" role="status">{toast}</div> : null}
@@ -1633,7 +1896,7 @@ const WEIGHT_GOAL_ALL_DAYS = (()=>{
     day.burn = day.ex ? day.ex[2] : 0;
     day.st = day.n === 0
       ? 'none'
-      : (day.n < 3 ? 'na' : (day.in < WEIGHT_GOAL_KCAL_LOW ? 'low' : (day.in > WEIGHT_GOAL_KCAL_HIGH ? 'over' : 'ok')));
+      : (day.in > WEIGHT_GOAL_KCAL_HIGH ? 'over' : 'ok');
   });
   days[count - 1].today = true;
   return days;
@@ -1906,7 +2169,7 @@ function ReviewDetailSectionCard({
         </div>
         {extra || (isActionable ? (
           <span className="review-detail-section-entry" aria-hidden="true">
-            <span className="review-detail-section-entry-gt">&gt;</span>
+            <ReviewChevron/>
           </span>
         ) : null)}
       </header>
@@ -2013,40 +2276,96 @@ function weightGoalRangeMeta(range){
   };
 }
 
+function weightGoalFmtMd(ts){
+  const d = new Date(ts);
+  return (d.getUTCMonth() + 1) + '月' + d.getUTCDate() + '日';
+}
+
+function WeightGoalProgressRing({progress}){
+  const r = 39;
+  const c = 2 * Math.PI * r;
+  const dash = Math.max(0, Math.min(1, progress / 100)) * c;
+  return (
+    <div className="wg-prog-ring" aria-hidden="true">
+      <svg viewBox="0 0 96 96" width="96" height="96">
+        <defs>
+          <linearGradient id="wg-prog-ring-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#FF9FBE"/>
+            <stop offset="1" stopColor="#FF4D88"/>
+          </linearGradient>
+        </defs>
+        <circle cx="48" cy="48" r={r} fill="none" stroke="rgba(255,77,136,.12)" strokeWidth="9"/>
+        <circle
+          className="wg-prog-ring-arc"
+          cx="48" cy="48" r={r}
+          fill="none" stroke="url(#wg-prog-ring-grad)" strokeWidth="9" strokeLinecap="round"
+          strokeDasharray={dash + ' ' + c}
+          style={{'--wg-ring-c':c, '--wg-ring-dash':dash}}
+          transform="rotate(-90 48 48)"
+        />
+      </svg>
+      <div className="wg-prog-ring-copy">
+        <b>{progress}<i>%</i></b>
+        <small>已完成</small>
+      </div>
+    </div>
+  );
+}
+
 function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePhase='none', onCreatePlan}){
   const isAll = weightGoalIsAllTab(range);
   const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
   const week = WEIGHT_GOAL_WEEK_STATS[weekIndex] || WEIGHT_GOAL_WEEK_STATS[WEIGHT_GOAL_CURRENT_WEEK];
   const isCurrent = !isAll && weekIndex === WEIGHT_GOAL_CURRENT_WEEK;
-  const weekNo = isAll ? WEIGHT_GOAL_PLAN_WEEKS : (weekIndex + 1);
   const displayWt = isAll || isCurrent
     ? WEIGHT_GOAL_CUR
     : Number((week?.to ?? WEIGHT_GOAL_CUR).toFixed(1));
   const totLost = Number((WEIGHT_GOAL_START - displayWt).toFixed(1));
   const left = Math.max(0, Number((displayWt - WEIGHT_GOAL_WEIGHT_TARGET).toFixed(1)));
   const span = WEIGHT_GOAL_START - WEIGHT_GOAL_WEIGHT_TARGET;
-  const progress = span > 0 ? Math.round((totLost / span) * 100) : 0;
-  const tipLeft = Math.max(8, Math.min(92, progress));
-  const remainWeeks = Math.max(0, WEIGHT_GOAL_EST_WEEKS - weekNo);
-  const weekLost = Math.max(0, Number((week?.lost || 0).toFixed(1)));
-  const weekGoal = week?.goal || 0.3;
-  const weekMet = weekLost >= weekGoal;
+  const progress = Math.max(0, Math.min(100, span > 0 ? Math.round((totLost / span) * 100) : 0));
+  const totalDays = WEIGHT_GOAL_EST_WEEKS * 7;
+  const dayNo = isAll
+    ? WEIGHT_GOAL_PLAN_WEEKS * 7
+    : ((isCurrent ? WEIGHT_GOAL_PLAN_WEEKS : (weekIndex + 1)) * 7);
+  const timePct = Math.round(dayNo / totalDays * 100);
+  // 里程碑：每完成 25% 一个
+  const milestones = [25, 50, 75].map(pct=>({
+    pct,
+    wt:Number((WEIGHT_GOAL_START - span * pct / 100).toFixed(1)),
+    done:progress >= pct,
+  }));
+  const nextMs = milestones.find(item=>!item.done);
+  const toNext = nextMs ? Math.max(0.1, Number((displayWt - nextMs.wt).toFixed(1))) : null;
+  // 按当前节奏预估达成日
+  const weeksUsed = Math.max(1, dayNo / 7);
+  const pace = totLost > 0 ? totLost / weeksUsed : 0;
+  const lastTs = (WEIGHT_GOAL_ALL_DAYS[WEIGHT_GOAL_ALL_DAYS.length - 1] || {}).ts || Date.now();
+  const etaWeeks = pace > 0 ? Math.ceil(left / pace) : null;
+  const etaText = etaWeeks != null ? weightGoalFmtMd(lastTs + etaWeeks * 7 * 864e5) : null;
+  const ahead = progress - timePct;
+  const pacing = progress >= 100
+    ? {tone:'is-done', label:'已达成'}
+    : (ahead >= 3 ? {tone:'is-ahead', label:'领先计划'} : (ahead >= -5 ? {tone:'is-ok', label:'节奏正常'} : {tone:'is-behind', label:'稍慢一点'}));
   const title = '目标进度';
-  const subtitle = isAll
-    ? ('共 ' + WEIGHT_GOAL_EST_WEEKS + ' 周')
-    : ('第 ' + weekNo + ' 周 / 共 ' + WEIGHT_GOAL_EST_WEEKS + ' 周');
-  const weekGoalLabel = '第' + weekNo + '周目标';
-  const metCount = WEIGHT_GOAL_WEEK_STATS.filter(item=>item.met).length;
+  // 整卡热区：示例态 → 制定目标；有目标 → 调整目标（同一个目标体重制定页）
+  const cardAction = sample ? onCreatePlan : onAdjustGoal;
   return (
     <section
-      className={'review-detail-card review-weight-goal-progress-card is-stage' + (sample ? ' is-sample' : '')}
+      className={'review-detail-card review-weight-goal-progress-card is-stage wg-prog' + (sample ? ' is-sample' : '') + (cardAction ? ' is-tappable' : '')}
       aria-label={(sample ? '示例数据，' : '') + title}
+      role={cardAction ? 'button' : undefined}
+      tabIndex={cardAction ? 0 : undefined}
+      onClick={cardAction || undefined}
+      onKeyDown={cardAction ? (event)=>{ if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); cardAction(); } } : undefined}
     >
       <header className="review-weight-goal-stage-head">
         <span className="review-card-icon is-diet-target" aria-hidden="true"><ReviewDietTargetIcon/></span>
         <div className="review-weight-goal-stage-title">
           <h3>{title}</h3>
-          <small>{subtitle}</small>
+          <small className={sample ? 'wg-prog-sub is-sample-blur' : 'wg-prog-sub'} aria-hidden={sample || undefined}>
+            {isAll ? ('共 ' + totalDays + ' 天') : <>第 <b className="wg-prog-day">{dayNo}</b> 天 · 共 {totalDays} 天</>}
+          </small>
         </div>
         {sample ? null : (
           <button
@@ -2062,43 +2381,52 @@ function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePha
           </button>
         )}
       </header>
-      <div className={'review-weight-goal-stage-body' + (sample ? ' is-sample-body' : '')}>
-        <div className="review-weight-goal-stage-metric">
-          <span className="review-weight-goal-stage-cur">
-            {displayWt.toFixed(1)}
-            <i>kg</i>
-          </span>
-          <span className="review-weight-goal-stage-to">/ 目标 {WEIGHT_GOAL_WEIGHT_TARGET.toFixed(1)}kg</span>
-        </div>
-        <div className="review-weight-goal-stage-bar" aria-hidden="true">
-          <i style={{width:progress + '%'}}/>
-          <em style={{left:progress + '%'}}/>
-          <span className="review-weight-goal-stage-tip" style={{left:tipLeft + '%'}}>已完成 {progress}%</span>
-        </div>
-        <div className="review-weight-goal-stage-foot is-split">
-          <span>起始 {WEIGHT_GOAL_START.toFixed(1)}kg</span>
-          <span>还差 {left}kg · 剩 {remainWeeks} 周</span>
-        </div>
-        <div className="review-weight-goal-stage-split">
-          <div>
-            <small>累计减重</small>
-            <b>{totLost.toFixed(1)} <i>kg</i></b>
+      <div className={'review-weight-goal-stage-body wg-prog-body' + (sample ? ' is-sample-body' : '')}>
+        <div className="wg-prog-hero">
+          <div className="wg-prog-hero-main">
+            <span className="wg-prog-hero-label">当前体重</span>
+            <span className="wg-prog-hero-cur">{displayWt.toFixed(1)}<i>kg</i></span>
+            <div className="wg-prog-hero-chips">
+              <span className="wg-prog-chip is-lost">
+                <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7M3 6.5l3 3 3-3"/></svg>
+                已减 {totLost.toFixed(1)}kg
+              </span>
+              <span className="wg-prog-chip is-left">还差 {left.toFixed(1)}kg</span>
+            </div>
           </div>
-          {isAll ? (
-            <div>
-              <small>周目标达成</small>
-              <b>{metCount}<i>/{WEIGHT_GOAL_WEEK_STATS.length} 周</i></b>
-            </div>
-          ) : (
-            <div>
-              <small>{weekGoalLabel}</small>
-              <b>
-                {weekLost.toFixed(1)} / {weekGoal.toFixed(1)}kg
-                {weekMet ? <span className="is-ok" aria-label="已达成">✓</span> : null}
-              </b>
-            </div>
-          )}
+          <WeightGoalProgressRing progress={progress}/>
         </div>
+
+        <div className="wg-prog-track" aria-hidden="true">
+          <div className="wg-prog-track-rail">
+            <i className="wg-prog-track-fill" style={{width:progress + '%'}}/>
+            {milestones.map(item=>(
+              <span
+                key={item.pct}
+                className={'wg-prog-track-ms' + (item.done ? ' is-done' : '') + (item === nextMs ? ' is-next' : '')}
+                style={{left:item.pct + '%'}}
+              />
+            ))}
+            <span className="wg-prog-track-me" style={{left:progress + '%'}}/>
+            <span className="wg-prog-track-flag">
+              <svg viewBox="0 0 16 16"><path d="M4 14V2.5"/><path d="M4.5 3h7.2l-1.6 2.6 1.6 2.6H4.5z"/></svg>
+            </span>
+          </div>
+          <div className="wg-prog-track-labels">
+            <span className="is-start">{WEIGHT_GOAL_START.toFixed(1)}</span>
+            {milestones.filter(item=>Math.abs(item.pct - progress) >= 8).map(item=>(
+              <span
+                key={item.pct}
+                className={'is-ms' + (item.done ? ' is-done' : '') + (item === nextMs ? ' is-next' : '')}
+                style={{left:item.pct + '%'}}
+              >
+                {item.wt.toFixed(1)}
+              </span>
+            ))}
+            <span className="is-target">{WEIGHT_GOAL_WEIGHT_TARGET.toFixed(1)}</span>
+          </div>
+        </div>
+
         {sample ? <ReviewSampleMark/> : null}
       </div>
       {sample ? (
@@ -2996,6 +3324,17 @@ function weightGoalSheetMonthStats(byMonth, monthKey){
   return {change, ex:monthDays.filter(item=>item.ex).length};
 }
 
+/** rows 为新→旧；展示「5月20日–5月26日」 */
+function weightGoalSheetRangeText(rows){
+  if(!rows || !rows.length) return '';
+  const end = rows[0];
+  const start = rows[rows.length - 1];
+  const startLabel = start.m + '月' + start.dd + '日';
+  const endLabel = end.m + '月' + end.dd + '日';
+  if(start.y === end.y && start.m === end.m && start.dd === end.dd) return startLabel;
+  return startLabel + '–' + endLabel;
+}
+
 function WeightGoalSheetDelta({delta}){
   if(delta == null) return <span className="wg-sheet-delta is-eq">—</span>;
   const cls = delta < 0 ? 'is-dn' : (delta > 0 ? 'is-up' : 'is-eq');
@@ -3003,12 +3342,46 @@ function WeightGoalSheetDelta({delta}){
   return <span className={'wg-sheet-delta ' + cls}>{text}</span>;
 }
 
+function weightGoalSheetMonthLabel(monthKey){
+  if(!monthKey) return '';
+  const parts = monthKey.split('-');
+  return parts[0] + '年' + Number(parts[1]) + '月';
+}
+
+function WeightGoalSheetMonthBar({monthKey, byMonth, rangeText, rangeStats, isRange}){
+  if(isRange){
+    return (
+      <div className="wg-sheet-month-inner">
+        <b>{rangeText}</b>
+        {rangeStats ? (
+          <small>
+            {rangeStats.change >= 0 ? '减' : '增'} <b>{Math.abs(rangeStats.change).toFixed(1)}kg</b>
+            {' · 运动 '}<b>{rangeStats.ex}</b>{' 天'}
+          </small>
+        ) : null}
+      </div>
+    );
+  }
+  const month = weightGoalSheetMonthStats(byMonth, monthKey);
+  return (
+    <div className="wg-sheet-month-inner">
+      <b>{weightGoalSheetMonthLabel(monthKey)}</b>
+      <small>
+        {month.change >= 0 ? '减' : '增'} <b>{Math.abs(month.change).toFixed(1)}kg</b>
+        {' · 运动 '}<b>{month.ex}</b>{' 天'}
+      </small>
+    </div>
+  );
+}
+
 // 所有记录表格：左侧日期+体重冻结，右侧饮食/运动可横滑；landscape 时一屏铺满
-function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateChange}){
+function WeightGoalSheetTable({rows, byMonth, landscape = false, compact = false, rangeText = '', onScrollStateChange}){
   const scrollRef = React.useRef(null);
   const headRef = React.useRef(null);
+  const monthMarksRef = React.useRef({});
   const [viewW, setViewW] = React.useState(0);
   const [scrollState, setScrollState] = React.useState({atStart:true, atEnd:false});
+  const [pinKey, setPinKey] = React.useState(null);
   const sync = ()=>{
     const el = scrollRef.current;
     if(!el) return;
@@ -3026,10 +3399,74 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
     return ()=>ro?.disconnect();
   }, [landscape]);
   React.useEffect(()=>{ onScrollStateChange?.(scrollState); }, [scrollState]);
+  const rangeStats = React.useMemo(()=>{
+    if(!compact || !rows.length) return null;
+    const weights = rows.filter(item=>item.wt != null);
+    const change = weights.length > 1
+      ? Number((weights[weights.length - 1].wt - weights[0].wt).toFixed(1))
+      : 0;
+    return {change, ex:rows.filter(item=>item.ex).length};
+  }, [compact, rows]);
+  const monthOrder = React.useMemo(()=>{
+    if(compact) return [];
+    const keys = [];
+    let last = '';
+    rows.forEach(day=>{
+      const key = day.y + '-' + day.m;
+      if(key !== last){
+        keys.push(key);
+        last = key;
+      }
+    });
+    return keys;
+  }, [compact, rows]);
+  React.useEffect(()=>{
+    if(!monthOrder.length){
+      setPinKey(null);
+      return;
+    }
+    setPinKey(prev=>monthOrder.includes(prev) ? prev : monthOrder[0]);
+  }, [monthOrder]);
+  React.useEffect(()=>{
+    if(compact || !monthOrder.length) return undefined;
+    const body = scrollRef.current;
+    if(!body) return undefined;
+    const scroller = body.closest('.review-detail-content, .wg-sheet-landscape-scroll') || body;
+    // 横屏容器有 rotate(90deg)，getBoundingClientRect 的 top 不可靠，改用 scroll 坐标系
+    const markY = (el)=>{
+      if(landscape){
+        return el.offsetTop - scroller.offsetTop;
+      }
+      return el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    };
+    const updatePin = ()=>{
+      const headH = headRef.current?.offsetHeight || 46;
+      const line = scroller.scrollTop + headH + 4;
+      let current = monthOrder[0];
+      monthOrder.forEach(key=>{
+        const el = monthMarksRef.current[key];
+        if(!el) return;
+        if(markY(el) <= line) current = key;
+      });
+      setPinKey(prev=>prev === current ? prev : current);
+    };
+    // 进入横屏时滚回顶部，避免沿用错误滚动位置
+    if(landscape) scroller.scrollTop = 0;
+    setPinKey(monthOrder[0]);
+    const raf = window.requestAnimationFrame(updatePin);
+    scroller.addEventListener('scroll', updatePin, {passive:true});
+    window.addEventListener('resize', updatePin);
+    return ()=>{
+      window.cancelAnimationFrame(raf);
+      scroller.removeEventListener('scroll', updatePin);
+      window.removeEventListener('resize', updatePin);
+    };
+  }, [compact, landscape, monthOrder, rows.length]);
   let lastMonth = '';
+  const pinStatsKey = pinKey || monthOrder[0] || null;
   return (
     <div
-      className={'wg-sheet' + (landscape ? ' is-landscape' : '') + (scrollState.atStart ? '' : ' is-scrolled') + (scrollState.atEnd ? ' is-at-end' : '')}
+      className={'wg-sheet' + (landscape ? ' is-landscape' : '') + (scrollState.atStart ? '' : ' is-scrolled') + (scrollState.atEnd ? ' is-at-end' : '') + (!compact ? ' has-month-pin' : '')}
       style={{'--wg-sheet-vw':viewW ? viewW + 'px' : '100%'}}
     >
       <div className="wg-sheet-head-wrap" ref={headRef} aria-hidden="true">
@@ -3038,6 +3475,7 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
             <span className="wg-sheet-col-date">日期</span>
             <span className="wg-sheet-col-wt">体重 kg</span>
           </div>
+          <div className="wg-sheet-cell wg-sheet-col-cum">累计减重</div>
           <div className="wg-sheet-cell wg-sheet-col-in">摄入</div>
           <div className="wg-sheet-head-group">
             <span className="wg-sheet-head-group-label">饮食</span>
@@ -3046,29 +3484,35 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
             </div>
           </div>
           <div className="wg-sheet-cell wg-sheet-col-ex">运动</div>
-          <div className="wg-sheet-cell wg-sheet-col-cum">累计减重</div>
         </div>
       </div>
+      {!compact && pinStatsKey ? (
+        <div className="wg-sheet-month is-pin" aria-live="polite">
+          <WeightGoalSheetMonthBar monthKey={pinStatsKey} byMonth={byMonth}/>
+        </div>
+      ) : null}
       <div className="wg-sheet-body" ref={scrollRef} onScroll={sync}>
+        {compact && rangeText ? (
+          <div className="wg-sheet-month is-range">
+            <WeightGoalSheetMonthBar isRange rangeText={rangeText} rangeStats={rangeStats}/>
+          </div>
+        ) : null}
         {rows.map(day=>{
           const monthKey = day.y + '-' + day.m;
-          const showMonth = monthKey !== lastMonth;
+          const showMonth = !compact && monthKey !== lastMonth;
           lastMonth = monthKey;
-          const month = showMonth ? weightGoalSheetMonthStats(byMonth, monthKey) : null;
           const meals = [...day.meals, day.sn];
           const status = WEIGHT_GOAL_STATUS[day.st] || WEIGHT_GOAL_STATUS.none;
           const recorded = meals.some(Boolean);
           return (
             <React.Fragment key={day.d + '-' + day.y}>
               {showMonth ? (
-                <div className="wg-sheet-month">
-                  <div className="wg-sheet-month-inner">
-                    <b>{day.y}年{day.m}月</b>
-                    <small>
-                      {month.change >= 0 ? '减' : '增'} <b>{Math.abs(month.change).toFixed(1)}kg</b>
-                      {' · 运动 '}<b>{month.ex}</b>{' 天'}
-                    </small>
-                  </div>
+                <div
+                  className={'wg-sheet-month' + (monthKey === pinStatsKey ? ' is-under-pin' : '')}
+                  ref={el=>{ monthMarksRef.current[monthKey] = el; }}
+                  data-month={monthKey}
+                >
+                  <WeightGoalSheetMonthBar monthKey={monthKey} byMonth={byMonth}/>
                 </div>
               ) : null}
               <div className={'wg-sheet-row' + (day.today ? ' is-today' : '')}>
@@ -3082,11 +3526,14 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
                     {day.wt != null ? <WeightGoalSheetDelta delta={day.delta}/> : null}
                   </div>
                 </div>
+                <div className={'wg-sheet-cell wg-sheet-col-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
+                  {day.cum == null ? <small>—</small> : <b>{day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1)}</b>}
+                </div>
                 <div className={'wg-sheet-cell wg-sheet-col-in' + (recorded ? '' : ' is-empty')}>
                   {recorded ? (
                     <>
                       <b style={{color:status.text}}>{day.in}</b>
-                      <small className={'wg-sheet-status is-' + day.st}>{day.n < 3 ? (day.n + '/3 餐') : status.label}</small>
+                      <small className={'wg-sheet-status is-' + day.st}>{status.label}</small>
                     </>
                   ) : <small>未记录</small>}
                 </div>
@@ -3112,9 +3559,6 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
                 <div className={'wg-sheet-cell wg-sheet-col-ex' + (day.ex ? '' : ' is-empty')}>
                   {day.ex ? <><b>{day.burn}</b><small>{day.ex[0]} {day.ex[1]}′</small></> : <small>—</small>}
                 </div>
-                <div className={'wg-sheet-cell wg-sheet-col-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
-                  {day.cum == null ? <small>—</small> : <b>{day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1)}</b>}
-                </div>
               </div>
             </React.Fragment>
           );
@@ -3124,12 +3568,8 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, onScrollStateCh
   );
 }
 
-function WeightGoalRecordsPage({open, onClose}){
-  const [limit, setLimit] = React.useState(60);
-  const [landscape, setLandscape] = React.useState(false);
-  const [phoneSize, setPhoneSize] = React.useState(null);
-  const [swipeHint, setSwipeHint] = React.useState(true);
-  const pageRef = React.useRef(null);
+function useWeightGoalRecordsSheet(initialLimit = 60){
+  const [limit, setLimit] = React.useState(initialLimit);
   const rows = React.useMemo(()=>weightGoalRecordsRows(), []);
   const byMonth = React.useMemo(()=>{
     const map = {};
@@ -3139,36 +3579,111 @@ function WeightGoalRecordsPage({open, onClose}){
     });
     return map;
   }, []);
-  React.useEffect(()=>{
-    if(open){ setLimit(60); setSwipeHint(true); }
-    else setLandscape(false);
-  }, [open]);
   const visible = rows.slice(0, limit);
-  const openLandscape = ()=>{
-    const phone = pageRef.current?.closest('.phone');
+  const remain = Math.max(0, rows.length - limit);
+  const expanded = remain === 0 || limit >= rows.length;
+  const expandAll = React.useCallback(()=>{
+    setLimit(rows.length);
+  }, [rows.length]);
+  return {
+    rows,
+    byMonth,
+    visible,
+    remain,
+    expanded,
+    expandAll,
+  };
+}
+
+function WeightGoalRecordsSheetCard({
+  visible,
+  byMonth,
+  compact = false,
+  landscape = false,
+  rangeText = '',
+}){
+  return (
+    <div
+      className={'review-weight-goal-sheet-card' + (compact ? ' is-embed' : '')}
+      aria-label="每日饮食与运动列表"
+    >
+      <WeightGoalSheetTable
+        rows={visible}
+        byMonth={byMonth}
+        landscape={landscape}
+        compact={compact}
+        rangeText={rangeText}
+      />
+    </div>
+  );
+}
+
+function WeightGoalRecordsSection({onOpen}){
+  // 体重页内嵌仅展示近 7 天；进二级页看全部
+  const sheet = useWeightGoalRecordsSheet(7);
+  const rangeText = React.useMemo(()=>weightGoalSheetRangeText(sheet.visible), [sheet.visible]);
+  return (
+    <ReviewDetailSectionCard
+      iconClass="is-weight"
+      icon={<ReviewScaleIcon/>}
+      title="每日饮食与运动"
+      className="review-weight-goal-records-section"
+      ariaLabel="每日饮食与运动"
+      onOpen={onOpen}
+    >
+      <WeightGoalRecordsSheetCard
+        visible={sheet.visible}
+        byMonth={sheet.byMonth}
+        compact
+        rangeText={rangeText}
+      />
+    </ReviewDetailSectionCard>
+  );
+}
+
+function WeightGoalRecordsPage({open, onClose}){
+  // 二级页默认按全部条数初始化，打开时再 expandAll 兜底
+  const sheet = useWeightGoalRecordsSheet(1e6);
+  const [landscape, setLandscape] = React.useState(false);
+  const [phoneSize, setPhoneSize] = React.useState(null);
+  const pageRef = React.useRef(null);
+  const measurePhone = ()=>{
+    const phone = pageRef.current?.closest('.phone') || document.querySelector('.phone');
     const rect = phone?.getBoundingClientRect();
     const height = Math.min(rect?.height || window.innerHeight, window.innerHeight);
-    setPhoneSize({w:rect?.width || 390, h:height});
+    return {w:rect?.width || 390, h:height};
+  };
+  const openLandscape = ()=>{
+    setPhoneSize(measurePhone());
     setLandscape(true);
   };
-  const moreButton = rows.length > limit ? (
-    <button type="button" className="review-weight-goal-sheet-more" onClick={()=>setLimit(value=>value + 60)}>
-      查看更早的记录（还有 {rows.length - limit} 天）
-    </button>
-  ) : null;
+  const exitLandscape = ()=>{
+    setLandscape(false);
+    setPhoneSize(null);
+  };
+  React.useEffect(()=>{
+    if(!open){
+      setLandscape(false);
+      setPhoneSize(null);
+      return;
+    }
+    // 进入二级页自动展开全部记录
+    sheet.expandAll();
+    setLandscape(false);
+  }, [open]);
   return (
     <section
       ref={pageRef}
       className={'review-cycle-detail is-fullscreen-detail review-weight-goal-records-page' + (open ? ' is-open' : '')}
       aria-hidden={!open}
-      aria-label="所有记录"
+      aria-label="每日饮食与运动"
     >
       <div className="review-detail-nav">
         <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
           <ReviewBackIcon/>
         </button>
-        <span className="review-detail-title">所有记录</span>
-        <button type="button" className="wg-sheet-rotate-btn" aria-label="横屏查看" onClick={openLandscape}>
+        <span className="review-detail-title">每日饮食与运动</span>
+        <button type="button" className="wg-sheet-rotate-btn" aria-label="查看横屏" onClick={openLandscape}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="7" width="18" height="11" rx="2.2"/>
             <path d="M8 3.5h3.2M15.5 3.5 18 6l-2.5 2.5" />
@@ -3178,33 +3693,23 @@ function WeightGoalRecordsPage({open, onClose}){
         </button>
       </div>
       <div className="review-detail-content review-weight-goal-detail-content">
-        <div className="review-weight-goal-sheet-card" aria-label="所有记录列表">
-          <WeightGoalSheetTable
-            rows={visible}
-            byMonth={byMonth}
-            onScrollStateChange={(state)=>{ if(!state.atStart) setSwipeHint(false); }}
-          />
-          {moreButton}
-          {swipeHint ? (
-            <div className="wg-sheet-swipe-hint" aria-hidden="true">
-              <span>左滑看每餐和运动</span>
-              <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
-            </div>
-          ) : null}
-        </div>
+        <WeightGoalRecordsSheetCard
+          visible={sheet.visible}
+          byMonth={sheet.byMonth}
+        />
       </div>
-      {landscape && phoneSize ? ReactDOM.createPortal(
-        <div className="wg-sheet-landscape-mask" role="dialog" aria-modal="true" aria-label="所有记录 · 横屏">
+      {open && landscape && phoneSize ? ReactDOM.createPortal(
+        <div className="wg-sheet-landscape-mask" role="dialog" aria-modal="true" aria-label="每日饮食与运动 · 横屏">
           <div
             className="wg-sheet-landscape"
             style={{width:phoneSize.h, height:phoneSize.w, '--wg-land-w':phoneSize.h + 'px', '--wg-land-h':phoneSize.w + 'px'}}
           >
             <div className="wg-sheet-landscape-bar">
-              <span className="wg-sheet-landscape-title">所有记录</span>
+              <span className="wg-sheet-landscape-title">每日饮食与运动</span>
               <span className="wg-sheet-landscape-legend">
-                <i className="is-ok"/>合适 <i className="is-over"/>超量 <i className="is-low"/>偏低
+                <i className="is-ok"/>合适 <i className="is-over"/>超量
               </span>
-              <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
+              <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={exitLandscape}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <rect x="7" y="3" width="11" height="18" rx="2.2"/>
                   <path d="M3.5 9.5V6.3M3.5 6.3 6 3.8"/>
@@ -3213,14 +3718,15 @@ function WeightGoalRecordsPage({open, onClose}){
               </button>
             </div>
             <div className="wg-sheet-landscape-scroll">
-              <div className="review-weight-goal-sheet-card">
-                <WeightGoalSheetTable rows={visible} byMonth={byMonth} landscape/>
-                {moreButton}
-              </div>
+              <WeightGoalRecordsSheetCard
+                visible={sheet.visible}
+                byMonth={sheet.byMonth}
+                landscape
+              />
             </div>
           </div>
         </div>,
-        pageRef.current?.closest('.phone') || document.body
+        pageRef.current?.closest('.phone') || document.querySelector('.phone') || document.body
       ) : null}
     </section>
   );
@@ -3445,10 +3951,8 @@ function ReviewPeriodOverview({
         iconClass="is-symptom"
         icon={<ReviewSymptomIcon/>}
         cardClass="is-symptom-l1"
-        trendPrefix="阶段最常"
-        trendText=""
-        metricLabel="记录次数"
-        value="18"
+        metricLabel="最新记录"
+        value="腹痛"
         sample={isSample}
         chart={<SymptomOverviewPhaseMost/>}
         onOpen={onOpenSymptom}
@@ -4602,7 +5106,10 @@ function WeightChart({
   showArea = true,
   gradientId = 'weightCardArea',
   ariaLabel = '近30天体重变化趋势曲线',
+  unit = 'jin',
 }){
+  const isKg = unit === 'kg';
+  const unitLabel = isKg ? 'kg' : '斤';
   const data = values;
   const n = data.length;
   const W = 340, H = height;
@@ -4704,7 +5211,7 @@ function WeightChart({
               fontWeight="500"
               fill={WEIGHT_LINE}
               fontFamily="PingFang SC"
-            >{reviewFmt1(data[mark.i])}斤</text>
+            >{isKg ? data[mark.i].toFixed(1) : reviewFmt1(data[mark.i])}{unitLabel}</text>
           </React.Fragment>
         );
       })}
@@ -4727,7 +5234,7 @@ function WeightChart({
               fontWeight="500"
               fill={WEIGHT_LINE}
               fontFamily="PingFang SC"
-            >{reviewFmt1(data[lastI])}斤</text>
+            >{isKg ? data[lastI].toFixed(1) : reviewFmt1(data[lastI])}{unitLabel}</text>
           ) : null}
         </React.Fragment>
       ) : null}
@@ -4920,55 +5427,62 @@ function WeightPlanGuideBanner({phase='none', onCreatePlan}){
   if(phase === 'plan') return null;
   const copy = phase === 'goal'
     ? {
-        title: '距离「减肥」目标日还有 92 天',
-        subtitle: '测评一下，把目标拆成每周做得到的小步',
-        action: '去测评',
+        title: '目标定好了，差一份计划',
+        subtitle: '拆成每周做得到的小步',
+        action: '定计划',
       }
     : {
-        title: '想让体重变化更有方向？',
-        subtitle: '1 分钟测评，定适合你的目标',
+        title: '设定你的减重目标',
+        subtitle: '帮你算好目标体重和每周节奏',
         action: '制定目标',
       };
   return (
-    <div className="review-weight-plan-guide is-cta" role="group" aria-label={copy.title}>
+    <button
+      type="button"
+      className="review-weight-plan-guide is-lite"
+      onClick={(event)=>{ event.stopPropagation(); onCreatePlan?.(); }}
+      aria-label={copy.action}
+    >
+      <span className="review-weight-plan-guide-badge" aria-hidden="true">
+        <svg viewBox="0 0 16 16"><path d="M4 14V2.5"/><path d="M4.5 3h7.2l-1.6 2.6 1.6 2.6H4.5z"/></svg>
+      </span>
       <span className="review-weight-plan-guide-copy">
         <strong>{copy.title}</strong>
         <span>{copy.subtitle}</span>
       </span>
-      <button
-        type="button"
-        className="review-weight-plan-guide-btn"
-        onClick={onCreatePlan}
-      >
+      <em className="review-weight-plan-guide-action">
         {copy.action}
-      </button>
-    </div>
+        <i className="review-weight-plan-guide-chevron" aria-hidden="true"><ReviewChevron/></i>
+      </em>
+    </button>
   );
 }
 
-function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan, showPlanGuide=true, onOpen}){
+function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan, showPlanGuide=true, showBmi=false, showDateText=false, onOpen}){
   const meta = WEIGHT_RANGE_META[range] || WEIGHT_RANGE_META.d30;
   const series = weightTrendSeries(range);
-  const latestJin = series.values[series.values.length - 1] || WEIGHT_CARD_VALUES[WEIGHT_CARD_VALUES.length - 1];
-  const firstJin = series.values[0] != null ? series.values[0] : latestJin;
-  const avgJin = series.values.length
-    ? series.values.reduce((sum, v)=>sum + v, 0) / series.values.length
-    : latestJin;
-  const bmi = weightJinToBmi(latestJin);
-  const deltaJin = latestJin - firstJin;
-  const deltaText = (deltaJin > 0 ? '+' : '') + reviewFmt1(deltaJin);
+  // 体重页统一 kg；演示数据对齐到目标进度卡的当前体重，避免两处数值对不上
+  const rawLast = series.values[series.values.length - 1] || WEIGHT_CARD_VALUES[WEIGHT_CARD_VALUES.length - 1];
+  const kgOffset = WEIGHT_GOAL_CUR - rawLast / 2;
+  const kgValues = series.values.map(v=>Math.round((v / 2 + kgOffset) * 10) / 10);
+  const latestKg = kgValues[kgValues.length - 1] ?? WEIGHT_GOAL_CUR;
+  const firstKg = kgValues[0] != null ? kgValues[0] : latestKg;
+  const avgKg = kgValues.length ? kgValues.reduce((sum, v)=>sum + v, 0) / kgValues.length : latestKg;
+  const bmi = weightJinToBmi(latestKg * 2);
+  const deltaKg = Math.round((latestKg - firstKg) * 10) / 10;
+  const deltaText = (deltaKg > 0 ? '+' : deltaKg < 0 ? '−' : '') + Math.abs(deltaKg).toFixed(1);
   return (
     <ReviewDetailSectionCard
       iconClass="is-weight"
       icon={<ReviewTrendLineIcon/>}
       title="体重趋势"
-      subtitle={meta.dateText}
+      subtitle={showDateText ? meta.dateText : undefined}
       className="review-weight-trend-section-card"
       onOpen={onOpen}
     >
       <div className="review-chart review-detail-chart review-mood-trend-chart">
         <WeightChart
-          values={series.values}
+          values={kgValues}
           labels={series.labels}
           height={152}
           showExtremes
@@ -4977,18 +5491,16 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
           showDots
           showArea
           gradientId={'weightDetailArea-' + range}
+          unit="kg"
           ariaLabel={meta.label + '体重趋势'}
         />
       </div>
-      <div className="review-legend review-trend-legend-with-days">
-        <div className="review-trend-legend-items">
-          <span className="review-legend-item is-weight"><i></i>体重（斤）</span>
-          <span className="review-legend-item is-trend"><i></i>趋势</span>
-        </div>
-        <span className="review-trend-legend-days">记录{meta.recordDays}天</span>
+      <div className="review-legend">
+        <span className="review-legend-item is-weight"><i></i>体重（kg）</span>
+        <span className="review-legend-item is-trend"><i></i>趋势</span>
       </div>
       <div className="review-mood-trend-foot">
-        <WeightBmiIndexCard bmi={bmi}/>
+        {showBmi ? <WeightBmiIndexCard bmi={bmi}/> : null}
         <div className="review-mood-trend-insight-row review-weight-stat-row">
           <div className="review-mood-trend-record-card review-weight-stat-card">
             <span className="review-mood-trend-record-card-title">体重记录</span>
@@ -4996,13 +5508,13 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
           </div>
           <div className="review-mood-trend-record-card review-weight-stat-card">
             <span className="review-mood-trend-record-card-title">平均体重</span>
-            <p><b>{reviewFmt1(avgJin)}</b><em>斤</em></p>
+            <p><b>{avgKg.toFixed(1)}</b><em>kg</em></p>
           </div>
-          <div className={'review-mood-trend-record-card review-weight-stat-card is-vs-baseline' + (deltaJin < 0 ? ' is-down' : deltaJin > 0 ? ' is-up' : '')}>
-            <span className="review-mood-trend-record-card-title">体重变化</span>
+          <div className={'review-mood-trend-record-card review-weight-stat-card'}>
+            <span className="review-mood-trend-record-card-title">{meta.label}变化</span>
             <p>
               <b>{deltaText}</b>
-              <em>斤</em>
+              <em>kg</em>
             </p>
           </div>
         </div>
@@ -5212,7 +5724,7 @@ function WeightCycleSparkLine({row}){
                 fontWeight="500"
                 fill={WEIGHT_LINE}
                 fontFamily="PingFang SC, -apple-system, sans-serif"
-              >{Number(p.v).toFixed(1)}</text>
+              >{(Number(p.v) / 2).toFixed(1)}</text>
             ) : null}
           </g>
         );
@@ -5412,7 +5924,7 @@ function WeightPhaseDistChart({expanded = false} = {}){
                       fontWeight="500"
                       fill={WEIGHT_LINE}
                       fontFamily="PingFang SC, -apple-system, sans-serif"
-                    >{Number(p.v).toFixed(1)}</text>
+                    >{(Number(p.v) / 2).toFixed(1)}</text>
                   </g>
                 );
               })}
@@ -5455,7 +5967,7 @@ function WeightPhaseDistChart({expanded = false} = {}){
       </div>
       {expanded ? null : (
         <div className="review-mood-traj-legend" aria-hidden="true">
-          <span><i className="is-weight"/>体重（斤）</span>
+          <span><i className="is-weight"/>体重（kg）</span>
           <span><i className="is-e2"/>雌激素 E2</span>
           <span><i className="is-p4"/>孕激素 P4</span>
         </div>
@@ -5506,7 +6018,7 @@ function WeightCycleCombinedCard({onExpand, showCompare = true, showPhase = true
   );
 }
 
-function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, showCycle=false}){
+function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, onOpenDietSport, showCycle=false}){
   const showGoalProgress = planGuidePhase === 'plan';
   const showGoalSample = planGuidePhase === 'none' || planGuidePhase === 'goal';
   const goalRange = 'w' + WEIGHT_GOAL_PLAN_WEEKS;
@@ -5531,6 +6043,7 @@ function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreate
       {showCycle && range === 'd30' ? (
         <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
       ) : null}
+      <WeightGoalRecordsSection onOpen={onOpenDietSport}/>
     </div>
   );
 }
@@ -5579,6 +6092,8 @@ function WeightTrendDetailPage({open, onClose, onExpandPhase}){
           <WeightTrendSummary
             range={range}
             showPlanGuide={false}
+            showBmi
+            showDateText
           />
           {range === 'd30' ? (
             <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
@@ -5592,19 +6107,21 @@ function WeightTrendDetailPage({open, onClose, onExpandPhase}){
 function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, onAdjustGoal}){
   const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
+  const [goalRecordsOpen, setGoalRecordsOpen] = React.useState(false);
   const [trendDetailOpen, setTrendDetailOpen] = React.useState(false);
-  const nestedOpen = phaseLandscapeOpen || allRecordsOpen || trendDetailOpen;
+  const nestedOpen = phaseLandscapeOpen || allRecordsOpen || goalRecordsOpen || trendDetailOpen;
   React.useEffect(()=>{
     if(!open){
       setPhaseLandscapeOpen(false);
       setAllRecordsOpen(false);
+      setGoalRecordsOpen(false);
       setTrendDetailOpen(false);
     }
   }, [open]);
   return (
     <>
     <section
-      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '') + (nestedOpen ? ' is-timeline-open' : '')}
+      className={'review-cycle-detail is-fullscreen-detail review-weight-detail-page' + (open ? ' is-open' : '') + (nestedOpen ? ' is-timeline-open' : '')}
       aria-hidden={!open}
       aria-label="体重详情"
     >
@@ -5622,6 +6139,7 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, o
           onCreatePlan={onCreatePlan}
           onAdjustGoal={onAdjustGoal}
           onOpenTrend={()=>setTrendDetailOpen(true)}
+          onOpenDietSport={()=>setGoalRecordsOpen(true)}
         />
       </div>
     </section>
@@ -5631,6 +6149,10 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, o
       onExpandPhase={()=>setPhaseLandscapeOpen(true)}
     />
     <WeightAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
+    <WeightGoalRecordsPage
+      open={open && goalRecordsOpen}
+      onClose={()=>setGoalRecordsOpen(false)}
+    />
     <PhaseChartLandscapePage
       open={open && phaseLandscapeOpen}
       onClose={()=>setPhaseLandscapeOpen(false)}
@@ -5638,7 +6160,7 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, o
       subtitle={WEIGHT_CYCLE_DATE_TEXT + ' · 左右滑动查看'}
       legend={(
         <>
-          <span className="review-mood-traj-legend-item"><i className="is-weight"/>体重（斤）</span>
+          <span className="review-mood-traj-legend-item"><i className="is-weight"/>体重（kg）</span>
           <span className="review-mood-traj-legend-item"><i className="is-e2"/>雌激素 E2</span>
           <span className="review-mood-traj-legend-item"><i className="is-p4"/>孕激素 P4</span>
           <span className="review-cycle-landscape-tip">← 滑动查看更多 →</span>
@@ -5730,7 +6252,7 @@ function WeightAllRecordsPage({open, onClose}){
       <div className="review-detail-content review-mood-all-records-content review-weight-all-records-content">
         <div className="review-weight-all-records-cols" aria-hidden="true">
           <span>日期</span>
-          <span>体重 (斤)</span>
+          <span>体重 (kg)</span>
           <span>BMI 指数</span>
         </div>
         <div className="review-detail-card review-mood-all-records-card review-weight-all-records-card">
@@ -5741,7 +6263,7 @@ function WeightAllRecordsPage({open, onClose}){
                   <span>{row.date}</span>
                   <em>{row.time}</em>
                 </div>
-                <span className="review-weight-all-records-weight">{row.weight.toFixed(2)}</span>
+                <span className="review-weight-all-records-weight">{(row.weight / 2).toFixed(1)}</span>
                 <span className="review-weight-all-records-bmi">{row.bmi.toFixed(1)}</span>
                 <span className="review-weight-all-records-chevron" aria-hidden="true">
                   <svg viewBox="0 0 12 12"><path d="M4.2 2.5 7.7 6 4.2 9.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -10121,11 +10643,8 @@ function MoodChartLegend({recordDays}){
   return (
     <div className="review-legend review-mood-chart-legend review-trend-legend-with-days">
       <div className="review-trend-legend-items">
-        <span className="review-legend-item is-mood"><i></i>每日心情</span>
+        <span className="review-legend-item is-mood"><i></i>心情</span>
         <span className="review-legend-item is-trend"><i></i>趋势</span>
-        <span className="review-legend-item is-mood-pos"><i></i>积极</span>
-        <span className="review-legend-item is-mood-neu"><i></i>中性</span>
-        <span className="review-legend-item is-mood-neg"><i></i>消极</span>
       </div>
       {recordDays != null ? (
         <span className="review-trend-legend-days">记录{recordDays}天</span>
@@ -10692,8 +11211,6 @@ function MoodTrendSummary({range = 'd30'}){
   const isCompact = !!chartProps.compact;
   const hourly = MOOD_HOURLY_BY_RANGE[range] || MOOD_HOURLY_BY_RANGE.d30;
   const recordCount = hourly.reduce((s, n)=>s + n, 0);
-  const triShare = meta.triShare || MOOD_RANGE_META.d30.triShare;
-  const recordDays = meta.recordDaysMain || '26';
   const topMoods = meta.topMoods || '平静、易怒';
   const trendParts = String(meta.trend || '↗ 上升').split(' ');
   const trendArrow = trendParts[0] || '↗';
@@ -10709,28 +11226,9 @@ function MoodTrendSummary({range = 'd30'}){
       <div className={'review-chart review-detail-chart review-mood-trend-chart' + (isCompact ? ' is-compact' : '')}>
         <MoodLineChart {...chartProps}/>
       </div>
-      <MoodChartLegend recordDays={recordDays}/>
+      <MoodChartLegend/>
       <div className="review-mood-trend-foot">
-        <div className="review-mood-trend-tri">
-          <div className="review-mood-trend-tri-head">
-            <span>心情构成</span>
-          </div>
-          <div className="review-mood-trend-tri-track" aria-hidden="true">
-            {triShare.map(item=>(
-              <i key={item.key} style={{width:item.pct + '%', background:item.color}}/>
-            ))}
-          </div>
-          <div className="review-mood-trend-tri-legend">
-            {triShare.map(item=>(
-              <span key={item.key}>
-                <i style={{background:item.color}}/>
-                <em>{item.label}</em>
-                <b>{item.pct}%</b>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="review-mood-trend-insight-row review-weight-stat-row">
+        <div className="review-mood-trend-insight-panel review-mood-trend-insight-row review-weight-stat-row">
           <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
             <span className="review-mood-trend-record-card-title">心情记录</span>
             <p><b>{recordCount}</b><em>次</em></p>
@@ -11645,30 +12143,46 @@ function PeriodReviewCard(){
 }
 
 const SYMPTOM_L1_PHASE_MOST = [
-  {key:'menstrual', label:'月经期', bar:'#ff4d88', name:'腹痛', count:4, icon:'assets/symptom-cramp.png'},
-  {key:'ovulation', label:'排卵期', bar:'#7ad6b0', name:'头痛', count:2, icon:'assets/symptom-picker-headache.png'},
-  {key:'luteal', label:'黄体期', bar:'#d8d8de', name:'乳胀', count:3, icon:'assets/symptom-breast.png'},
+  {key:'menstrual', label:'月经期', tone:'is-period', flex:1, bar:'#FF4D88', name:'腹痛', count:4, icon:'assets/symptom-cramp.png'},
+  {key:'follicular', label:'', tone:'is-follicle', flex:0.22, bar:'rgba(0,204,153,0.18)'},
+  {key:'ovulation', label:'排卵期', tone:'is-ovu', flex:1, bar:'#9A6FD4', name:'头痛', count:2, icon:'assets/symptom-picker-headache.png'},
+  {key:'luteal', label:'黄体期', tone:'is-luteal', flex:1, bar:'#D4A017', name:'乳胀', count:3, icon:'assets/symptom-breast.png'},
 ];
 
+function symptomPhaseGridColumns(items){
+  return items.map(item => Math.max(0.18, item.flex || 1) + 'fr').join(' ');
+}
+
 function SymptomOverviewPhaseMost({items = SYMPTOM_L1_PHASE_MOST}){
+  const columns = symptomPhaseGridColumns(items);
   return (
     <div className="review-symptom-overview-phase" aria-hidden="true">
-      <div className="review-symptom-overview-phase-slots">
-        {items.map(item=>(
-          <div className="review-symptom-overview-phase-slot" key={item.key}>
-            <div className="review-symptom-overview-phase-pill">
-              <div className="review-symptom-overview-phase-icon">
-                <img src={item.icon} alt=""/>
-                <em>{item.count}x</em>
-              </div>
-              <span>{item.name}</span>
+      <div className="review-symptom-overview-phase-slots" style={{gridTemplateColumns:columns}}>
+        {items.map(item=>{
+          const hasSymptom = Boolean(item.name);
+          return (
+            <div className={'review-symptom-overview-phase-slot ' + (item.tone || '') + (hasSymptom ? ' is-filled' : ' is-empty')} key={item.key}>
+              {hasSymptom ? (
+                <div className="review-symptom-overview-phase-pill">
+                  <div className="review-symptom-overview-phase-icon">
+                    <img src={item.icon} alt=""/>
+                    <em>{item.count}x</em>
+                  </div>
+                  <span>{item.name}</span>
+                </div>
+              ) : null}
             </div>
-          </div>
+          );
+        })}
+      </div>
+      <div className="review-symptom-overview-phase-bar" style={{gridTemplateColumns:columns}}>
+        {items.map(item=>(
+          <i key={item.key} className={item.tone === 'is-follicle' ? 'is-slim' : undefined} style={{background:item.bar}}/>
         ))}
       </div>
-      <div className="review-symptom-overview-phase-bar">
+      <div className="review-symptom-overview-phase-labels" style={{gridTemplateColumns:columns}}>
         {items.map(item=>(
-          <i key={item.key} style={{background:item.bar}}/>
+          <span key={item.key}>{item.label || ''}</span>
         ))}
       </div>
     </div>
@@ -11935,26 +12449,26 @@ function SymptomTrendDiscovery({range = 'd30'}){
 }
 
 const SYMPTOM_SCATTER_DEFS = {
-  back:{key:'back', label:'腰酸', color:'#5b8fd9'},
-  cramp:{key:'cramp', label:'腹痛', color:'#ff7a59'},
-  tired:{key:'tired', label:'疲惫', color:'#8e7bd9'},
-  head:{key:'head', label:'头痛', color:'#e8a040'},
-  breast:{key:'breast', label:'乳胀', color:'#2db7a0'},
-  sleep:{key:'sleep', label:'失眠', color:'#6b9bd1'},
-  acne:{key:'acne', label:'粉刺', color:'#d98e7b'},
-  diarrhea:{key:'diarrhea', label:'腹泻', color:'#5bb8a8'},
-  constip:{key:'constip', label:'便秘', color:'#c4a67f'},
-  dizzy:{key:'dizzy', label:'眩晕', color:'#b07bd9'},
-  bloat:{key:'bloat', label:'小腹坠胀', color:'#e08a6a'},
-  sore:{key:'sore', label:'身体酸痛', color:'#7a9ec4'},
+  back:{key:'back', label:'腰酸', color:'#5b8fd9', icon:SYMPTOM_DIST_ICON['腰酸']},
+  cramp:{key:'cramp', label:'腹痛', color:'#ff7a59', icon:SYMPTOM_DIST_ICON['腹痛']},
+  tired:{key:'tired', label:'疲惫', color:'#8e7bd9', icon:SYMPTOM_DIST_ICON['疲惫']},
+  head:{key:'head', label:'头痛', color:'#e8a040', icon:SYMPTOM_DIST_ICON['头痛']},
+  breast:{key:'breast', label:'乳胀', color:'#2db7a0', icon:SYMPTOM_DIST_ICON['乳胀']},
+  sleep:{key:'sleep', label:'失眠', color:'#6b9bd1', icon:SYMPTOM_DIST_ICON['失眠']},
+  acne:{key:'acne', label:'粉刺', color:'#d98e7b', icon:SYMPTOM_DIST_ICON['粉刺']},
+  diarrhea:{key:'diarrhea', label:'腹泻', color:'#5bb8a8', icon:SYMPTOM_DIST_ICON['腹泻']},
+  constip:{key:'constip', label:'便秘', color:'#c4a67f', icon:SYMPTOM_DIST_ICON['便秘']},
+  dizzy:{key:'dizzy', label:'眩晕', color:'#b07bd9', icon:SYMPTOM_DIST_ICON['眩晕']},
+  bloat:{key:'bloat', label:'小腹坠胀', color:'#e08a6a', icon:SYMPTOM_DIST_ICON['小腹坠胀']},
+  sore:{key:'sore', label:'身体酸痛', color:'#7a9ec4', icon:SYMPTOM_DIST_ICON['身体酸痛']},
 };
 const SYMPTOM_ROW_ORDER = [
   'back','cramp','tired','breast','head','sleep','acne','diarrhea','constip','dizzy','bloat','sore',
 ];
 const SYMPTOM_TRAJ_ROWS = [
-  {...SYMPTOM_SCATTER_DEFS.back, days:[1,2,3,22]},
+  {...SYMPTOM_SCATTER_DEFS.back, days:[1,2,3,22,30]},
   {...SYMPTOM_SCATTER_DEFS.cramp, days:[1,2,3,4]},
-  {...SYMPTOM_SCATTER_DEFS.breast, days:[20,22,24,25,26]},
+  {...SYMPTOM_SCATTER_DEFS.breast, days:[20,22,24,25,26,30]},
   {...SYMPTOM_SCATTER_DEFS.head, days:[14,15]},
   {...SYMPTOM_SCATTER_DEFS.acne, days:[23,24,25]},
   {...SYMPTOM_SCATTER_DEFS.diarrhea, days:[1,2,3]},
@@ -12316,47 +12830,373 @@ function SymptomFlatScatterChart({range = 'd30'}){
   );
 }
 
-function SymptomTrendSummary({range = 'd30', flatScatter = false}){
-  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
-  const isCycleStack = !flatScatter && meta.mode === 'cycles';
+const SYMPTOM_SHEET_TODAY = new Date(2026, 6, 13); // 与回顾页其他卡对齐：2026-07-13
+
+function symptomSheetPhaseForDay(range, dayIndex){
+  return symptomSheetDayMeta(range, dayIndex).phase;
+}
+
+function symptomSheetDayMeta(range, dayIndex){
+  if(range === 'd30'){
+    const cycleDay = Math.max(1, dayIndex);
+    const phaseDay = Math.min(cycleDay, MOOD_TRAJ_DAYS);
+    const phase = MOOD_TRAJ_PHASES.find(ph => phaseDay >= ph.start && phaseDay <= ph.end)
+      || MOOD_TRAJ_PHASES[MOOD_TRAJ_PHASES.length - 1];
+    return {phase, cycleDay};
+  }
+  const cycles = (SYMPTOM_CYCLE_STACK[range] || SYMPTOM_CYCLE_STACK.half).slice().reverse();
+  let offset = 0;
+  for(let i = 0; i < cycles.length; i++){
+    const cycle = cycles[i];
+    const length = cycle.days || 0;
+    if(dayIndex > offset && dayIndex <= offset + length){
+      const cycleDay = dayIndex - offset;
+      const phases = symptomCyclePhases(length, cycle.period, cycle.ovulation);
+      const phase = phases.find(ph => cycleDay >= ph.start && cycleDay <= ph.end) || phases[phases.length - 1];
+      return {phase, cycleDay};
+    }
+    offset += length;
+  }
+  return {phase: MOOD_TRAJ_PHASES[0], cycleDay: Math.max(1, dayIndex)};
+}
+
+function symptomSheetDateForDay(dayIndex, length, today = SYMPTOM_SHEET_TODAY){
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  d.setDate(d.getDate() - (length - dayIndex));
+  return d;
+}
+
+function symptomSheetLatestDay(rows){
+  let latest = 0;
+  (rows || []).forEach(row=>{
+    (row.days || []).forEach(day=>{
+      if(day > latest) latest = day;
+    });
+  });
+  return latest;
+}
+
+/** tip 副文案：今天 / 2026年7月1日（不展示星期、阶段） */
+function symptomSheetTipSub(range, dayIndex, length){
+  if(dayIndex === length) return '今天';
+  const d = symptomSheetDateForDay(dayIndex, length);
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+
+function symptomSheetDayTitle(range, day, length){
+  if(day === length) return '今天';
+  const d = symptomSheetDateForDay(day, length);
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+
+/** 与 HTML mrow 一致：首列或每月 1 号显示「2026年1月 / 2月」 */
+function symptomSheetMonthLabel(dayIndex, length){
+  const d = symptomSheetDateForDay(dayIndex, length);
+  const isFirst = dayIndex === 1;
+  if(!isFirst && d.getDate() !== 1) return '';
+  const yearBit = (d.getMonth() === 0 || isFirst) ? (d.getFullYear() + '年') : '';
+  return yearBit + (d.getMonth() + 1) + '月';
+}
+
+/** 卡片副标题：2026年1月13日–今天 */
+function symptomSheetRangeTitle(length){
+  const d = symptomSheetDateForDay(1, length);
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日–今天';
+}
+
+function SymptomSheetTable({range = 'd30', landscape = false}){
+  const model = React.useMemo(()=>buildFlatSymptomScatter(range), [range]);
+  const days = React.useMemo(()=>{
+    const list = [];
+    for(let d = 1; d <= model.length; d++) list.push(d);
+    return list;
+  }, [model.length]);
+  const dayPhases = React.useMemo(
+    ()=>days.map(day=>symptomSheetPhaseForDay(range, day)),
+    [days, range]
+  );
+  const daySets = React.useMemo(()=>{
+    const map = {};
+    model.rows.forEach(row=>{
+      map[row.key] = new Set(row.days || []);
+    });
+    return map;
+  }, [model.rows]);
+  const symptomsByDay = React.useMemo(()=>{
+    const map = {};
+    model.rows.forEach(row=>{
+      (row.days || []).forEach(day=>{
+        if(!map[day]) map[day] = [];
+        map[day].push(row.label);
+      });
+    });
+    return map;
+  }, [model.rows]);
+  const defaultFocus = React.useMemo(()=>{
+    const todaySymptoms = symptomsByDay[model.length] || [];
+    if(todaySymptoms.length) return model.length;
+    return symptomSheetLatestDay(model.rows) || model.length;
+  }, [model.length, model.rows, symptomsByDay]);
+  // 点选仅在当前 tab 生效；切 tab 自动回到该 range 最新有记录日，不再二次 set 挪线
+  const [picked, setPicked] = React.useState(null); // {range, day} | null
+  const focusDay = (picked && picked.range === range) ? picked.day : defaultFocus;
+  const scrollRef = React.useRef(null);
+  const focusColRef = React.useRef(null);
+  // 切 tab / 横屏：视口一次落到最右，选中不另做动画改位
+  React.useLayoutEffect(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const jumpLatest = ()=>{
+      scroller.scrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    };
+    jumpLatest();
+    requestAnimationFrame(jumpLatest);
+  }, [range, landscape, model.length]);
+  // 仅用户点选时，把该列滚进可视区
+  React.useLayoutEffect(()=>{
+    if(!picked || picked.range !== range) return;
+    const scroller = scrollRef.current;
+    const col = focusColRef.current;
+    if(!scroller || !col) return;
+    const left = Math.max(0, col.offsetLeft - scroller.clientWidth * 0.62 + col.offsetWidth);
+    scroller.scrollLeft = left;
+  }, [picked, range]);
+  const hasRecord = day => (symptomsByDay[day] || []).length > 0;
+  const selectDay = day=>{
+    if(!hasRecord(day)) return;
+    setPicked({range, day});
+  };
+  const focusSymptoms = symptomsByDay[focusDay] || [];
+  const focusEmpty = focusSymptoms.length === 0;
+  const focusTitle = focusEmpty
+    ? '未记录'
+    : (focusSymptoms.length > 2
+      ? focusSymptoms.slice(0, 2).join('、') + ' 等' + focusSymptoms.length + '项'
+      : focusSymptoms.join('、'));
+  const focusSub = symptomSheetTipSub(range, focusDay, model.length);
+  const fitAll = landscape && days.length <= 35;
+  const nameW = landscape ? 56 : 70;
+  // 与 HTML 一致：列宽足够让每日日期常驻显示（近半年/近1年也不抽稀）
+  const colW = landscape
+    ? (fitAll ? null : (days.length > 200 ? 18 : 22))
+    : 26;
+  const gridCols = fitAll
+    ? (nameW + 'px repeat(' + days.length + ', minmax(0, 1fr))')
+    : (nameW + 'px repeat(' + days.length + ', ' + colW + 'px)');
+  const focusX = React.useMemo(()=>{
+    if(fitAll) return null;
+    return nameW + (focusDay - 0.5) * (colW || 28);
+  }, [fitAll, focusDay, nameW, colW]);
+  const tipRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const [tipLayout, setTipLayout] = React.useState({lineLeft: nameW + 14, tipLeft: nameW + 4});
+  React.useLayoutEffect(()=>{
+    const tip = tipRef.current;
+    const canvas = canvasRef.current;
+    const scroller = scrollRef.current;
+    if(!tip || !canvas || !scroller) return;
+    const canvasW = canvas.offsetWidth || 0;
+    const x = fitAll
+      ? (nameW + ((focusDay - 0.5) / Math.max(1, days.length)) * Math.max(0, canvasW - nameW))
+      : (focusX || (nameW + 14));
+    const ch = tip.offsetHeight || 44;
+    canvas.style.setProperty('--coh', (ch + 14) + 'px');
+    canvas.style.setProperty('--vlt', (ch + 4) + 'px');
+    const right = x > scroller.scrollLeft + nameW + (scroller.clientWidth - nameW) / 2;
+    const w = tip.offsetWidth || 64;
+    const tipLeft = Math.max(nameW + 4, Math.min(Math.max(nameW + 4, canvasW - w - 2), right ? x - w + 8 : x - 8));
+    setTipLayout({lineLeft: x, tipLeft});
+  }, [fitAll, focusDay, focusTitle, focusSub, focusX, days.length, nameW, model.rows.length, landscape]);
   return (
-    <ReviewDetailSectionCard
-      iconClass="is-symptom"
-      icon={<ReviewSymptomIcon/>}
-      title="症状分布"
-      subtitle={meta.dateText}
-      className={'review-symptom-trend-section-card is-scatter-only' + (isCycleStack ? ' is-cycle-stack' : '') + (flatScatter ? ' is-flat-scatter' : '')}
-    >
-      <div className={'review-chart review-detail-chart review-symptom-scatter-chart' + (isCycleStack ? ' is-cycle-stack' : '') + (flatScatter ? ' is-flat-scatter' : '')}>
-        {flatScatter ? (
-          <SymptomFlatScatterChart range={range}/>
-        ) : isCycleStack ? (
-          <SymptomMultiCycleScatter range={range}/>
-        ) : (
-          <SymptomPhaseDistChart showHormone={false} showPhaseLabels/>
-        )}
-      </div>
-      <div className="review-mood-trend-foot">
-        <div className="review-mood-trend-insight-row review-weight-stat-row">
-          <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
-            <span className="review-mood-trend-record-card-title">记录症状</span>
-            <p><b>{meta.kinds}</b><em>种</em></p>
+    <div className={'sy-sheet' + (landscape ? ' is-landscape' : '') + (fitAll ? ' is-fit' : '')} aria-label="症状记录表格">
+      <div className="sy-sheet-scroll" ref={scrollRef}>
+        <div className="sy-sheet-canvas" ref={canvasRef}>
+          <div
+            ref={tipRef}
+            className={'sy-sheet-tip' + (focusEmpty ? ' is-empty' : '')}
+            style={{left: tipLayout.tipLeft + 'px'}}
+            role="status"
+          >
+            <b>{focusTitle}</b>
+            <span>{focusSub}</span>
           </div>
-          <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest">
-            <span className="review-mood-trend-record-card-title">最长持续天数</span>
-            <p>
-              <em className="is-name">{meta.longestName}</em>
-              <b>{meta.longestDays}</b>
-              <em>天</em>
-            </p>
+          <div
+            className="sy-sheet-grid"
+            style={{gridTemplateColumns:gridCols, width:fitAll ? '100%' : undefined}}
+          >
+            <div className="sy-sheet-corner is-month" aria-hidden="true"/>
+            {days.map((day)=>{
+              const label = symptomSheetMonthLabel(day, model.length);
+              return (
+                <div
+                  key={'m-' + day}
+                  className={'sy-sheet-month' + (label ? ' is-label' : '')}
+                  aria-hidden={!label}
+                >
+                  {label}
+                </div>
+              );
+            })}
+            <div className="sy-sheet-corner">症状</div>
+            {days.map((day, index)=>{
+              const isFocus = day === focusDay;
+              const isToday = day === model.length;
+              const recorded = hasRecord(day);
+              const date = symptomSheetDateForDay(day, model.length);
+              return (
+                <button
+                  key={'h-' + day}
+                  type="button"
+                  ref={isFocus ? focusColRef : null}
+                  className={
+                    'sy-sheet-day is-label'
+                    + (isFocus ? ' is-focus' : '')
+                    + (isToday ? ' is-today' : '')
+                    + (recorded ? '' : ' is-empty-day')
+                  }
+                  style={{background:dayPhases[index]?.bg}}
+                  onClick={()=>selectDay(day)}
+                  disabled={!recorded}
+                  aria-pressed={isFocus}
+                  aria-label={symptomSheetDayTitle(range, day, model.length)}
+                >
+                  {isToday || isFocus
+                    ? <span>{isToday ? '今' : date.getDate()}</span>
+                    : date.getDate()}
+                </button>
+              );
+            })}
+            {model.rows.map(row=>(
+              <React.Fragment key={row.key}>
+                <div className="sy-sheet-name">
+                  <span>{row.label}</span>
+                </div>
+                {days.map((day, index)=>{
+                  const on = daySets[row.key]?.has(day);
+                  const isFocus = day === focusDay;
+                  const recorded = hasRecord(day);
+                  const iconSrc = on ? (row.icon || SYMPTOM_DIST_ICON[row.label]) : null;
+                  return (
+                    <button
+                      key={row.key + '-' + day}
+                      type="button"
+                      className={
+                        'sy-sheet-cell'
+                        + (on ? ' is-on' : '')
+                        + (isFocus ? ' is-focus' : '')
+                        + (recorded ? '' : ' is-empty-day')
+                      }
+                      style={{background:dayPhases[index]?.bg}}
+                      onClick={()=>selectDay(day)}
+                      disabled={!recorded}
+                      aria-label={row.label + ' · ' + symptomSheetDayTitle(range, day, model.length)}
+                    >
+                      {iconSrc ? (
+                        <img className="sy-sheet-icon" src={iconSrc} alt="" draggable="false"/>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </div>
-          <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-freq">
-            <span className="review-mood-trend-record-card-title">常一起出现</span>
-            <p className="review-mood-freq-words"><b>{meta.coOccur}</b></p>
-          </div>
+          <div className="sy-sheet-focus-line" style={{left: tipLayout.lineLeft + 'px'}} aria-hidden="true"/>
         </div>
       </div>
-    </ReviewDetailSectionCard>
+      <div className="review-mood-traj-legend review-symptom-phase-legend" aria-hidden="true">
+        <span><i className="is-period"/>月经期</span>
+        <span><i className="is-phase" style={{background:'#22B487'}}/>卵泡期</span>
+        <span><i className="is-phase" style={{background:'#9A6FD4'}}/>排卵期</span>
+        <span><i className="is-phase" style={{background:'#D4A017'}}/>黄体期</span>
+      </div>
+    </div>
+  );
+}
+
+function SymptomTrendSummary({range = 'd30'}){
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
+  const sheetModel = React.useMemo(()=>buildFlatSymptomScatter(range), [range]);
+  const rangeTitle = symptomSheetRangeTitle(sheetModel.length);
+  const [landscape, setLandscape] = React.useState(false);
+  const [phoneSize, setPhoneSize] = React.useState(null);
+  const cardRef = React.useRef(null);
+  React.useEffect(()=>{ setLandscape(false); }, [range]);
+  const openLandscape = event=>{
+    event?.stopPropagation?.();
+    const phone = cardRef.current?.closest('.phone');
+    const rect = phone?.getBoundingClientRect();
+    const height = Math.min(rect?.height || window.innerHeight, window.innerHeight);
+    setPhoneSize({w:rect?.width || 390, h:height});
+    setLandscape(true);
+  };
+  const expandBtn = (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏横屏查看症状表格" onClick={openLandscape}>
+      <ReviewExpandIcon/>
+    </button>
+  );
+  return (
+    <>
+      <div ref={cardRef}>
+        <ReviewDetailSectionCard
+          iconClass="is-symptom"
+          icon={<ReviewSymptomIcon/>}
+          title="症状分布"
+          subtitle={rangeTitle}
+          extra={expandBtn}
+          className="review-symptom-trend-section-card is-sheet"
+        >
+          <div className="review-chart review-detail-chart review-symptom-sheet-chart">
+            <SymptomSheetTable range={range}/>
+          </div>
+          <div className="review-mood-trend-foot">
+            <div className="review-mood-trend-insight-row review-weight-stat-row">
+              <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
+                <span className="review-mood-trend-record-card-title">记录症状</span>
+                <p><b>{meta.kinds}</b><em>种</em></p>
+              </div>
+              <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest">
+                <span className="review-mood-trend-record-card-title">最长持续天数</span>
+                <p>
+                  <em className="is-name">{meta.longestName}</em>
+                  <b>{meta.longestDays}</b>
+                  <em>天</em>
+                </p>
+              </div>
+              <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-freq">
+                <span className="review-mood-trend-record-card-title">常一起出现</span>
+                <p className="review-mood-freq-words"><b>{meta.coOccur}</b></p>
+              </div>
+            </div>
+          </div>
+        </ReviewDetailSectionCard>
+      </div>
+      {landscape && phoneSize ? ReactDOM.createPortal(
+        <div className="wg-sheet-landscape-mask" role="dialog" aria-modal="true" aria-label="症状分布 · 横屏">
+          <div
+            className="wg-sheet-landscape"
+            style={{width:phoneSize.h, height:phoneSize.w, '--wg-land-w':phoneSize.h + 'px', '--wg-land-h':phoneSize.w + 'px'}}
+          >
+            <div className="wg-sheet-landscape-bar">
+              <span className="wg-sheet-landscape-title">症状分布</span>
+              <span className="wg-sheet-landscape-legend">圆点表示当天有该症状</span>
+              <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="3" width="11" height="18" rx="2.2"/>
+                  <path d="M3.5 9.5V6.3M3.5 6.3 6 3.8"/>
+                </svg>
+                <span>退出横屏</span>
+              </button>
+            </div>
+            <div className="wg-sheet-landscape-scroll">
+              <div className="review-detail-card review-symptom-sheet-landscape-card">
+                <SymptomSheetTable range={range} landscape/>
+              </div>
+            </div>
+          </div>
+        </div>,
+        cardRef.current?.closest('.phone') || document.body
+      ) : null}
+    </>
   );
 }
 
@@ -12551,10 +13391,10 @@ function SymptomCycleCombinedCard({onExpand}){
   );
 }
 
-function SymptomDetailBody({range, flatScatter = false}){
+function SymptomDetailBody({range}){
   return (
     <div className="review-detail-section-stack">
-      <SymptomTrendSummary range={range} flatScatter={flatScatter}/>
+      <SymptomTrendSummary range={range}/>
       {range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
     </div>
   );
@@ -12650,7 +13490,7 @@ function SymptomAllRecordsPage({open, onClose}){
   );
 }
 
-function SymptomDetailPage({open, onClose, flatScatter = false}){
+function SymptomDetailPage({open, onClose}){
   const [range, setRange] = React.useState('d30');
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
   const ranges = [
@@ -12695,7 +13535,7 @@ function SymptomDetailPage({open, onClose, flatScatter = false}){
             ))}
           </div>
         </div>
-        <SymptomDetailBody range={range} flatScatter={flatScatter}/>
+        <SymptomDetailBody range={range}/>
       </div>
     </section>
     <SymptomAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
@@ -12708,35 +13548,47 @@ const SYMPTOM_PHASE_MOST = [
     key:'menstrual',
     label:'月经期',
     tone:'is-period',
-    bar:'#ff4d88',
+    flex:1,
+    bar:'#FF4D88',
     symptom:{name:'腹痛', count:4, icon:SYMPTOM_DIST_ICON['腹痛']},
+  },
+  {
+    key:'follicular',
+    label:'',
+    tone:'is-follicle',
+    flex:0.22,
+    bar:'rgba(0,204,153,0.18)',
+    symptom:null,
   },
   {
     key:'ovulation',
     label:'排卵期',
     tone:'is-ovu',
-    bar:'#7ad6b0',
+    flex:1,
+    bar:'#9A6FD4',
     symptom:{name:'头痛', count:2, icon:SYMPTOM_DIST_ICON['头痛']},
   },
   {
     key:'luteal',
     label:'黄体期',
     tone:'is-luteal',
-    bar:'#d8d8de',
+    flex:1,
+    bar:'#D4A017',
     symptom:{name:'乳胀', count:3, icon:SYMPTOM_DIST_ICON['乳胀']},
   },
 ];
 
 function SymptomPhaseMostChart(){
+  const columns = symptomPhaseGridColumns(SYMPTOM_PHASE_MOST);
   return (
     <div className="review-symptom-phase-most" aria-label="各月经阶段最常出现的症状">
       <div className="review-symptom-phase-most-count">
-        <span>记录次数</span>
-        <b>18</b>
+        <span>最新记录</span>
+        <b className="is-text">腹痛</b>
       </div>
       <div className="review-symptom-phase-most-main">
-        <div className="review-symptom-phase-most-caption">阶段最常</div>
-        <div className="review-symptom-phase-most-slots">
+        <div className="review-symptom-phase-most-caption">各阶段最常见</div>
+        <div className="review-symptom-phase-most-slots" style={{gridTemplateColumns:columns}}>
           {SYMPTOM_PHASE_MOST.map(phase=>{
             const item = phase.symptom;
             return (
@@ -12749,21 +13601,19 @@ function SymptomPhaseMostChart(){
                     </div>
                     <span>{item.name}</span>
                   </div>
-                ) : (
-                  <div className="review-symptom-phase-most-placeholder">?</div>
-                )}
+                ) : null}
               </div>
             );
           })}
         </div>
-        <div className="review-symptom-phase-most-bar" aria-hidden="true">
+        <div className="review-symptom-phase-most-bar" aria-hidden="true" style={{gridTemplateColumns:columns}}>
           {SYMPTOM_PHASE_MOST.map(phase=>(
-            <i key={phase.key} style={{background:phase.bar}}/>
+            <i key={phase.key} className={phase.tone === 'is-follicle' ? 'is-slim' : undefined} style={{background:phase.bar}}/>
           ))}
         </div>
-        <div className="review-symptom-phase-most-labels" aria-hidden="true">
+        <div className="review-symptom-phase-most-labels" aria-hidden="true" style={{gridTemplateColumns:columns}}>
           {SYMPTOM_PHASE_MOST.map(phase=>(
-            <span key={phase.key}>{phase.label}</span>
+            <span key={phase.key}>{phase.label || ''}</span>
           ))}
         </div>
       </div>
@@ -12778,7 +13628,7 @@ function SymptomReviewCard({onOpen}){
       iconClass="is-symptom"
       icon={<ReviewSymptomIcon/>}
       chart={<SymptomPhaseMostChart/>}
-      legend={<span className="review-legend-note">展示月经期、排卵期、黄体期最常出现的症状；多次出现显示次数</span>}
+      legend={<span className="review-legend-note">展示月经期、排卵期、黄体期最常见症状；卵泡期可无高亮；多次出现显示次数</span>}
       metrics={(
         <>
           <ReviewMetric value="5" unit="种" label="记录症状"/>
