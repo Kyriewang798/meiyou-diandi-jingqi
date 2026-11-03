@@ -814,6 +814,12 @@ function TimelineReviewEntry({label, eventName}){
   );
 }
 
+function openWeightDetailFromTimeline(extra = {}){
+  window.dispatchEvent(new CustomEvent('openReviewWeightDetail', {
+    detail: { returnTab: 'note', ...extra },
+  }));
+}
+
 function WeightTrendReviewEntry(){
   const planCtx = usePlanCheckInCtx();
   if(planCtx && window.PlanCheckInFeedback) return <window.PlanCheckInFeedback/>;
@@ -821,16 +827,114 @@ function WeightTrendReviewEntry(){
     <button
       type="button"
       className="tl-card-review-entry"
-      onClick={()=>window.dispatchEvent(new CustomEvent('openReviewWeightDetail', {
-        detail: { activateGoal: true, returnTab: 'note' },
-      }))}
-      aria-label="定个小目标，减重更有方向"
+      onClick={(event)=>{
+        event.preventDefault();
+        event.stopPropagation();
+        // 无目标：直接进体重二级页，不改 phase，保留「设定你的减重目标」引导
+        openWeightDetailFromTimeline();
+      }}
+      aria-label="设定体重目标，按节奏稳稳减重"
     >
-      <span>定个小目标，减重更有方向</span>
+      <span>设定体重目标，按节奏稳稳减重</span>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 6l6 6-6 6"/>
       </svg>
     </button>
+  );
+}
+
+function WeightGoalProgressReviewEntry(){
+  const planCtx = usePlanCheckInCtx();
+  if(planCtx && window.PlanCheckInFeedback) return <window.PlanCheckInFeedback/>;
+  return (
+    <button
+      type="button"
+      className="tl-card-review-entry"
+      onClick={(event)=>{
+        event.preventDefault();
+        event.stopPropagation();
+        openWeightDetailFromTimeline({ activateGoal: true });
+      }}
+      aria-label="查看完整目标进度"
+    >
+      <span>查看完整目标进度</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6"/>
+      </svg>
+    </button>
+  );
+}
+
+function ChartWeightGoalProgress({data, compact = false}){
+  const current = Number(data?.current ?? 48.6);
+  const target = Number(data?.target ?? 45);
+  const start = Number(data?.start ?? 49.7);
+  const span = Math.max(0.1, start - target);
+  const lost = data?.lost != null
+    ? Number(data.lost)
+    : Math.max(0, Number((start - current).toFixed(1)));
+  const progress = data?.progress != null
+    ? Number(data.progress)
+    : Math.max(0, Math.min(100, Math.round((lost / span) * 100)));
+  const size = compact ? 72 : 88;
+  const stroke = compact ? 7 : 8;
+  const r = (size - stroke) / 2 - 2;
+  const c = 2 * Math.PI * r;
+  const dash = (Math.min(1, progress / 100) * c);
+  const openDetail = (event)=>{
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    openWeightDetailFromTimeline({ activateGoal: true });
+  };
+  return (
+    <div className={'v3-chart-wg-prog' + (compact ? ' is-compact' : '')}>
+      <div className="v3-chart-wg-prog-ring" style={{width:size, height:size}} aria-hidden="true">
+        <svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size}>
+          <defs>
+            <linearGradient id="v3-wg-prog-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#7BE0B0"/>
+              <stop offset="100%" stopColor="#2E9E70"/>
+            </linearGradient>
+          </defs>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke="rgba(0,0,0,0.06)"
+            strokeWidth={stroke}
+            fill="none"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke="url(#v3-wg-prog-grad)"
+            strokeWidth={stroke}
+            fill="none"
+            strokeDasharray={dash + ' ' + c}
+            strokeLinecap="round"
+            transform={'rotate(-90 ' + (size / 2) + ' ' + (size / 2) + ')'}
+          />
+        </svg>
+        <div className="v3-chart-wg-prog-ring-copy">
+          <small>已完成</small>
+          <b>{progress}<i>%</i></b>
+        </div>
+      </div>
+      <div className="v3-chart-wg-prog-meta">
+        <div className="v3-chart-wg-prog-row">
+          <span>当前体重</span>
+          <strong>{current.toFixed(1)} <em>公斤</em></strong>
+        </div>
+        <div className="v3-chart-wg-prog-row">
+          <span>目标体重</span>
+          <button type="button" className="v3-chart-wg-prog-goal" onClick={openDetail}>
+            <strong>{target.toFixed(1)} <em>公斤</em></strong>
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -993,6 +1097,7 @@ function ChartSymptomDots({data}){
 }
 
 function TLChart({type, compact = false, data, weightUnit, note}){
+  if(type === 'weightGoalProgress') return <ChartWeightGoalProgress compact={compact} data={data}/>;
   if(type === 'moodWeek') return <ChartMoodWeek compact={compact}/>;
   if(type === 'weightTrend') return <ChartWeightTrend compact={compact} data={data} unit={weightUnit}/>;
   if(type === 'caloriePanel') return (
@@ -1747,8 +1852,11 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
       }}>
         <V3v2Header time={a.time} title={a.title} isNew={isNew} entryId={derivedId} entryKind={derivedKind} editPayload={editPayload}/>
         <div style={{marginTop:8}}>
+          {a.noteFirst && a.chartType !== 'caloriePanel' && (a.noteParts || a.note) ? (
+            <WeightAnalysisNote noteParts={a.noteParts} note={a.note}/>
+          ) : null}
           <TLChart type={a.chartType} data={a.chartData} weightUnit={a.weightUnit} note={a.note}/>
-          {a.note && a.chartType !== 'caloriePanel' && (
+          {!a.noteFirst && a.note && a.chartType !== 'caloriePanel' && (
             <div style={{fontSize:11, color:TL_MUTED, marginTop:8}}>{a.note}</div>
           )}
         </div>
@@ -1761,6 +1869,32 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
     : undefined;
   const showTags = revealStep >= 1;
   const showAi = revealStep >= 2;
+  const renderAiNote = (streamNote, TypewriterText)=>(
+    a.chartType !== 'caloriePanel' && (a.noteParts || a.note) ? (
+      streamNote ? (
+        <div className="v3-weight-curve-note">
+          <TypewriterText text={a.note} active followScroll/>
+        </div>
+      ) : (
+        <WeightAnalysisNote noteParts={a.noteParts} note={a.note}/>
+      )
+    ) : null
+  );
+  const renderAiChart = ()=>(
+    a.chartType ? (
+      <TLChart
+        type={a.chartType}
+        data={a.chartData}
+        weightUnit={a.weightUnit}
+        note={a.note}
+      />
+    ) : null
+  );
+  const aiFooter =
+    a?.chartType === 'weightGoalProgress' ? <WeightGoalProgressReviewEntry/> :
+    a?.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> :
+    a?.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> :
+    (planCtx && window.PlanCheckInFeedback ? <window.PlanCheckInFeedback/> : null);
 
   return (
     <div
@@ -1796,6 +1930,11 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
         const DietAiCollapsibleSection = window.DietAiCollapsibleSection;
         const TypewriterText = window.TypewriterText;
         const streamNote = isNew && a.chartType === 'symptomDots' && a.note && TypewriterText;
+        const noteBlock = renderAiNote(streamNote, TypewriterText);
+        const chartBlock = renderAiChart();
+        const body = a.noteFirst
+          ? <>{noteBlock}{chartBlock}</>
+          : <>{chartBlock}{noteBlock}</>;
         if (DietAiCollapsibleSection) {
           return (
             <div ref={aiPanelRef}>
@@ -1805,29 +1944,9 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
                 embedded
                 compact={!a.chartType}
                 animateIn={isNew}
-                footer={
-                  a.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> :
-                  a.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> :
-                  (planCtx && window.PlanCheckInFeedback ? <window.PlanCheckInFeedback/> : null)
-                }
+                footer={aiFooter}
               >
-                {a.chartType && (
-                  <TLChart
-                    type={a.chartType}
-                    data={a.chartData}
-                    weightUnit={a.weightUnit}
-                    note={a.note}
-                  />
-                )}
-                {a.chartType !== 'caloriePanel' && (a.noteParts || a.note) && (
-                  streamNote ? (
-                    <div className="v3-weight-curve-note">
-                      <TypewriterText text={a.note} active followScroll/>
-                    </div>
-                  ) : (
-                    <WeightAnalysisNote noteParts={a.noteParts} note={a.note}/>
-                  )
-                )}
+                {body}
               </DietAiCollapsibleSection>
             </div>
           );
@@ -1853,23 +1972,8 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
             </button>
             {open && (
               <div ref={aiPanelRef} className="v3-ai-panel-in" style={{paddingBottom:12}}>
-                {a.chartType && (
-                  <TLChart
-                    type={a.chartType}
-                    data={a.chartData}
-                    weightUnit={a.weightUnit}
-                    note={a.note}
-                  />
-                )}
-                {a.chartType !== 'caloriePanel' && (a.noteParts || a.note) && (
-                  streamNote ? (
-                    <div className="v3-weight-curve-note">
-                      <TypewriterText text={a.note} active followScroll/>
-                    </div>
-                  ) : (
-                    <WeightAnalysisNote noteParts={a.noteParts} note={a.note}/>
-                  )
-                )}
+                {body}
+                {a.chartType === 'weightGoalProgress' ? <WeightGoalProgressReviewEntry/> : null}
                 {a.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> : null}
                 {a.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> : null}
               </div>

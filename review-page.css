@@ -2594,14 +2594,14 @@
   width:16px;
   height:16px;
   fill:none;
-  stroke:#c9bfc9;
+  stroke:#ff4d88;
   stroke-width:1.4;
   stroke-linecap:round;
   stroke-linejoin:round;
 }
 .review-weight-manage-track-flag svg path:last-child{
-  fill:#ffe0ea;
-  stroke:#ff8fb1;
+  fill:#ff4d88;
+  stroke:#ff4d88;
 }
 .review-weight-manage-track-labels{
   position:absolute;
@@ -14388,9 +14388,9 @@
   width:100%;
   overflow:auto;
   -webkit-overflow-scrolling:touch;
-  border-radius:10px;
-  background:#fff;
-  border:1px solid #F0ECEF;
+  border-radius:0;
+  background:transparent;
+  border:0;
   scrollbar-width:none;
 }
 .sy-sheet-scroll::-webkit-scrollbar{display:none}
@@ -14439,26 +14439,27 @@
   color:rgba(0,0,0,0.45);
   font-weight:500;
 }
-.sy-sheet-corner.is-month{
+.sy-sheet-month-track{
   height:18px;
-  border-bottom:0;
+  width:100%;
+  position:relative;
+  z-index:4;
+  pointer-events:none;
 }
-.sy-sheet-month{
-  height:18px;
-  display:flex;
+.sy-sheet-month-pin{
+  position:sticky;
+  left:var(--sy-name-w, 70px);
+  display:inline-flex;
   align-items:flex-end;
-  justify-content:flex-start;
-  padding:0 0 2px 2px;
+  height:18px;
+  padding:0 8px 2px 2px;
   box-sizing:border-box;
   font-size:10.5px;
   line-height:1;
   color:#8A8A93;
-  white-space:nowrap;
-  overflow:visible;
-  pointer-events:none;
-}
-.sy-sheet-month.is-label{
   font-weight:400;
+  white-space:nowrap;
+  background:#fff;
 }
 .sy-sheet-name{
   height:32px;
@@ -14495,7 +14496,7 @@
   color:#8A8A93;
   box-sizing:border-box;
   position:relative;
-  z-index:1;
+  z-index:2;
   border-bottom:1px solid #EEE9EE;
   font-variant-numeric:tabular-nums;
 }
@@ -14514,6 +14515,8 @@
 .sy-sheet-day.is-focus span,
 .sy-sheet-day.is-today span{
   display:inline-block;
+  position:relative;
+  z-index:3;
   min-width:18px;
   height:18px;
   line-height:18px;
@@ -14547,7 +14550,7 @@
   box-sizing:border-box;
   border-top:0.5px solid rgba(0,0,0,0.04);
   position:relative;
-  z-index:1;
+  z-index:2;
 }
 .sy-sheet-day.is-focus,
 .sy-sheet-cell.is-focus{
@@ -14555,17 +14558,21 @@
 }
 .sy-sheet-icon{
   display:block;
+  position:relative;
+  z-index:3;
   width:18px;
   height:18px;
   object-fit:contain;
   pointer-events:none;
   user-select:none;
   -webkit-user-drag:none;
+  background:#fff;
+  border-radius:50%;
+  box-shadow:0 0 0 3px #fff;
 }
 .sy-sheet-cell.is-focus .sy-sheet-icon{
   width:20px;
   height:20px;
-  filter:drop-shadow(0 0 0 1.5px #fff);
 }
 .sy-sheet-tip{
   position:absolute;
@@ -14612,7 +14619,7 @@
   margin-left:-1px;
   background:#F2558B;
   pointer-events:none;
-  z-index:1;
+  z-index:0;
 }
 .sy-sheet-focus-line::before{
   content:"";
@@ -14652,7 +14659,7 @@
   padding:0 6px;
   background:#fff;
 }
-.sy-sheet.is-landscape .sy-sheet-month{
+.sy-sheet.is-landscape .sy-sheet-month-pin{
   font-size:9.5px;
 }
 .sy-sheet.is-landscape .sy-sheet-day{
@@ -14706,26 +14713,37 @@
 .review-symptom-trend-block .review-mood-stat-card.is-freq p.review-mood-freq-words b{
   color:#5b8fd9;
 }
-.review-symptom-trend-block .review-mood-stat-card.is-longest p{
+.review-symptom-trend-block .review-mood-stat-card.is-longest p,
+.review-symptom-trend-section-card .review-mood-stat-card.is-longest p{
   align-items:baseline;
   gap:3px;
   white-space:nowrap;
 }
-.review-symptom-trend-block .review-mood-stat-card.is-longest p b{
+.review-symptom-trend-block .review-mood-stat-card.is-longest p b,
+.review-symptom-trend-section-card .review-mood-stat-card.is-longest p b{
   font-size:22px;
   font-weight:500;
   line-height:22px;
-  color:#5b8fd9;
+  color:rgba(0,0,0,0.8);
 }
-.review-symptom-trend-block .review-mood-stat-card.is-longest p em{
+.review-symptom-trend-block .review-mood-stat-card.is-longest p em,
+.review-symptom-trend-section-card .review-mood-stat-card.is-longest p em{
   font-size:13px;
   line-height:22px;
+  color:rgba(0,0,0,0.8);
 }
-.review-symptom-trend-block .review-mood-stat-card.is-longest p em.is-name{
+.review-symptom-trend-block .review-mood-stat-card.is-longest p em.is-name,
+.review-symptom-trend-section-card .review-mood-stat-card.is-longest p em.is-name{
   font-size:15px;
   font-weight:500;
   line-height:22px;
-  color:#5b8fd9;
+  color:rgba(0,0,0,0.8);
+}
+.review-symptom-trend-section-card .review-mood-stat-card.review-mood-trend-record-card p b,
+.review-symptom-trend-section-card .review-mood-stat-card.review-mood-trend-record-card p em,
+.review-symptom-trend-block .review-mood-stat-card.review-mood-trend-record-card p b,
+.review-symptom-trend-block .review-mood-stat-card.review-mood-trend-record-card p em{
+  color:rgba(0,0,0,0.8);
 }
 .review-symptom-phase-card,
 .review-symptom-insight-card{
@@ -15273,8 +15291,8 @@
   position:absolute; right:-10px; top:50%; width:20px; height:20px; margin-top:-16px;
   display:flex; align-items:center; justify-content:center;
 }
-.wg-prog-track-flag svg{ width:18px; height:18px; fill:none; stroke:#c9bfc9; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
-.wg-prog-track-flag svg path:last-child{ fill:#ffe0ea; stroke:#ff8fb1; }
+.wg-prog-track-flag svg{ width:18px; height:18px; fill:none; stroke:#ff4d88; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+.wg-prog-track-flag svg path:last-child{ fill:#ff4d88; stroke:#ff4d88; }
 .wg-prog-track-labels{
   display:flex; justify-content:space-between; margin-top:9px;
   font-size:11px; line-height:15px; color:rgba(0,0,0,.4);

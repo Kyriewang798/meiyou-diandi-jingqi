@@ -502,10 +502,74 @@ function parseWeightFromText(text){
   return null;
 }
 
-function buildWeightAiBlock(value, unit){
+/** 与体重二级页演示目标对齐：起点 / 目标（kg） */
+const WEIGHT_GOAL_DEMO_START_KG = 49.7;
+const WEIGHT_GOAL_DEMO_TARGET_KG = 45;
+
+function buildWeightGoalProgressData(todayKg){
+  const current = Number(todayKg.toFixed(1));
+  const start = WEIGHT_GOAL_DEMO_START_KG;
+  const target = WEIGHT_GOAL_DEMO_TARGET_KG;
+  const span = Math.max(0.1, start - target);
+  const lost = Math.max(0, Number((start - current).toFixed(1)));
+  const left = Math.max(0, Number((current - target).toFixed(1)));
+  const progress = Math.max(0, Math.min(100, Math.round((lost / span) * 100)));
+  return { current, start, target, lost, left, progress };
+}
+
+/** 有目标：比昨天轻了 0.5kg，离 45kg 又近一步，还差 5.1kg，当前进度 x% */
+function buildWeightGoalProgressNote(todayKg, progressData){
+  const yesterdayKg = Number((todayKg + 0.5).toFixed(1));
+  const deltaKg = Number((todayKg - yesterdayKg).toFixed(1));
+  const target = progressData.target;
+  const left = progressData.left;
+  const progress = progressData.progress;
+  const targetBit = target.toFixed(target % 1 === 0 ? 0 : 1) + 'kg';
+  const leftBit = left.toFixed(1) + 'kg';
+  const progressBit = progress + '%';
+
+  if(Math.abs(deltaKg) < 0.05){
+    return {
+      prefix: '比昨天持平，离 ' + targetBit + ' 还差 ',
+      delta: leftBit,
+      emphasize: false,
+      tail: '，当前进度 ' + progressBit,
+    };
+  }
+  if(deltaKg < 0){
+    return {
+      prefix: '比昨天轻了 ',
+      delta: Math.abs(deltaKg).toFixed(1) + 'kg',
+      emphasize: true,
+      tail: '，离 ' + targetBit + ' 又近一步，还差 ' + leftBit + '，当前进度 ' + progressBit,
+    };
+  }
+  return {
+    prefix: '比昨天重了 ',
+    delta: deltaKg.toFixed(1) + 'kg',
+    emphasize: false,
+    tail: '，离 ' + targetBit + ' 还差 ' + leftBit + '，当前进度 ' + progressBit,
+  };
+}
+
+function buildWeightAiBlock(value, unit, opts = {}){
   const todayKg = toWeightKg(value, unit);
   const gid = 'e-'+Date.now();
   const time = window.formatNowTime();
+  if(opts.hasWeightGoal){
+    const chartData = buildWeightGoalProgressData(todayKg);
+    return {
+      id:gid+'-ai',
+      time,
+      kind:'chart',
+      chartType:'weightGoalProgress',
+      title:'目标进度',
+      chartData,
+      weightUnit: unit,
+      noteParts: buildWeightGoalProgressNote(todayKg, chartData),
+      noteFirst: true,
+    };
+  }
   return {
     id:gid+'-ai',
     time,
@@ -518,7 +582,7 @@ function buildWeightAiBlock(value, unit){
   };
 }
 
-function createWeightRecordEntry({value, unit}){
+function createWeightRecordEntry({value, unit, hasWeightGoal = false}){
   const gid = 'e-'+Date.now();
   const time = window.formatNowTime();
   return {
@@ -536,7 +600,7 @@ function createWeightRecordEntry({value, unit}){
       weightUnit:unit,
       tags:[],
     },
-    ai: buildWeightAiBlock(value, unit),
+    ai: buildWeightAiBlock(value, unit, { hasWeightGoal: !!hasWeightGoal }),
     aiDefaultOpen:true,
   };
 }
@@ -563,7 +627,7 @@ function createWeightRecordEntryFromText(text, opts = {}){
       tags:[{ cat:'体重', val: valText, icon:'weight' }],
       voice: opts.voice || null,
     },
-    ai: buildWeightAiBlock(parsed.value, parsed.unit),
+    ai: buildWeightAiBlock(parsed.value, parsed.unit, { hasWeightGoal: !!opts.hasWeightGoal }),
     aiDefaultOpen:true,
   };
 }
@@ -655,7 +719,7 @@ function createGoalRecordEntriesFromText(text, opts = {}){
   };
   if(parsed.isWeightGoal){
     textEntry.detailLink = {
-      label:'定个小目标，减重更有方向',
+      label:'设定体重目标，按节奏稳稳减重',
       event:'openReviewWeightDetail',
       detail:{ activateGoal:true, returnTab:'note' },
     };

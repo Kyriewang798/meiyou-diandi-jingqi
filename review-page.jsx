@@ -6070,12 +6070,13 @@ function WeightCycleCombinedCard({onExpand, showCompare = true, showPhase = true
 }
 
 function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, onOpenDietSport, showCycle=false}){
-  const showGoalProgress = planGuidePhase === 'plan';
-  const showGoalSample = planGuidePhase === 'none' || planGuidePhase === 'goal';
+  // none：示例进度；goal/plan：真实目标进度（点滴「查看完整目标进度」进二级页可见）
+  const showGoalSample = planGuidePhase === 'none';
+  const showGoalCard = showGoalSample || planGuidePhase === 'goal' || planGuidePhase === 'plan';
   const goalRange = 'w' + WEIGHT_GOAL_PLAN_WEEKS;
   return (
     <div className="review-detail-section-stack">
-      {showGoalProgress || showGoalSample ? (
+      {showGoalCard ? (
         <WeightGoalProgressCard
           range={goalRange}
           sample={showGoalSample}
@@ -12302,40 +12303,45 @@ const SYMPTOM_DIST_DATA = {
 };
 
 const SYMPTOM_RANGE_META = {
+  // kinds：范围内不同症状数；most：记录天数最多（展示为「次」）；longest：最长连续天数
   d30:{
     label:'近30天',
     dateText:'2026年6月14日至7月13日',
-    kinds:6,
+    kinds:8,
+    mostName:'乳胀',
+    mostCount:8,
     longestName:'腹痛',
-    longestDays:4,
-    coOccur:'腹痛+腹泻',
+    longestDays:5,
     mode:'phase',
   },
   half:{
     label:'近半年',
     dateText:'2026年1月13日至7月13日',
     kinds:10,
-    longestName:'疲惫',
-    longestDays:5,
-    coOccur:'乳胀+疲惫',
+    mostName:'腹痛',
+    mostCount:22,
+    longestName:'腰酸',
+    longestDays:6,
     mode:'cycles',
   },
   year:{
     label:'近1年',
     dateText:'2025年7月14日至2026年7月13日',
     kinds:11,
-    longestName:'腰酸',
-    longestDays:4,
-    coOccur:'腰酸+腹痛',
+    mostName:'腰酸',
+    mostCount:41,
+    longestName:'腹痛',
+    longestDays:7,
     mode:'cycles',
   },
   all:{
     label:'全部',
     dateText:'2024年7月14日至2026年7月13日',
     kinds:12,
+    mostName:'疲惫',
+    mostCount:63,
     longestName:'失眠',
-    longestDays:3,
-    coOccur:'粉刺+失眠',
+    longestDays:6,
     mode:'cycles',
   },
 };
@@ -12385,19 +12391,19 @@ const SYMPTOM_DISCOVERY_COPY = {
   d30: {
     items: [
       {
-        tone:'is-good',
-        title:'阶段集中',
-        text:<>近 30 天症状更偏 <b>月经期</b>：腹痛连续加重，并常伴腹泻；黄体后期则出现乳胀与粉刺，排卵前后有短暂头痛。</>,
-      },
-      {
-        tone:'is-good',
-        title:'高频症状',
-        text:<>共记录 <b>6</b> 种症状，其中 <b>腹痛</b> 最长连续 <b>4</b> 天，是本段最突出的不适。</>,
-      },
-      {
         tone:'is-note',
-        title:'伴随出现',
-        text:<>腹痛与腹泻最常一起出现。若经期第 1–2 天同时加重，可提前准备温热饮食与休息，减轻集中不适。</>,
+        title:'需要关注',
+        text:<>乳胀已经连续记录 <b>5</b> 天，比前 30 天多了 <b>3</b> 天，持续时间比以往更长。经前乳胀通常在月经来后 1~2 天内缓解；如果月经结束后仍然胀痛，或摸到硬块、乳头有分泌物，建议去做个乳腺检查。</>,
+      },
+      {
+        tone:'is-good',
+        title:'集中时段',
+        text:<>16 天记录里有 <b>13</b> 天集中在月经前后：月经前一周共 <b>9</b> 天，以乳胀、粉刺为主；经期前 <b>4</b> 天以腹痛、腰酸为主。其余时间只零星记录了 <b>3</b> 天头痛和失眠。你的不适和经期关系很明显，下次经期预计在 <b>11月5日</b> 左右，可以提前把重要安排错开。</>,
+      },
+      {
+        tone:'is-good',
+        title:'伴随症状',
+        text:<>粉刺的 <b>6</b> 天记录里有 <b>5</b> 天同时出现乳胀，两者几乎总是一起出现，都在月经前一周；腰酸的 <b>3</b> 天都伴随腹痛，集中在经期第 1~3 天。总是一起出现的症状通常来自同一阶段的变化，下次乳胀开始时，粉刺也可能跟着出现，可以提前做好清洁护肤。</>,
       },
     ],
   },
@@ -12539,7 +12545,7 @@ const SYMPTOM_CYCLE_STACK = {
   half:[
     {
       id:'h0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
-      rows:{cramp:[1,2,3,4], back:[1,2,3,22], diarrhea:[1,2,3], breast:[20,22,23,24,26], tired:[20,21,22,23,24], acne:[23,24,25]},
+      rows:{cramp:[1,2,3,4], back:[1,2,3,22,30], diarrhea:[1,2,3], breast:[20,22,23,24,26,30], tired:[20,21,22,23,24], acne:[23,24,25]},
     },
     {
       id:'h1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
@@ -12563,7 +12569,7 @@ const SYMPTOM_CYCLE_STACK = {
   year:[
     {
       id:'y0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
-      rows:{cramp:[1,2,3,4], back:[1,2,3,22], diarrhea:[1,2,3], breast:[20,22,23,24,26], tired:[20,21,22,23,24], acne:[23,24,25]},
+      rows:{cramp:[1,2,3,4], back:[1,2,3,22,30], diarrhea:[1,2,3], breast:[20,22,23,24,26,30], tired:[20,21,22,23,24], acne:[23,24,25]},
     },
     {
       id:'y1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
@@ -12940,12 +12946,15 @@ function symptomSheetDayTitle(range, day, length){
   return (d.getMonth() + 1) + '月' + d.getDate() + '日';
 }
 
-/** 与 HTML mrow 一致：首列或每月 1 号显示「2026年1月 / 2月」 */
-function symptomSheetMonthLabel(dayIndex, length){
+/** 左侧固定月份：根据当前可视日显示「2026年6月 / 7月」 */
+function symptomSheetStickyMonthLabel(dayIndex, length){
   const d = symptomSheetDateForDay(dayIndex, length);
-  const isFirst = dayIndex === 1;
-  if(!isFirst && d.getDate() !== 1) return '';
-  const yearBit = (d.getMonth() === 0 || isFirst) ? (d.getFullYear() + '年') : '';
+  const first = symptomSheetDateForDay(1, length);
+  const sameYearAsFirst = d.getFullYear() === first.getFullYear();
+  const isFirstMonth = sameYearAsFirst && d.getMonth() === first.getMonth();
+  const yearBit = (isFirstMonth || d.getMonth() === 0 || !sameYearAsFirst)
+    ? (d.getFullYear() + '年')
+    : '';
   return yearBit + (d.getMonth() + 1) + '月';
 }
 
@@ -12983,26 +12992,55 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
     });
     return map;
   }, [model.rows]);
-  const defaultFocus = React.useMemo(()=>{
-    const todaySymptoms = symptomsByDay[model.length] || [];
-    if(todaySymptoms.length) return model.length;
-    return symptomSheetLatestDay(model.rows) || model.length;
-  }, [model.length, model.rows, symptomsByDay]);
-  // 点选仅在当前 tab 生效；切 tab 自动回到该 range 最新有记录日，不再二次 set 挪线
+  // 切 tab 一律落在「今天」；点选仅在当前 tab 生效
+  const defaultFocus = model.length;
   const [picked, setPicked] = React.useState(null); // {range, day} | null
   const focusDay = (picked && picked.range === range) ? picked.day : defaultFocus;
   const scrollRef = React.useRef(null);
   const focusColRef = React.useRef(null);
+  const fitAll = landscape && days.length <= 35;
+  const nameW = landscape ? 56 : 70;
+  // 与 HTML 一致：列宽足够让每日日期常驻显示（近半年/近1年也不抽稀）
+  const colW = landscape
+    ? (fitAll ? null : (days.length > 200 ? 18 : 22))
+    : 26;
+  const [stickyMonth, setStickyMonth] = React.useState(
+    ()=>symptomSheetStickyMonthLabel(model.length, model.length)
+  );
+  const syncStickyMonth = React.useCallback(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    let dayIndex = model.length;
+    if(fitAll || !colW){
+      dayIndex = 1;
+    }else{
+      dayIndex = Math.min(
+        model.length,
+        Math.max(1, Math.floor(scroller.scrollLeft / colW) + 1)
+      );
+    }
+    const next = symptomSheetStickyMonthLabel(dayIndex, model.length);
+    setStickyMonth(prev => prev === next ? prev : next);
+  }, [colW, fitAll, model.length]);
   // 切 tab / 横屏：视口一次落到最右，选中不另做动画改位
   React.useLayoutEffect(()=>{
     const scroller = scrollRef.current;
     if(!scroller) return;
     const jumpLatest = ()=>{
       scroller.scrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+      syncStickyMonth();
     };
     jumpLatest();
     requestAnimationFrame(jumpLatest);
-  }, [range, landscape, model.length]);
+  }, [range, landscape, model.length, syncStickyMonth]);
+  React.useEffect(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const onScroll = ()=>syncStickyMonth();
+    scroller.addEventListener('scroll', onScroll, {passive:true});
+    syncStickyMonth();
+    return ()=>scroller.removeEventListener('scroll', onScroll);
+  }, [syncStickyMonth, range, landscape]);
   // 仅用户点选时，把该列滚进可视区
   React.useLayoutEffect(()=>{
     if(!picked || picked.range !== range) return;
@@ -13011,7 +13049,8 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
     if(!scroller || !col) return;
     const left = Math.max(0, col.offsetLeft - scroller.clientWidth * 0.62 + col.offsetWidth);
     scroller.scrollLeft = left;
-  }, [picked, range]);
+    syncStickyMonth();
+  }, [picked, range, syncStickyMonth]);
   const hasRecord = day => (symptomsByDay[day] || []).length > 0;
   const selectDay = day=>{
     if(!hasRecord(day)) return;
@@ -13025,12 +13064,6 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
       ? focusSymptoms.slice(0, 2).join('、') + ' 等' + focusSymptoms.length + '项'
       : focusSymptoms.join('、'));
   const focusSub = symptomSheetTipSub(range, focusDay, model.length);
-  const fitAll = landscape && days.length <= 35;
-  const nameW = landscape ? 56 : 70;
-  // 与 HTML 一致：列宽足够让每日日期常驻显示（近半年/近1年也不抽稀）
-  const colW = landscape
-    ? (fitAll ? null : (days.length > 200 ? 18 : 22))
-    : 26;
   const gridCols = fitAll
     ? (nameW + 'px repeat(' + days.length + ', minmax(0, 1fr))')
     : (nameW + 'px repeat(' + days.length + ', ' + colW + 'px)');
@@ -13059,9 +13092,14 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
     setTipLayout({lineLeft: x, tipLeft});
   }, [fitAll, focusDay, focusTitle, focusSub, focusX, days.length, nameW, model.rows.length, landscape]);
   return (
-    <div className={'sy-sheet' + (landscape ? ' is-landscape' : '') + (fitAll ? ' is-fit' : '')} aria-label="症状记录表格">
+    <div
+      className={'sy-sheet' + (landscape ? ' is-landscape' : '') + (fitAll ? ' is-fit' : '')}
+      style={{'--sy-name-w': nameW + 'px'}}
+      aria-label="症状记录表格"
+    >
       <div className="sy-sheet-scroll" ref={scrollRef}>
         <div className="sy-sheet-canvas" ref={canvasRef}>
+          <div className="sy-sheet-focus-line" style={{left: tipLayout.lineLeft + 'px'}} aria-hidden="true"/>
           <div
             ref={tipRef}
             className={'sy-sheet-tip' + (focusEmpty ? ' is-empty' : '')}
@@ -13071,23 +13109,13 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
             <b>{focusTitle}</b>
             <span>{focusSub}</span>
           </div>
+          <div className="sy-sheet-month-track" aria-hidden="true">
+            <div className="sy-sheet-month-pin">{stickyMonth}</div>
+          </div>
           <div
             className="sy-sheet-grid"
             style={{gridTemplateColumns:gridCols, width:fitAll ? '100%' : undefined}}
           >
-            <div className="sy-sheet-corner is-month" aria-hidden="true"/>
-            {days.map((day)=>{
-              const label = symptomSheetMonthLabel(day, model.length);
-              return (
-                <div
-                  key={'m-' + day}
-                  className={'sy-sheet-month' + (label ? ' is-label' : '')}
-                  aria-hidden={!label}
-                >
-                  {label}
-                </div>
-              );
-            })}
             <div className="sy-sheet-corner">症状</div>
             {days.map((day, index)=>{
               const isFocus = day === focusDay;
@@ -13151,7 +13179,6 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
               </React.Fragment>
             ))}
           </div>
-          <div className="sy-sheet-focus-line" style={{left: tipLayout.lineLeft + 'px'}} aria-hidden="true"/>
         </div>
       </div>
       <div className="review-mood-traj-legend review-symptom-phase-legend" aria-hidden="true">
@@ -13205,17 +13232,21 @@ function SymptomTrendSummary({range = 'd30'}){
                 <span className="review-mood-trend-record-card-title">记录症状</span>
                 <p><b>{meta.kinds}</b><em>种</em></p>
               </div>
+              <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest is-most">
+                <span className="review-mood-trend-record-card-title">最常记录</span>
+                <p>
+                  <em className="is-name">{meta.mostName}</em>
+                  <b>{meta.mostCount}</b>
+                  <em>次</em>
+                </p>
+              </div>
               <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest">
-                <span className="review-mood-trend-record-card-title">最长持续天数</span>
+                <span className="review-mood-trend-record-card-title">最长持续</span>
                 <p>
                   <em className="is-name">{meta.longestName}</em>
                   <b>{meta.longestDays}</b>
                   <em>天</em>
                 </p>
-              </div>
-              <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-freq">
-                <span className="review-mood-trend-record-card-title">常一起出现</span>
-                <p className="review-mood-freq-words"><b>{meta.coOccur}</b></p>
               </div>
             </div>
           </div>
@@ -17764,8 +17795,11 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
   const [dietDistDetailOpen, setDietDistDetailOpen] = useState(false);
   const [moodDetailOpen, setMoodDetailOpen] = useState(false);
-  const [weightDetailOpen, setWeightDetailOpen] = useState(false);
-  const [weightGoalDetailOpen, setWeightGoalDetailOpen] = useState(false);
+  // 点滴文字链直达：首屏即开二级页，避免先闪回顾一级
+  const [weightDetailOpen, setWeightDetailOpen] = useState(() => openWeightDetailRequest > 0);
+  const [weightGoalDetailOpen, setWeightGoalDetailOpen] = useState(() => openWeightGoalDetailRequest > 0);
+  const lastWeightDetailReqRef = React.useRef(openWeightDetailRequest > 0 ? openWeightDetailRequest : 0);
+  const lastWeightGoalDetailReqRef = React.useRef(openWeightGoalDetailRequest > 0 ? openWeightGoalDetailRequest : 0);
   const [weightAssessOpen, setWeightAssessOpen] = useState(false);
   const [weightAssessPrefill, setWeightAssessPrefill] = useState(false);
   const [weightAssessValues, setWeightAssessValues] = useState(null);
@@ -17786,17 +17820,19 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
     onCycleDetailRequestHandled?.();
   }, [openCycleDetailRequest]);
 
-  React.useEffect(()=>{
-    if(openWeightDetailRequest <= 0) return;
+  React.useLayoutEffect(()=>{
+    if(openWeightDetailRequest <= lastWeightDetailReqRef.current) return;
+    lastWeightDetailReqRef.current = openWeightDetailRequest;
     setWeightDetailOpen(true);
     onWeightDetailRequestHandled?.();
-  }, [openWeightDetailRequest]);
+  }, [openWeightDetailRequest, onWeightDetailRequestHandled]);
 
-  React.useEffect(()=>{
-    if(openWeightGoalDetailRequest <= 0) return;
+  React.useLayoutEffect(()=>{
+    if(openWeightGoalDetailRequest <= lastWeightGoalDetailReqRef.current) return;
+    lastWeightGoalDetailReqRef.current = openWeightGoalDetailRequest;
     setWeightGoalDetailOpen(true);
     onWeightGoalDetailRequestHandled?.();
-  }, [openWeightGoalDetailRequest]);
+  }, [openWeightGoalDetailRequest, onWeightGoalDetailRequestHandled]);
 
   React.useEffect(()=>{
     if(openDietDetailRequest <= 0) return;

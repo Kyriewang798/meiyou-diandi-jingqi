@@ -1912,7 +1912,10 @@ function App(){
       return;
     }
 
-    const weightEntry = photos.length ? null : window.tryCreateWeightTextEntry?.(text, opts);
+    const hasWeightGoal = weightManagePhase === 'goal' || weightManagePhase === 'plan';
+    const weightEntry = photos.length
+      ? null
+      : window.tryCreateWeightTextEntry?.(text, { ...opts, hasWeightGoal });
     if (weightEntry) {
       setDraft('');
       markUserRecorded();
@@ -2184,7 +2187,10 @@ function App(){
 
   const submitWeightRecord = (payload)=>{
     markUserRecorded();
-    const entry = window.createWeightRecordEntry(payload);
+    const entry = window.createWeightRecordEntry({
+      ...payload,
+      hasWeightGoal: weightManagePhase === 'goal' || weightManagePhase === 'plan',
+    });
     attachPlanCheckIn(entry, 'weight');
     if(payload?.source === 'camera' || payload?.photoUrl){
       entry.weightSource = 'camera';
@@ -2966,7 +2972,7 @@ function App(){
             setActiveTab(returnTab);
           }}
           openWeightDetailRequest={reviewWeightOpenRequest}
-          onWeightDetailRequestHandled={()=>setReviewWeightOpenRequest(0)}
+          onWeightDetailRequestHandled={()=>{}}
           onWeightDetailReturn={()=>{
             if(!reviewWeightReturnTab) return;
             const returnTab = reviewWeightReturnTab;
@@ -2974,7 +2980,7 @@ function App(){
             setActiveTab(returnTab);
           }}
           openWeightGoalDetailRequest={reviewWeightGoalOpenRequest}
-          onWeightGoalDetailRequestHandled={()=>setReviewWeightGoalOpenRequest(0)}
+          onWeightGoalDetailRequestHandled={()=>{}}
           onWeightGoalDetailReturn={()=>{
             if(!reviewWeightGoalReturnTab) return;
             const returnTab = reviewWeightGoalReturnTab;
