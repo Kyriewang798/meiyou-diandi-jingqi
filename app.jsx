@@ -868,7 +868,7 @@ function App(){
   };
 
   React.useEffect(()=>{
-    if(weightManagePhase === 'none'){
+    if(weightManagePhase !== 'plan' && weightManagePhase !== 'goal'){
       goalTimelinePostedRef.current = false;
       return;
     }

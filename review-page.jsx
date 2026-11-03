@@ -612,7 +612,15 @@ function ReviewOverviewLine({values, color, fill, bands=false}){
   );
 }
 
-function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendText, metricLabel, value, valueText, unit, chart, cardClass='', onOpen}){
+function ReviewSampleMark(){
+  return (
+    <div className="review-sample-mark" aria-hidden="true">
+      <span>示例数据</span>
+    </div>
+  );
+}
+
+function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendText, metricLabel, value, valueText, unit, chart, cardClass='', sample=false, onOpen}){
   const isActionable = typeof onOpen === 'function';
   const handleKeyDown = event=>{
     if(!isActionable) return;
@@ -626,12 +634,12 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
     : (typeof value === 'string' || typeof value === 'number' ? value : '');
   return (
     <article
-      className={'review-overview-card' + (cardClass ? ' ' + cardClass : '') + (isActionable ? ' is-actionable' : '')}
+      className={'review-overview-card' + (cardClass ? ' ' + cardClass : '') + (isActionable ? ' is-actionable' : '') + (sample ? ' is-sample' : '')}
       role={isActionable ? 'button' : undefined}
       tabIndex={isActionable ? 0 : undefined}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      aria-label={title + '，' + metricLabel + metricValueText + (unit || '') + '，' + trendPrefix + trendText}
+      aria-label={(sample ? '示例数据，' : '') + title + '，' + metricLabel + metricValueText + (unit || '') + '，' + trendPrefix + trendText}
     >
       <header className="review-overview-head">
         <span className={'review-overview-icon ' + iconClass} aria-hidden="true">{icon}</span>
@@ -639,7 +647,7 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
         {status ? <span className="review-overview-status">{status}</span> : null}
         <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
       </header>
-      <div className="review-overview-body">
+      <div className={'review-overview-body' + (sample ? ' is-sample-body' : '')}>
         <div className="review-overview-metric">
           <span>{metricLabel}</span>
           <strong>{value}{unit ? <small>{unit}</small> : null}</strong>
@@ -648,6 +656,81 @@ function ReviewOverviewCard({title, iconClass, icon, status, trendPrefix, trendT
           <div className="review-overview-trend-label"><span>{trendPrefix}</span><b>{trendText}</b></div>
           <div className="review-overview-chart">{chart}</div>
         </div>
+        {sample ? <ReviewSampleMark/> : null}
+      </div>
+    </article>
+  );
+}
+
+function PeriodHealthOverviewCard({sample=false, onOpen}){
+  const isActionable = typeof onOpen === 'function';
+  const handleKeyDown = event=>{
+    if(!isActionable) return;
+    if(event.key === 'Enter' || event.key === ' '){
+      event.preventDefault();
+      onOpen();
+    }
+  };
+  return (
+    <article
+      className={'review-overview-card review-period-health-l1' + (isActionable ? ' is-actionable' : '') + (sample ? ' is-sample' : '')}
+      role={isActionable ? 'button' : undefined}
+      tabIndex={isActionable ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={(sample ? '示例数据，' : '') + '经期健康度，预测得分88，优秀'}
+    >
+      <header className="review-overview-head">
+        <span className="review-overview-icon is-period-health" aria-hidden="true">
+          <span className="review-period-health-ai">Ai</span>
+        </span>
+        <h2>经期健康度</h2>
+        <span className="review-health-score-vip" aria-label="VIP">VIP</span>
+        <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
+      </header>
+      <div className={'review-period-health-l1-body' + (sample ? ' is-sample-body' : '')}>
+        <div className="review-period-health-l1-gauge-wrap">
+          <div className="review-period-health-l1-gauge" aria-hidden="true">
+            <svg viewBox="0 0 120 78">
+              <defs>
+                <linearGradient id="reviewPeriodHealthL1Arc" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#ffb6d3"/>
+                  <stop offset="100%" stopColor="#ff6ba6"/>
+                </linearGradient>
+              </defs>
+              <path className="review-period-health-l1-track" d="M12 70 A48 48 0 0 1 108 70"/>
+              <path className="review-period-health-l1-arc" d="M12 70 A48 48 0 0 1 108 70"/>
+            </svg>
+            <div className="review-period-health-l1-score">
+              <span>预测得分</span>
+              <strong>88</strong>
+            </div>
+          </div>
+          <div className="review-period-health-l1-change">
+            <span>比上周期</span>
+            <b>↑ 2分</b>
+          </div>
+        </div>
+        <div className="review-period-health-l1-summary">
+          <h3>优秀</h3>
+          <div className="review-period-health-l1-metric">
+            <span><b>1</b> 项指标</span>
+            <em className="is-normal">正常</em>
+          </div>
+          <div className="review-period-health-l1-metric">
+            <span><b>1</b> 项影响因素</span>
+            <em className="is-strong">影响强烈</em>
+          </div>
+          <button
+            type="button"
+            className="review-period-health-l1-cta"
+            onClick={event=>{
+              event.stopPropagation();
+              onOpen?.();
+            }}
+          >立即查看</button>
+        </div>
+        {sample ? <ReviewSampleMark/> : null}
       </div>
     </article>
   );
@@ -712,73 +795,55 @@ function WeightManageProgressBody(){
   );
 }
 
-function WeightManageCard({phase='none', onActivateGoal, onOpen}){
-  // 无目标 / 仅有目标未开计划：一级页展示示例卡；有计划才展示真实进度卡
+/** 体重一级卡：有计划展示管理进度；无计划展示趋势。均进入体重详情页 */
+function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight}){
   const isPlan = phase === 'plan';
   const handleKeyDown = event=>{
-    if(!onOpen) return;
+    if(!onOpenWeight) return;
     if(event.key === 'Enter' || event.key === ' '){
       event.preventDefault();
-      onOpen();
+      onOpenWeight();
     }
   };
   const totLost = weightGoalTotLost();
+
   if(isPlan){
     return (
       <article
-        className="review-overview-card review-weight-manage-card is-active is-actionable"
-        role={onOpen ? 'button' : undefined}
-        tabIndex={onOpen ? 0 : undefined}
-        onClick={onOpen}
+        className={'review-overview-card review-weight-manage-card is-active is-actionable' + (sample ? ' is-sample' : '')}
+        role={onOpenWeight ? 'button' : undefined}
+        tabIndex={onOpenWeight ? 0 : undefined}
+        onClick={onOpenWeight}
         onKeyDown={handleKeyDown}
-        aria-label={'体重管理，累计减重' + totLost + '公斤'}
+        aria-label={'体重，累计减重' + totLost + '公斤'}
       >
         <header className="review-overview-head">
-          <span className="review-overview-icon is-weight-manage" aria-hidden="true"><ReviewDietTargetIcon/></span>
-          <h2>体重管理</h2>
+          <span className="review-overview-icon is-weight" aria-hidden="true"><ReviewScaleIcon/></span>
+          <h2>体重</h2>
           <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
         </header>
-        <WeightManageProgressBody/>
+        <div className={'review-overview-sample-body' + (sample ? ' is-sample-body' : '')}>
+          <WeightManageProgressBody/>
+          {sample ? <ReviewSampleMark/> : null}
+        </div>
       </article>
     );
   }
 
   return (
-    <article
-      className="review-overview-card review-weight-manage-card is-idle is-actionable"
-      role={onOpen ? 'button' : undefined}
-      tabIndex={onOpen ? 0 : undefined}
-      onClick={onOpen}
-      onKeyDown={handleKeyDown}
-      aria-label="体重管理，未开启计划，示例数据，点击查看示例"
-    >
-      <header className="review-overview-head">
-        <span className="review-overview-icon is-weight-manage" aria-hidden="true"><ReviewDietTargetIcon/></span>
-        <h2>体重管理</h2>
-        <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
-      </header>
-      <div className="review-weight-manage-sample is-combo">
-        <div className="review-weight-manage-sample-body" aria-hidden="true">
-          <WeightManageProgressBody/>
-        </div>
-        <div className="review-weight-manage-sample-mask" aria-hidden="true">
-          <span>示例数据</span>
-        </div>
-      </div>
-      <div className="review-weight-manage-idle-foot">
-        <p>1 分钟测评，定适合你的目标</p>
-        <button
-          type="button"
-          className="review-weight-manage-goal-link"
-          onClick={(event)=>{
-            event.stopPropagation();
-            onActivateGoal?.();
-          }}
-        >
-          制定目标
-        </button>
-      </div>
-    </article>
+    <ReviewOverviewCard
+      title="体重"
+      iconClass="is-weight"
+      icon={<ReviewScaleIcon/>}
+      trendPrefix="近7天趋势"
+      trendText="下降"
+      metricLabel="最新记录"
+      value="52.4"
+      unit="公斤"
+      sample={sample}
+      chart={<ReviewOverviewLine values={[54.1,52.8,52.8,52.9,54.8,53.1,53.3,52.7]} color="#08c49c" fill="rgba(8,196,156,.10)"/>}
+      onOpen={onOpenWeight}
+    />
   );
 }
 
@@ -1793,6 +1858,63 @@ function WeightGoalInsightSectionIcon(){
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 15c-1.8-1.2-3-3.2-3-5.4A5.8 5.8 0 0 1 12 3.8 5.8 5.8 0 0 1 18.8 9.6c0 2.2-1.2 4.2-3 5.4H8.2z"/></svg>;
 }
 
+function ReviewTrendLineIcon(){
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6M4 18h16"/><path d="M7 14l3.2-4.2 3 2.4L17.5 7"/><path d="M15.2 7h2.3v2.3"/></svg>;
+}
+
+function ReviewCyclePhaseIcon(){
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v8l5.2 3"/></svg>;
+}
+
+function ReviewDetailSectionCard({
+  iconClass = '',
+  icon,
+  title,
+  subtitle,
+  extra,
+  className = '',
+  children,
+  ariaLabel,
+  onOpen,
+}){
+  const isActionable = typeof onOpen === 'function';
+  const handleKeyDown = event=>{
+    if(!isActionable) return;
+    if(event.key === 'Enter' || event.key === ' '){
+      event.preventDefault();
+      onOpen();
+    }
+  };
+  return (
+    <section
+      className={'review-detail-card review-detail-section-card' + (className ? ' ' + className : '') + (isActionable ? ' is-actionable' : '')}
+      aria-label={ariaLabel || title}
+      role={isActionable ? 'button' : undefined}
+      tabIndex={isActionable ? 0 : undefined}
+      onClick={isActionable ? onOpen : undefined}
+      onKeyDown={handleKeyDown}
+    >
+      <header className={'review-detail-section-head' + (subtitle ? ' has-subtitle' : '')}>
+        <div className="review-detail-section-title">
+          {icon ? (
+            <span className={'review-card-icon ' + iconClass} aria-hidden="true">{icon}</span>
+          ) : null}
+          <div className="review-detail-section-title-text">
+            <h3>{title}</h3>
+            {subtitle ? <p>{subtitle}</p> : null}
+          </div>
+        </div>
+        {extra || (isActionable ? (
+          <span className="review-detail-section-entry" aria-hidden="true">
+            <span className="review-detail-section-entry-gt">&gt;</span>
+          </span>
+        ) : null)}
+      </header>
+      <div className="review-detail-section-body">{children}</div>
+    </section>
+  );
+}
+
 function WeightGoalSectionHead({iconClass, icon, title, subtitle, extra}){
   return (
     <header className={'review-weight-goal-card-head' + (subtitle ? ' has-subtitle' : '')}>
@@ -1891,7 +2013,7 @@ function weightGoalRangeMeta(range){
   };
 }
 
-function WeightGoalProgressCard({range, onAdjustGoal}){
+function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePhase='none', onCreatePlan}){
   const isAll = weightGoalIsAllTab(range);
   const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
   const week = WEIGHT_GOAL_WEEK_STATS[weekIndex] || WEIGHT_GOAL_WEEK_STATS[WEIGHT_GOAL_CURRENT_WEEK];
@@ -1916,61 +2038,72 @@ function WeightGoalProgressCard({range, onAdjustGoal}){
   const weekGoalLabel = '第' + weekNo + '周目标';
   const metCount = WEIGHT_GOAL_WEEK_STATS.filter(item=>item.met).length;
   return (
-    <section className="review-detail-card review-weight-goal-progress-card is-stage" aria-label={title}>
+    <section
+      className={'review-detail-card review-weight-goal-progress-card is-stage' + (sample ? ' is-sample' : '')}
+      aria-label={(sample ? '示例数据，' : '') + title}
+    >
       <header className="review-weight-goal-stage-head">
         <span className="review-card-icon is-diet-target" aria-hidden="true"><ReviewDietTargetIcon/></span>
         <div className="review-weight-goal-stage-title">
           <h3>{title}</h3>
           <small>{subtitle}</small>
         </div>
-        <button
-          type="button"
-          className="review-weight-goal-text-action"
-          onClick={(event)=>{
-            event.stopPropagation();
-            onAdjustGoal?.();
-          }}
-        >
-          调整目标
-          <span className="review-weight-goal-text-action-chevron" aria-hidden="true"><ReviewChevron/></span>
-        </button>
-      </header>
-      <div className="review-weight-goal-stage-metric">
-        <span className="review-weight-goal-stage-cur">
-          {displayWt.toFixed(1)}
-          <i>kg</i>
-        </span>
-        <span className="review-weight-goal-stage-to">/ 目标 {WEIGHT_GOAL_WEIGHT_TARGET.toFixed(1)}kg</span>
-      </div>
-      <div className="review-weight-goal-stage-bar" aria-hidden="true">
-        <i style={{width:progress + '%'}}/>
-        <em style={{left:progress + '%'}}/>
-        <span className="review-weight-goal-stage-tip" style={{left:tipLeft + '%'}}>已完成 {progress}%</span>
-      </div>
-      <div className="review-weight-goal-stage-foot is-split">
-        <span>起始 {WEIGHT_GOAL_START.toFixed(1)}kg</span>
-        <span>还差 {left}kg · 剩 {remainWeeks} 周</span>
-      </div>
-      <div className="review-weight-goal-stage-split">
-        <div>
-          <small>累计减重</small>
-          <b>{totLost.toFixed(1)} <i>kg</i></b>
-        </div>
-        {isAll ? (
-          <div>
-            <small>周目标达成</small>
-            <b>{metCount}<i>/{WEIGHT_GOAL_WEEK_STATS.length} 周</i></b>
-          </div>
-        ) : (
-          <div>
-            <small>{weekGoalLabel}</small>
-            <b>
-              {weekLost.toFixed(1)} / {weekGoal.toFixed(1)}kg
-              {weekMet ? <span className="is-ok" aria-label="已达成">✓</span> : null}
-            </b>
-          </div>
+        {sample ? null : (
+          <button
+            type="button"
+            className="review-weight-goal-text-action"
+            onClick={(event)=>{
+              event.stopPropagation();
+              onAdjustGoal?.();
+            }}
+          >
+            调整目标
+            <span className="review-weight-goal-text-action-chevron" aria-hidden="true"><ReviewChevron/></span>
+          </button>
         )}
+      </header>
+      <div className={'review-weight-goal-stage-body' + (sample ? ' is-sample-body' : '')}>
+        <div className="review-weight-goal-stage-metric">
+          <span className="review-weight-goal-stage-cur">
+            {displayWt.toFixed(1)}
+            <i>kg</i>
+          </span>
+          <span className="review-weight-goal-stage-to">/ 目标 {WEIGHT_GOAL_WEIGHT_TARGET.toFixed(1)}kg</span>
+        </div>
+        <div className="review-weight-goal-stage-bar" aria-hidden="true">
+          <i style={{width:progress + '%'}}/>
+          <em style={{left:progress + '%'}}/>
+          <span className="review-weight-goal-stage-tip" style={{left:tipLeft + '%'}}>已完成 {progress}%</span>
+        </div>
+        <div className="review-weight-goal-stage-foot is-split">
+          <span>起始 {WEIGHT_GOAL_START.toFixed(1)}kg</span>
+          <span>还差 {left}kg · 剩 {remainWeeks} 周</span>
+        </div>
+        <div className="review-weight-goal-stage-split">
+          <div>
+            <small>累计减重</small>
+            <b>{totLost.toFixed(1)} <i>kg</i></b>
+          </div>
+          {isAll ? (
+            <div>
+              <small>周目标达成</small>
+              <b>{metCount}<i>/{WEIGHT_GOAL_WEEK_STATS.length} 周</i></b>
+            </div>
+          ) : (
+            <div>
+              <small>{weekGoalLabel}</small>
+              <b>
+                {weekLost.toFixed(1)} / {weekGoal.toFixed(1)}kg
+                {weekMet ? <span className="is-ok" aria-label="已达成">✓</span> : null}
+              </b>
+            </div>
+          )}
+        </div>
+        {sample ? <ReviewSampleMark/> : null}
       </div>
+      {sample ? (
+        <WeightPlanGuideBanner phase={planGuidePhase} onCreatePlan={onCreatePlan}/>
+      ) : null}
     </section>
   );
 }
@@ -3200,7 +3333,6 @@ function WeightGoalDetailPage({open, onClose, onAssess, onUpgrade, onGoCheckIn, 
               ))}
             </div>
           </div>
-          <WeightGoalProgressCard range={range} onAdjustGoal={onAssess}/>
           {range === currentWeekKey ? (
             !isSample && isPaid ? (
               <WeightGoalPaidExclusiveCard open={open} onGoCheckIn={onGoCheckIn}/>
@@ -3250,8 +3382,7 @@ function WeightGoalDetailPage({open, onClose, onAssess, onUpgrade, onGoCheckIn, 
 function ReviewPeriodOverview({
   cycleUpdated,
   weightManagePhase='none',
-  onWeightManageActivateGoal,
-  onOpenWeightGoal,
+  isSample=false,
   onOpenCycle,
   onOpenWeight,
   onOpenMood,
@@ -3263,36 +3394,26 @@ function ReviewPeriodOverview({
   onOpenStool,
 }){
   return (
-    <div className="review-overview-list">
+    <div className={'review-overview-list' + (isSample ? ' is-sample-overview' : '')}>
+      {isSample ? <PeriodHealthOverviewCard sample/> : null}
       <ReviewOverviewCard
         title="月经周期"
         iconClass="is-cycle"
         icon={<ReviewDropletIcon/>}
-        status={cycleUpdated ? '已更新' : null}
+        status={!isSample && cycleUpdated ? '已更新' : null}
         trendPrefix="近6次趋势"
         trendText="缩短"
         metricLabel="最近周期"
         value="28"
         unit="天"
+        sample={isSample}
         chart={<ReviewOverviewBars values={[30,32,25,30,27,22]} color="#ff6599" softColor="#ffb1cb"/>}
         onOpen={onOpenCycle}
       />
-      <WeightManageCard
+      <WeightPeriodOverviewCard
         phase={weightManagePhase}
-        onActivateGoal={onWeightManageActivateGoal}
-        onOpen={onOpenWeightGoal}
-      />
-      <ReviewOverviewCard
-        title="体重"
-        iconClass="is-weight"
-        icon={<ReviewScaleIcon/>}
-        trendPrefix="近7天趋势"
-        trendText="下降"
-        metricLabel="最新记录"
-        value="52.4"
-        unit="公斤"
-        chart={<ReviewOverviewLine values={[54.1,52.8,52.8,52.9,54.8,53.1,53.3,52.7]} color="#08c49c" fill="rgba(8,196,156,.10)"/>}
-        onOpen={onOpenWeight}
+        sample={isSample}
+        onOpenWeight={onOpenWeight}
       />
       <ReviewOverviewCard
         title="心情"
@@ -3302,6 +3423,7 @@ function ReviewPeriodOverview({
         trendText="更积极"
         metricLabel="最新记录"
         value="挺开心"
+        sample={isSample}
         chart={<ReviewOverviewLine values={[3.8,2.1,3.0,4.0,2.2,3.0,4.2,4.5]} color="#ff4f87" bands/>}
         onOpen={onOpenMood}
       />
@@ -3314,6 +3436,7 @@ function ReviewPeriodOverview({
         metricLabel="近7天日均"
         value="1784"
         unit="千卡"
+        sample={isSample}
         chart={<ReviewOverviewBars values={[1520,1280,1490,1760,1500,1450,1190]} color="#ff8b68" softColor="#ff8b68"/>}
         onOpen={onOpenDiet}
       />
@@ -3322,11 +3445,12 @@ function ReviewPeriodOverview({
         iconClass="is-symptom"
         icon={<ReviewSymptomIcon/>}
         cardClass="is-symptom-l1"
-        trendPrefix="近30天常见症状 "
-        trendText="腰酸"
-        metricLabel="最新记录"
-        value="腰酸、腹痛"
-        chart={<SymptomOverviewRank/>}
+        trendPrefix="阶段最常"
+        trendText=""
+        metricLabel="记录次数"
+        value="18"
+        sample={isSample}
+        chart={<SymptomOverviewPhaseMost/>}
         onOpen={onOpenSymptom}
       />
       <ReviewOverviewCard
@@ -3338,6 +3462,7 @@ function ReviewPeriodOverview({
         metricLabel="最新记录"
         value="286"
         unit="千卡"
+        sample={isSample}
         chart={<ReviewOverviewBars values={[0,138,0,0,162,0,286]} color="#29b7ad" softColor="#8bd9d2"/>}
         onOpen={onOpenBeverage}
       />
@@ -3349,6 +3474,7 @@ function ReviewPeriodOverview({
         trendText="改善"
         metricLabel="最新记录"
         value="轻微"
+        sample={isSample}
         chart={<ReviewOverviewLine values={[3,2,2,1,2,1,1,1]} color="#eb7891" fill="rgba(235,120,145,.09)"/>}
         onOpen={onOpenSkin}
       />
@@ -3361,6 +3487,7 @@ function ReviewPeriodOverview({
         metricLabel="本月记录"
         value="4"
         unit="次"
+        sample={isSample}
         chart={<ReviewOverviewBars values={[2,4,3,5,3,4]} color="#ff4d88" softColor="#ffabc5"/>}
         onOpen={onOpenLove}
       />
@@ -3373,6 +3500,7 @@ function ReviewPeriodOverview({
         metricLabel="近7天日均"
         value="0.6"
         unit="次"
+        sample={isSample}
         chart={<ReviewOverviewBars values={[1,1,0,1,0,1,0]} color="#ae7a47" softColor="#d4b18e"/>}
         onOpen={onOpenStool}
       />
@@ -4478,7 +4606,7 @@ function WeightChart({
   const data = values;
   const n = data.length;
   const W = 340, H = height;
-  const padL = 28, padR = labelToday ? 22 : 14, padT = (showExtremes || labelToday) ? 28 : 16, padB = 26;
+  const padL = 28, padR = labelToday ? 22 : 14, padT = 12, padB = 24;
   const x0 = padL, x1 = W - padR, y0 = padT, y1 = H - padB;
   const dataMin = Math.min(...data);
   const dataMax = Math.max(...data);
@@ -4794,28 +4922,31 @@ function WeightPlanGuideBanner({phase='none', onCreatePlan}){
     ? {
         title: '距离「减肥」目标日还有 92 天',
         subtitle: '测评一下，把目标拆成每周做得到的小步',
+        action: '去测评',
       }
     : {
         title: '想让体重变化更有方向？',
         subtitle: '1 分钟测评，定适合你的目标',
+        action: '制定目标',
       };
   return (
-    <button
-      type="button"
-      className="review-weight-plan-guide is-lite"
-      onClick={onCreatePlan}
-      aria-label={copy.title}
-    >
+    <div className="review-weight-plan-guide is-cta" role="group" aria-label={copy.title}>
       <span className="review-weight-plan-guide-copy">
         <strong>{copy.title}</strong>
         <span>{copy.subtitle}</span>
       </span>
-      <em className="review-weight-plan-guide-chevron" aria-hidden="true"><ReviewChevron/></em>
-    </button>
+      <button
+        type="button"
+        className="review-weight-plan-guide-btn"
+        onClick={onCreatePlan}
+      >
+        {copy.action}
+      </button>
+    </div>
   );
 }
 
-function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan}){
+function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan, showPlanGuide=true, onOpen}){
   const meta = WEIGHT_RANGE_META[range] || WEIGHT_RANGE_META.d30;
   const series = weightTrendSeries(range);
   const latestJin = series.values[series.values.length - 1] || WEIGHT_CARD_VALUES[WEIGHT_CARD_VALUES.length - 1];
@@ -4827,15 +4958,19 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan}
   const deltaJin = latestJin - firstJin;
   const deltaText = (deltaJin > 0 ? '+' : '') + reviewFmt1(deltaJin);
   return (
-    <div className="review-mood-trend-block">
-      <div className="review-mood-trend-head-main">
-        <div className="review-mood-trend-title review-mood-section-title">体重趋势</div>
-        <div className="review-mood-trend-range">{meta.dateText}</div>
-      </div>
+    <ReviewDetailSectionCard
+      iconClass="is-weight"
+      icon={<ReviewTrendLineIcon/>}
+      title="体重趋势"
+      subtitle={meta.dateText}
+      className="review-weight-trend-section-card"
+      onOpen={onOpen}
+    >
       <div className="review-chart review-detail-chart review-mood-trend-chart">
         <WeightChart
           values={series.values}
           labels={series.labels}
+          height={152}
           showExtremes
           labelToday
           markLast
@@ -4871,9 +5006,11 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan}
             </p>
           </div>
         </div>
-        <WeightPlanGuideBanner phase={planGuidePhase} onCreatePlan={onCreatePlan}/>
+        {showPlanGuide ? (
+          <WeightPlanGuideBanner phase={planGuidePhase} onCreatePlan={onCreatePlan}/>
+        ) : null}
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -5162,14 +5299,14 @@ function weightTrajY(v, top, bot){
 
 function WeightPhaseDistChart({expanded = false} = {}){
   const uid = expanded ? 'Exp' : '';
-  const W = expanded ? 760 : 360, H = 300;
-  const padL = 14, padR = 16, padT = 36, padB = 26;
+  const W = expanded ? 760 : 360, H = expanded ? 300 : 268;
+  const padL = 14, padR = 16, padT = expanded ? 36 : 8, padB = 24;
   const x0 = padL, x1 = W - padR;
   const plotW = x1 - x0;
   const dayW = plotW / (WEIGHT_TRAJ_DAYS - 1);
   const weightTop = padT;
-  const weightBot = 156;
-  const hormTop = 176;
+  const weightBot = expanded ? 156 : 128;
+  const hormTop = expanded ? 176 : 146;
   const hormBot = H - padB;
   const X = day => x0 + ((day - 1) / (WEIGHT_TRAJ_DAYS - 1)) * plotW;
   const phaseLeft = ph => X(ph.start) - (ph.start === 1 ? 0 : dayW / 2);
@@ -5329,95 +5466,98 @@ function WeightPhaseDistChart({expanded = false} = {}){
 
 function WeightCycleCombinedCard({onExpand, showCompare = true, showPhase = true}){
   if(!showCompare && !showPhase) return null;
+  const title = showPhase && !showCompare ? '本周期体重变化' : '月经周期与体重';
+  const subtitle = showPhase && !showCompare ? WEIGHT_CYCLE_DATE_TEXT : null;
+  const expandBtn = (typeof onExpand === 'function' && showPhase) ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期体重变化" onClick={onExpand}>
+      <ReviewExpandIcon/>
+    </button>
+  ) : null;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">月经周期与体重</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        {showCompare ? (
-          <div className="review-love-cycle-block">
-            <WeightCycleCompareChart/>
-            <div className="review-love-insight">
-              最近 2 个完整周期里，体重都呈现出相似节奏：<b>排卵前后</b>相对偏低，进入<b>黄体期</b>后逐渐回升。当前周期也延续这一趋势，波动多与周期内的水钠潴留有关，不必过度焦虑。
-            </div>
+    <ReviewDetailSectionCard
+      iconClass="is-weight"
+      icon={<ReviewCyclePhaseIcon/>}
+      title={title}
+      subtitle={subtitle}
+      extra={expandBtn}
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      {showCompare ? (
+        <div className="review-love-cycle-block">
+          <WeightCycleCompareChart/>
+          <div className="review-love-insight">
+            最近 2 个完整周期里，体重都呈现出相似节奏：<b>排卵前后</b>相对偏低，进入<b>黄体期</b>后逐渐回升。当前周期也延续这一趋势，波动多与周期内的水钠潴留有关，不必过度焦虑。
           </div>
-        ) : null}
-        {showCompare && showPhase ? <div className="review-love-cycle-divider" aria-hidden="true"/> : null}
-        {showPhase ? (
-          <div className="review-love-cycle-block review-mood-traj-block review-weight-traj-block">
-            <div className="review-love-cycle-subhead review-cycle-subhead-expand-row">
-              <div className="review-cycle-subhead-copy">
-                <span>本周期体重变化</span>
-                <em className="review-cycle-subhead-range">{WEIGHT_CYCLE_DATE_TEXT}</em>
-              </div>
-              {typeof onExpand === 'function' && (
-                <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期体重变化" onClick={onExpand}>
-                  <ReviewExpandIcon/>
-                </button>
-              )}
-            </div>
-            <WeightPhaseDistChart/>
-            <div className="review-love-insight">
-              本周期体重变化可能与激素节奏有关。<b>雌激素</b>升高阶段身体更易排水、体重偏轻；进入<b>黄体期</b>后，<b>孕激素</b>上升常伴随轻度水肿，体重短暂回升很常见。了解阶段规律，有助于更平和地看待数字波动。
-            </div>
+        </div>
+      ) : null}
+      {showCompare && showPhase ? <div className="review-love-cycle-divider" aria-hidden="true"/> : null}
+      {showPhase ? (
+        <div className="review-love-cycle-block review-mood-traj-block review-weight-traj-block">
+          {showCompare ? (
+            <div className="review-love-cycle-subhead">本周期体重变化</div>
+          ) : null}
+          <WeightPhaseDistChart/>
+          <div className="review-love-insight">
+            本周期体重变化可能与激素节奏有关。<b>雌激素</b>升高阶段身体更易排水、体重偏轻；进入<b>黄体期</b>后，<b>孕激素</b>上升常伴随轻度水肿，体重短暂回升很常见。了解阶段规律，有助于更平和地看待数字波动。
           </div>
-        ) : null}
-      </div>
-    </div>
+        </div>
+      ) : null}
+    </ReviewDetailSectionCard>
   );
 }
 
-function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan}){
+function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, showCycle=false}){
+  const showGoalProgress = planGuidePhase === 'plan';
+  const showGoalSample = planGuidePhase === 'none' || planGuidePhase === 'goal';
+  const goalRange = 'w' + WEIGHT_GOAL_PLAN_WEEKS;
   return (
-    <>
+    <div className="review-detail-section-stack">
+      {showGoalProgress || showGoalSample ? (
+        <WeightGoalProgressCard
+          range={goalRange}
+          sample={showGoalSample}
+          planGuidePhase={planGuidePhase}
+          onCreatePlan={onCreatePlan}
+          onAdjustGoal={showGoalSample ? undefined : (onAdjustGoal || onCreatePlan)}
+        />
+      ) : null}
       <WeightTrendSummary
         range={range}
         planGuidePhase={planGuidePhase}
         onCreatePlan={onCreatePlan}
+        showPlanGuide={!showGoalSample}
+        onOpen={onOpenTrend}
       />
-      <div className="review-mood-detail-lower">
-        {range === 'd30' ? (
-          <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
-        ) : null}
-        {false && range === 'half' ? (
-          <WeightCycleCombinedCard showCompare showPhase={false}/>
-        ) : null}
-      </div>
-    </>
+      {showCycle && range === 'd30' ? (
+        <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
+      ) : null}
+    </div>
   );
 }
 
-function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan}){
+function WeightTrendDetailPage({open, onClose, onExpandPhase}){
   const [range, setRange] = React.useState('d30');
-  const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
-  const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
   const ranges = [
     {key:'d30', label:'近30天'},
     {key:'half', label:'近半年'},
     {key:'year', label:'近一年'},
     {key:'all', label:'全部'},
   ];
-  const nestedOpen = phaseLandscapeOpen || allRecordsOpen;
   React.useEffect(()=>{
-    if(!open){
-      setPhaseLandscapeOpen(false);
-      setAllRecordsOpen(false);
-      return;
-    }
+    if(!open) return;
     setRange('d30');
   }, [open]);
   return (
-    <>
     <section
-      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '') + (nestedOpen ? ' is-timeline-open' : '')}
+      className={'review-cycle-detail is-fullscreen-detail review-weight-trend-detail' + (open ? ' is-open' : '')}
       aria-hidden={!open}
-      aria-label="体重详情"
+      aria-label="体重趋势详情"
     >
       <div className="review-detail-nav">
         <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
           <ReviewBackIcon/>
         </button>
-        <span className="review-detail-title">体重</span>
-        <button type="button" className="review-detail-all-records" onClick={()=>setAllRecordsOpen(true)}>所有记录</button>
+        <span className="review-detail-title">体重趋势</span>
       </div>
       <div className="review-detail-content review-mood-detail-content">
         <div className="review-mood-detail-top">
@@ -5435,14 +5575,61 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan}){
             ))}
           </div>
         </div>
+        <div className="review-detail-section-stack">
+          <WeightTrendSummary
+            range={range}
+            showPlanGuide={false}
+          />
+          {range === 'd30' ? (
+            <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, onAdjustGoal}){
+  const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
+  const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
+  const [trendDetailOpen, setTrendDetailOpen] = React.useState(false);
+  const nestedOpen = phaseLandscapeOpen || allRecordsOpen || trendDetailOpen;
+  React.useEffect(()=>{
+    if(!open){
+      setPhaseLandscapeOpen(false);
+      setAllRecordsOpen(false);
+      setTrendDetailOpen(false);
+    }
+  }, [open]);
+  return (
+    <>
+    <section
+      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '') + (nestedOpen ? ' is-timeline-open' : '')}
+      aria-hidden={!open}
+      aria-label="体重详情"
+    >
+      <div className="review-detail-nav">
+        <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
+          <ReviewBackIcon/>
+        </button>
+        <span className="review-detail-title">体重</span>
+        <button type="button" className="review-detail-all-records" onClick={()=>setAllRecordsOpen(true)}>所有记录</button>
+      </div>
+      <div className="review-detail-content review-mood-detail-content">
         <WeightDetailBody
-          range={range}
-          onExpandPhase={()=>setPhaseLandscapeOpen(true)}
+          range="d30"
           planGuidePhase={planGuidePhase}
           onCreatePlan={onCreatePlan}
+          onAdjustGoal={onAdjustGoal}
+          onOpenTrend={()=>setTrendDetailOpen(true)}
         />
       </div>
     </section>
+    <WeightTrendDetailPage
+      open={open && trendDetailOpen}
+      onClose={()=>setTrendDetailOpen(false)}
+      onExpandPhase={()=>setPhaseLandscapeOpen(true)}
+    />
     <WeightAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
     <PhaseChartLandscapePage
       open={open && phaseLandscapeOpen}
@@ -6946,24 +7133,24 @@ function DietNutrientIntakeCard({goal = DIET_TARGET_GOAL, activityId = 'light', 
   const [selectedIndex, setSelectedIndex] = useState(DIET_BALANCE_DAYS.length - 1);
   const selected = DIET_BALANCE_DAYS[selectedIndex] || DIET_BALANCE_DAYS[DIET_BALANCE_DAYS.length - 1];
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title review-diet-balance-title-row">
-        <span>营养分析</span>
+    <ReviewDetailSectionCard
+      iconClass="is-diet"
+      icon={<ReviewDietIcon/>}
+      title="营养分析"
+      className="review-love-mini-card review-diet-daily-card review-diet-balance-card"
+    >
+      <DietBalanceWeekStrip
+        days={DIET_BALANCE_DAYS}
+        goal={goal}
+        selectedIndex={selectedIndex}
+        onSelect={setSelectedIndex}
+      />
+      <DietBalanceIntakePanel day={selected} goal={goal} onOpenBudget={onOpenBudget}/>
+      <DietBalanceMacroSection day={selected}/>
+      <div className="review-love-insight review-diet-balance-insight">
+        {dietBalanceInsight(selected, goal)}
       </div>
-      <div className="review-detail-card review-love-mini-card review-diet-daily-card review-diet-balance-card">
-        <DietBalanceWeekStrip
-          days={DIET_BALANCE_DAYS}
-          goal={goal}
-          selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
-        />
-        <DietBalanceIntakePanel day={selected} goal={goal} onOpenBudget={onOpenBudget}/>
-        <DietBalanceMacroSection day={selected}/>
-        <div className="review-love-insight review-diet-balance-insight">
-          {dietBalanceInsight(selected, goal)}
-        </div>
-      </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -7781,11 +7968,13 @@ function DietTrendSummary({range = 'd7'}){
   const trendArrow = trendParts[0] || '↘';
   const trendText = trendParts.slice(1).join(' ') || '下降';
   return (
-    <div className="review-love-trend-block is-detail-main is-diet-main">
-      <div className="review-love-trend-head">
-        <div className="review-love-trend-title">热量趋势</div>
-        <div className="review-love-trend-range">{meta.dateText}</div>
-      </div>
+    <ReviewDetailSectionCard
+      iconClass="is-diet"
+      icon={<ReviewTrendLineIcon/>}
+      title="热量趋势"
+      subtitle={meta.dateText}
+      className="review-diet-trend-section-card"
+    >
       <DietTrendMainChart days={trendDays} range={range}/>
       <div className="review-legend review-trend-legend-with-days">
         <div className="review-trend-legend-items">
@@ -7845,7 +8034,7 @@ function DietTrendSummary({range = 'd7'}){
           )}
         </div>
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -7897,8 +8086,8 @@ function DietDistributionDetailPage({open, onClose}){
             ))}
           </div>
         </div>
-        <DietTrendSummary range={range}/>
-        <div className="review-love-detail-lower">
+        <div className="review-detail-section-stack">
+          <DietTrendSummary range={range}/>
           {range === 'd7' ? (
             <DietNutrientIntakeCard
               goal={calorieGoal}
@@ -10510,11 +10699,13 @@ function MoodTrendSummary({range = 'd30'}){
   const trendArrow = trendParts[0] || '↗';
   const trendText = trendParts.slice(1).join(' ') || '上升';
   return (
-    <div className="review-mood-trend-block">
-      <div className="review-mood-trend-head-main">
-        <div className="review-mood-trend-title review-mood-section-title">心情趋势</div>
-        <div className="review-mood-trend-range">{meta.dateText}</div>
-      </div>
+    <ReviewDetailSectionCard
+      iconClass="is-mood"
+      icon={<ReviewTrendLineIcon/>}
+      title="心情趋势"
+      subtitle={meta.dateText}
+      className="review-mood-trend-section-card"
+    >
       <div className={'review-chart review-detail-chart review-mood-trend-chart' + (isCompact ? ' is-compact' : '')}>
         <MoodLineChart {...chartProps}/>
       </div>
@@ -10554,7 +10745,7 @@ function MoodTrendSummary({range = 'd30'}){
           </div>
         </div>
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -10961,40 +11152,41 @@ function MoodPhaseDistChart({expanded = false} = {}){
 
 function MoodCycleCombinedCard({onExpand, showCompare = true, showPhase = true}){
   if(!showCompare && !showPhase) return null;
+  const title = showPhase && !showCompare ? '本周期心情变化' : '月经周期与心情';
+  const subtitle = showPhase && !showCompare ? WEIGHT_CYCLE_DATE_TEXT : null;
+  const expandBtn = (typeof onExpand === 'function' && showPhase) ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期心情变化" onClick={onExpand}>
+      <ReviewExpandIcon/>
+    </button>
+  ) : null;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">月经周期与心情</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        {showCompare ? (
-          <div className="review-love-cycle-block">
-            <MoodCycleCompareChart/>
-            <div className="review-love-insight">
-              最近2个完整周期里，你的心情呈现出相似轨迹：<b>排卵前后</b>状态较好，进入<b>黄体期</b>后逐渐回落。当前周期也延续这一趋势，你似乎形成了自己的“<b>周期节拍</b>”。情绪变化时，可以多一点理解和接纳自己。
-            </div>
+    <ReviewDetailSectionCard
+      iconClass="is-mood"
+      icon={<ReviewCyclePhaseIcon/>}
+      title={title}
+      subtitle={subtitle}
+      extra={expandBtn}
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      {showCompare ? (
+        <div className="review-love-cycle-block">
+          <MoodCycleCompareChart/>
+          <div className="review-love-insight">
+            最近2个完整周期里，你的心情呈现出相似轨迹：<b>排卵前后</b>状态较好，进入<b>黄体期</b>后逐渐回落。当前周期也延续这一趋势，你似乎形成了自己的“<b>周期节拍</b>”。情绪变化时，可以多一点理解和接纳自己。
           </div>
-        ) : null}
-        {showCompare && showPhase ? <div className="review-love-cycle-divider" aria-hidden="true"/> : null}
-        {showPhase ? (
-          <div className="review-love-cycle-block review-mood-traj-block">
-            <div className="review-love-cycle-subhead review-cycle-subhead-expand-row">
-              <div className="review-cycle-subhead-copy">
-                <span>本周期心情变化</span>
-                <em className="review-cycle-subhead-range">{WEIGHT_CYCLE_DATE_TEXT}</em>
-              </div>
-              {typeof onExpand === 'function' && (
-                <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期心情变化" onClick={onExpand}>
-                  <ReviewExpandIcon/>
-                </button>
-              )}
-            </div>
-            <MoodPhaseDistChart/>
-            <div className="review-love-insight">
-              本周期的心情变化，可能与体内激素节奏有关。随着<b>雌激素</b>升高，状态通常更容易保持积极；进入<b>黄体期</b>后，<b>孕激素</b>变化和激素波动，可能让人更容易疲惫或敏感。提前了解这些阶段，可以更好安排休息调节。
-            </div>
+        </div>
+      ) : null}
+      {showCompare && showPhase ? <div className="review-love-cycle-divider" aria-hidden="true"/> : null}
+      {showPhase ? (
+        <div className="review-love-cycle-block review-mood-traj-block">
+          {showCompare ? <div className="review-love-cycle-subhead">本周期心情变化</div> : null}
+          <MoodPhaseDistChart/>
+          <div className="review-love-insight">
+            本周期的心情变化，可能与体内激素节奏有关。随着<b>雌激素</b>升高，状态通常更容易保持积极；进入<b>黄体期</b>后，<b>孕激素</b>变化和激素波动，可能让人更容易疲惫或敏感。提前了解这些阶段，可以更好安排休息调节。
           </div>
-        ) : null}
-      </div>
-    </div>
+        </div>
+      ) : null}
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -11090,21 +11282,19 @@ function MoodShareCombinedCard({range = 'd30'}){
 function MoodDetailBody({range, onExpandPhase}){
   const showCycle = range === 'd30';
   return (
-    <>
+    <div className="review-detail-section-stack">
       <MoodTrendSummary range={range}/>
-      <div className="review-mood-detail-lower">
-        {range === 'd30' ? (
-          <MoodCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
-        ) : null}
-        {false && range === 'half' ? (
-          <MoodCycleCombinedCard showCompare showPhase={false}/>
-        ) : null}
-        {false && (
-          <MoodTimeDistributionCard range={range}/>
-        )}
-        {false && showCycle ? <MoodRecordCard/> : null}
-      </div>
-    </>
+      {range === 'd30' ? (
+        <MoodCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
+      ) : null}
+      {false && range === 'half' ? (
+        <MoodCycleCombinedCard showCompare showPhase={false}/>
+      ) : null}
+      {false && (
+        <MoodTimeDistributionCard range={range}/>
+      )}
+      {false && showCycle ? <MoodRecordCard/> : null}
+    </div>
   );
 }
 
@@ -11454,24 +11644,33 @@ function PeriodReviewCard(){
   );
 }
 
-const SYMPTOM_L1_RANK = [
-  {label:'腰酸', value:10},
-  {label:'腹痛', value:8},
-  {label:'疲惫', value:6},
+const SYMPTOM_L1_PHASE_MOST = [
+  {key:'menstrual', label:'月经期', bar:'#ff4d88', name:'腹痛', count:4, icon:'assets/symptom-cramp.png'},
+  {key:'ovulation', label:'排卵期', bar:'#7ad6b0', name:'头痛', count:2, icon:'assets/symptom-picker-headache.png'},
+  {key:'luteal', label:'黄体期', bar:'#d8d8de', name:'乳胀', count:3, icon:'assets/symptom-breast.png'},
 ];
 
-function SymptomOverviewRank({items = SYMPTOM_L1_RANK}){
-  const max = Math.max(...items.map(item=>item.value), 1);
+function SymptomOverviewPhaseMost({items = SYMPTOM_L1_PHASE_MOST}){
   return (
-    <div className="review-symptom-overview-rank" aria-hidden="true">
-      {items.map(item=>(
-        <div key={item.label} className="review-symptom-overview-rank-row">
-          <span className="review-symptom-overview-rank-label">{item.label}</span>
-          <div className="review-symptom-overview-rank-track">
-            <i style={{width: ((item.value / max) * 100) + '%'}}/>
+    <div className="review-symptom-overview-phase" aria-hidden="true">
+      <div className="review-symptom-overview-phase-slots">
+        {items.map(item=>(
+          <div className="review-symptom-overview-phase-slot" key={item.key}>
+            <div className="review-symptom-overview-phase-pill">
+              <div className="review-symptom-overview-phase-icon">
+                <img src={item.icon} alt=""/>
+                <em>{item.count}x</em>
+              </div>
+              <span>{item.name}</span>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div className="review-symptom-overview-phase-bar">
+        {items.map(item=>(
+          <i key={item.key} style={{background:item.bar}}/>
+        ))}
+      </div>
     </div>
   );
 }
@@ -11481,41 +11680,59 @@ const SYMPTOM_DIST_ICON = {
   '腹痛':'assets/symptom-cramp.png',
   '疲惫':'assets/symptom-tired.png',
   '乳房胀痛':'assets/symptom-breast.png',
+  '乳胀':'assets/symptom-breast.png',
   '头痛':'assets/symptom-picker-headache.png',
   '失眠':'assets/symptom-insomnia.png',
+  '粉刺':'assets/symptom-acne.png',
+  '腹泻':'assets/symptom-diarrhea.png',
+  '便秘':'assets/symptom-picker-constipation.png',
+  '眩晕':'assets/symptom-picker-dizzy.png',
+  '小腹坠胀':'assets/symptom-bloat.png',
+  '身体酸痛':'assets/symptom-sore.png',
 };
 
 const SYMPTOM_DIST_DATA = {
   d30: [
-    {label:'腰酸', days:13, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
-    {label:'腹痛', days:10, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
-    {label:'疲惫', days:8, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
-    {label:'乳房胀痛', days:6, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
+    {label:'腹痛', days:9, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'腰酸', days:7, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'乳胀', days:6, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳胀']},
     {label:'头痛', days:4, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'腹泻', days:3, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹泻']},
+    {label:'粉刺', days:3, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['粉刺']},
   ],
   half: [
-    {label:'腰酸', days:28, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
-    {label:'腹痛', days:22, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
-    {label:'疲惫', days:18, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
-    {label:'乳房胀痛', days:14, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
-    {label:'头痛', days:11, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
-    {label:'失眠', days:8, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'疲惫', days:24, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳胀', days:19, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳胀']},
+    {label:'腹痛', days:17, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'腰酸', days:15, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'失眠', days:12, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'头痛', days:9, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'腹泻', days:7, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹泻']},
+    {label:'粉刺', days:6, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['粉刺']},
   ],
   year: [
-    {label:'腰酸', days:52, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
-    {label:'腹痛', days:41, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
-    {label:'疲惫', days:33, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
-    {label:'乳房胀痛', days:29, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
-    {label:'头痛', days:21, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
-    {label:'失眠', days:17, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'腹痛', days:38, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'腰酸', days:34, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'疲惫', days:31, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'乳胀', days:26, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳胀']},
+    {label:'失眠', days:22, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'粉刺', days:18, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['粉刺']},
+    {label:'头痛', days:16, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'腹泻', days:14, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹泻']},
+    {label:'便秘', days:11, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['便秘']},
   ],
   all: [
-    {label:'腰酸', days:86, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
-    {label:'腹痛', days:70, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
-    {label:'疲惫', days:58, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
-    {label:'乳房胀痛', days:49, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳房胀痛']},
-    {label:'头痛', days:36, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
-    {label:'失眠', days:28, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'腰酸', days:61, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腰酸']},
+    {label:'腹痛', days:55, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹痛']},
+    {label:'疲惫', days:49, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['疲惫']},
+    {label:'失眠', days:41, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['失眠']},
+    {label:'乳胀', days:37, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['乳胀']},
+    {label:'粉刺', days:33, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['粉刺']},
+    {label:'头痛', days:28, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['头痛']},
+    {label:'腹泻', days:22, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['腹泻']},
+    {label:'便秘', days:18, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['便秘']},
+    {label:'眩晕', days:12, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['眩晕']},
+    {label:'小腹坠胀', days:10, color:'#7aa8e8', icon:SYMPTOM_DIST_ICON['小腹坠胀']},
   ],
 };
 
@@ -11523,34 +11740,38 @@ const SYMPTOM_RANGE_META = {
   d30:{
     label:'近30天',
     dateText:'2026年6月14日至7月13日',
-    kinds:5,
-    longestName:'腰酸',
-    longestDays:3,
-    coOccur:'腰酸+腹痛',
+    kinds:6,
+    longestName:'腹痛',
+    longestDays:4,
+    coOccur:'腹痛+腹泻',
+    mode:'phase',
   },
   half:{
     label:'近半年',
     dateText:'2026年1月13日至7月13日',
-    kinds:6,
-    longestName:'腰酸',
+    kinds:10,
+    longestName:'疲惫',
     longestDays:5,
-    coOccur:'腰酸+腹痛',
+    coOccur:'乳胀+疲惫',
+    mode:'cycles',
   },
   year:{
     label:'近1年',
     dateText:'2025年7月14日至2026年7月13日',
-    kinds:6,
+    kinds:11,
     longestName:'腰酸',
-    longestDays:6,
+    longestDays:4,
     coOccur:'腰酸+腹痛',
+    mode:'cycles',
   },
   all:{
     label:'全部',
     dateText:'2024年7月14日至2026年7月13日',
-    kinds:6,
-    longestName:'腰酸',
-    longestDays:7,
-    coOccur:'腰酸+腹痛',
+    kinds:12,
+    longestName:'失眠',
+    longestDays:3,
+    coOccur:'粉刺+失眠',
+    mode:'cycles',
   },
 };
 
@@ -11595,22 +11816,525 @@ function SymptomReviewChart({symptoms, maxDays = 10, ariaLabel = '症状分布'}
   );
 }
 
-function SymptomTrendSummary({range = 'd30'}){
-  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
-  const symptoms = SYMPTOM_DIST_DATA[range] || SYMPTOM_DIST_DATA.d30;
-  const maxDays = Math.max(...symptoms.map(item=>item.days), 10);
+const SYMPTOM_DISCOVERY_COPY = {
+  d30: {
+    items: [
+      {
+        tone:'is-good',
+        title:'阶段集中',
+        text:<>近 30 天症状更偏 <b>月经期</b>：腹痛连续加重，并常伴腹泻；黄体后期则出现乳胀与粉刺，排卵前后有短暂头痛。</>,
+      },
+      {
+        tone:'is-good',
+        title:'高频症状',
+        text:<>共记录 <b>6</b> 种症状，其中 <b>腹痛</b> 最长连续 <b>4</b> 天，是本段最突出的不适。</>,
+      },
+      {
+        tone:'is-note',
+        title:'伴随出现',
+        text:<>腹痛与腹泻最常一起出现。若经期第 1–2 天同时加重，可提前准备温热饮食与休息，减轻集中不适。</>,
+      },
+    ],
+  },
+  half: {
+    items: [
+      {
+        tone:'is-good',
+        title:'跨周期差异',
+        text:<>近半年 <b>6</b> 个周期里，有的经期以腹痛+腹泻为主，有的黄体期更突出乳胀与疲惫，也有整周期未记症状，并不雷同。</>,
+      },
+      {
+        tone:'is-good',
+        title:'高频症状',
+        text:<>共记录 <b>10</b> 种症状；黄体期的 <b>疲惫</b> 最长可持续 <b>5</b> 天，比经期腹痛更拖沓。</>,
+      },
+      {
+        tone:'is-good',
+        title:'伴随模式',
+        text:<>乳胀与疲惫最常前后出现，适合作为经前准备信号；个别周期则转向失眠、粉刺或排卵期头痛。</>,
+      },
+      {
+        tone:'is-note',
+        title:'值得留意',
+        text:<>疲惫连续天数在个别周期拉长。若连续两个周期都超过 <b>5</b> 天，可结合作息与睡眠再观察。</>,
+      },
+    ],
+  },
+  year: {
+    items: [
+      {
+        tone:'is-good',
+        title:'长期节奏',
+        text:<>近 1 年各周期侧重点不同：有经期腰酸腹痛成组，也有腹泻/便秘交替，还有排卵期眩晕或黄体期失眠粉刺占主导的月份。</>,
+      },
+      {
+        tone:'is-good',
+        title:'高频症状',
+        text:<>共记录 <b>11</b> 种症状；整体仍以 <b>腰酸</b> 最长可持续 <b>4</b> 天，但腹痛、疲惫、失眠的占比也明显上升。</>,
+      },
+      {
+        tone:'is-good',
+        title:'跨周期对照',
+        text:<>腰酸与腹痛仍是最稳定的共现组合；同时可见消化道症状、皮肤与睡眠问题在不同月份轮换出现。</>,
+      },
+      {
+        tone:'is-note',
+        title:'伴随出现',
+        text:<>若经期第 1–2 天腰酸+腹痛同时加重，可提前做轻度热敷或休息安排，减轻集中不适。</>,
+      },
+    ],
+  },
+  all: {
+    items: [
+      {
+        tone:'is-good',
+        title:'长期多样性',
+        text:<>全部记录覆盖更多种类：除经期不适外，失眠、粉刺、眩晕、小腹坠胀等也会在不同周期单独抬头，阶段关联仍清晰。</>,
+      },
+      {
+        tone:'is-good',
+        title:'高频症状',
+        text:<>共记录 <b>12</b> 种症状；长期看 <b>失眠</b> 最长连续 <b>3</b> 天最突出，常与粉刺前后出现。</>,
+      },
+      {
+        tone:'is-good',
+        title:'伴随模式',
+        text:<>粉刺与失眠是跨年最稳定的共现；经期腰酸腹痛、黄体期疲惫乳胀仍反复出现，但不再是每个周期的固定剧本。</>,
+      },
+      {
+        tone:'is-note',
+        title:'近期变化',
+        text:<>近年更常见睡眠与皮肤类不适穿插出现。适合按周期对照，而不是只用同一组经期症状做判断。</>,
+      },
+    ],
+  },
+};
+
+function SymptomTrendDiscovery({range = 'd30'}){
+  const discovery = SYMPTOM_DISCOVERY_COPY[range] || SYMPTOM_DISCOVERY_COPY.d30;
   return (
-    <div className="review-mood-trend-block review-symptom-trend-block">
-      <div className="review-mood-trend-head-main">
-        <div className="review-mood-trend-title review-mood-section-title">症状分布</div>
-        <div className="review-mood-trend-range">{meta.dateText}</div>
+    <ReviewDetailSectionCard
+      iconClass="is-symptom"
+      icon={<WeightGoalInsightSectionIcon/>}
+      title="趋势发现"
+      className="review-ai-insight-card review-cycle-discovery-card review-symptom-discovery"
+    >
+        <div className="review-insight-body">
+          {discovery.items.map((item, index)=>(
+            <div className={'review-insight-item ' + item.tone} key={index}>
+              <span className="review-insight-dot"></span>
+              <div>
+                <div className="review-insight-title">{item.title}</div>
+                <div className="review-insight-text">{item.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+    </ReviewDetailSectionCard>
+  );
+}
+
+const SYMPTOM_SCATTER_DEFS = {
+  back:{key:'back', label:'腰酸', color:'#5b8fd9'},
+  cramp:{key:'cramp', label:'腹痛', color:'#ff7a59'},
+  tired:{key:'tired', label:'疲惫', color:'#8e7bd9'},
+  head:{key:'head', label:'头痛', color:'#e8a040'},
+  breast:{key:'breast', label:'乳胀', color:'#2db7a0'},
+  sleep:{key:'sleep', label:'失眠', color:'#6b9bd1'},
+  acne:{key:'acne', label:'粉刺', color:'#d98e7b'},
+  diarrhea:{key:'diarrhea', label:'腹泻', color:'#5bb8a8'},
+  constip:{key:'constip', label:'便秘', color:'#c4a67f'},
+  dizzy:{key:'dizzy', label:'眩晕', color:'#b07bd9'},
+  bloat:{key:'bloat', label:'小腹坠胀', color:'#e08a6a'},
+  sore:{key:'sore', label:'身体酸痛', color:'#7a9ec4'},
+};
+const SYMPTOM_ROW_ORDER = [
+  'back','cramp','tired','breast','head','sleep','acne','diarrhea','constip','dizzy','bloat','sore',
+];
+const SYMPTOM_TRAJ_ROWS = [
+  {...SYMPTOM_SCATTER_DEFS.back, days:[1,2,3,22]},
+  {...SYMPTOM_SCATTER_DEFS.cramp, days:[1,2,3,4]},
+  {...SYMPTOM_SCATTER_DEFS.breast, days:[20,22,24,25,26]},
+  {...SYMPTOM_SCATTER_DEFS.head, days:[14,15]},
+  {...SYMPTOM_SCATTER_DEFS.acne, days:[23,24,25]},
+  {...SYMPTOM_SCATTER_DEFS.diarrhea, days:[1,2,3]},
+];
+const SYMPTOM_TRAJ_DOT_SOFT = 'rgba(0,0,0,0.05)';
+
+function symptomRowsForCycle(cycle){
+  return SYMPTOM_ROW_ORDER
+    .filter(key => (cycle.rows[key] || []).length > 0)
+    .map(key=>({
+      ...SYMPTOM_SCATTER_DEFS[key],
+      days:cycle.rows[key] || [],
+    }));
+}
+
+const SYMPTOM_CYCLE_STACK = {
+  half:[
+    {
+      id:'h0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
+      rows:{cramp:[1,2,3,4], back:[1,2,3,22], diarrhea:[1,2,3], breast:[20,22,23,24,26], tired:[20,21,22,23,24], acne:[23,24,25]},
+    },
+    {
+      id:'h1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
+      rows:{cramp:[1,2,3], diarrhea:[1,2,4], constip:[22,23,24], breast:[21,23,25], sleep:[22,24,25,26], acne:[2,3]},
+    },
+    {
+      id:'h2', rangeText:'4月16日–5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
+    },
+    {
+      id:'h3', rangeText:'3月18日–4月15日', days:29, period:[1,5], ovulation:14,
+      rows:{back:[1,2], breast:[19,21,22,24,25], tired:[18,20,22,23,25], sleep:[21,22,23], acne:[20,21,24], head:[23]},
+    },
+    {
+      id:'h4', rangeText:'2月17日–3月17日', days:29, period:[1,5], ovulation:14,
+      rows:{head:[13,14,15], dizzy:[14], cramp:[1,2], back:[1,3], sore:[2,3], breast:[24,26]},
+    },
+    {
+      id:'h5', rangeText:'1月18日–2月16日', days:30, period:[1,5], ovulation:15, empty:true, rows:{},
+    },
+  ],
+  year:[
+    {
+      id:'y0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
+      rows:{cramp:[1,2,3,4], back:[1,2,3,22], diarrhea:[1,2,3], breast:[20,22,23,24,26], tired:[20,21,22,23,24], acne:[23,24,25]},
+    },
+    {
+      id:'y1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
+      rows:{cramp:[1,2,3], diarrhea:[1,2,4], constip:[22,23,24], breast:[21,23,25], sleep:[22,24,25,26], acne:[2,3]},
+    },
+    {
+      id:'y2', rangeText:'4月16日–5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
+    },
+    {
+      id:'y3', rangeText:'3月18日–4月15日', days:29, period:[1,5], ovulation:14,
+      rows:{back:[1,2,3,4], cramp:[1,2,3], bloat:[1,2], tired:[19,21,23], breast:[20,22,24], head:[23]},
+    },
+    {
+      id:'y4', rangeText:'2月17日–3月17日', days:29, period:[1,5], ovulation:14,
+      rows:{head:[13,14,15], dizzy:[14], cramp:[1,2], back:[1,3], sore:[2,3], breast:[24,26]},
+    },
+    {
+      id:'y5', rangeText:'1月18日–2月16日', days:30, period:[1,5], ovulation:15,
+      rows:{sleep:[21,22,23], acne:[20,21,22,24], breast:[22,24,25], tired:[24,25,27], diarrhea:[2], cramp:[1,2]},
+    },
+    {
+      id:'y6', rangeText:'12月19日–1月17日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
+    },
+    {
+      id:'y7', rangeText:'11月20日–12月18日', days:29, period:[1,4], ovulation:13,
+      rows:{back:[1,2,3,4], cramp:[1,2], constip:[3,4,5], tired:[17,19,22], breast:[19,21,23], sleep:[20]},
+    },
+  ],
+};
+SYMPTOM_CYCLE_STACK.all = [
+  ...SYMPTOM_CYCLE_STACK.year,
+  {
+    id:'a8', rangeText:'10月21日–11月19日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
+  },
+  {
+    id:'a9', rangeText:'9月22日–10月20日', days:29, period:[1,5], ovulation:14,
+    rows:{sleep:[22,23,24], acne:[21,22,23,25], dizzy:[14,15], bloat:[1,2], cramp:[1], head:[14]},
+  },
+];
+
+function symptomCyclePhases(length, period, ovulation){
+  const [p0, p1] = period || [1, 5];
+  const ovu = ovulation || Math.round(length * 0.5);
+  const ovuStart = Math.max(p1 + 1, ovu - 3);
+  const ovuEnd = Math.min(length, ovu + 2);
+  const lutealStart = Math.min(length, ovuEnd + 1);
+  return [
+    {key:'menstrual', label:'月经期', start:p0, end:p1, bg:'rgba(255,77,136,0.05)', color:'#FF4D88'},
+    {key:'follicular', label:'卵泡期', start:p1 + 1, end:ovuStart - 1, bg:'rgba(0,204,153,0.05)', color:'#22B487'},
+    {key:'ovulation', label:'排卵期', start:ovuStart, end:ovuEnd, bg:'rgba(179,136,232,0.08)', color:'#9A6FD4'},
+    {key:'luteal', label:'黄体期', start:lutealStart, end:length, bg:'rgba(255,185,71,0.06)', color:'#D4A017'},
+  ].filter(ph => ph.end >= ph.start);
+}
+
+function SymptomCycleScatterCard({cycle, range}){
+  const empty = !!cycle.empty;
+  const rows = empty ? [] : symptomRowsForCycle(cycle);
+  const title = cycle.current
+    ? ('当前周期：' + cycle.rangeText)
+    : cycle.rangeText;
+  if(empty || rows.length === 0){
+    return (
+      <article className="review-symptom-cycle-card is-empty" aria-label={title}>
+        <header className="review-symptom-cycle-card-head is-inline">
+          <strong>{title}</strong>
+          <span className="review-symptom-cycle-empty">本周期未记录症状</span>
+        </header>
+      </article>
+    );
+  }
+  const length = cycle.days;
+  const W = 320;
+  const softR = 1.15;
+  const activeR = 4;
+  const padL = Math.ceil(activeR) + 4;
+  const padR = Math.ceil(activeR) + 6;
+  const padT = 10;
+  const padB = 24;
+  const rowH = 24;
+  const H = padT + rows.length * rowH + padB;
+  const x0 = padL;
+  const x1 = W - padR;
+  const plotW = x1 - x0;
+  const dayW = plotW / Math.max(1, length - 1);
+  const X = day => length <= 1 ? (x0 + plotW / 2) : (x0 + ((day - 1) / (length - 1)) * plotW);
+  const phaseLeft = (ph) => X(ph.start) - (ph.start === 1 ? 0 : dayW / 2);
+  const phaseRight = (ph) => X(ph.end) + (ph.end === length ? 0 : dayW / 2);
+  const phases = symptomCyclePhases(length, cycle.period, cycle.ovulation);
+  const days = [];
+  for(let d = 1; d <= length; d++) days.push(d);
+  const yAxisTops = rows.map((_, index) => padT + rowH * (index + 0.5));
+  return (
+    <article className="review-symptom-cycle-card is-phase-style" aria-label={title + '症状分布'}>
+      <header className="review-symptom-cycle-card-head">
+        <strong>{title}</strong>
+      </header>
+      <div className="review-mood-traj review-symptom-traj is-scatter-only is-cycle-card">
+        <div className="review-mood-traj-plot">
+          <div className="review-mood-traj-yaxis review-symptom-traj-yaxis" aria-hidden="true">
+            {rows.map((row, index)=>(
+              <span key={row.key} style={{top:yAxisTops[index] + 'px'}}>{row.label}</span>
+            ))}
+          </div>
+          <div className="review-mood-traj-scroll" aria-label={title + '症状散点'}>
+            <div className="review-mood-traj-canvas">
+              <svg viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label={title + '症状散点'}>
+                {phases.map(ph=>{
+                  const left = phaseLeft(ph);
+                  const right = phaseRight(ph);
+                  return (
+                    <rect
+                      key={'bg-' + ph.key}
+                      x={left}
+                      y={padT}
+                      width={Math.max(2, right - left)}
+                      height={rows.length * rowH}
+                      fill={ph.bg}
+                    />
+                  );
+                })}
+                {rows.map((row, rowIndex)=>{
+                  const y = padT + rowH * (rowIndex + 0.5);
+                  const active = new Set(row.days || []);
+                  return (
+                    <g key={row.key}>
+                      {days.map(day=>{
+                        const on = active.has(day);
+                        return (
+                          <circle
+                            key={row.key + '-' + day}
+                            cx={X(day)}
+                            cy={y}
+                            r={on ? activeR : softR}
+                            fill={on ? row.color : SYMPTOM_TRAJ_DOT_SOFT}
+                            stroke={on ? '#fff' : 'none'}
+                            strokeWidth={on ? 1.1 : 0}
+                          />
+                        );
+                      })}
+                    </g>
+                  );
+                })}
+                <line x1={x0} y1={padT + rows.length * rowH} x2={x1} y2={padT + rows.length * rowH} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+                {phases.map(ph=>{
+                  const cx = (phaseLeft(ph) + phaseRight(ph)) / 2;
+                  return (
+                    <text
+                      key={'x-' + ph.key}
+                      x={cx}
+                      y={H - 6}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fill={ph.color}
+                      fontFamily="PingFang SC, -apple-system, sans-serif"
+                    >{ph.label}</text>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="review-chart review-detail-chart review-symptom-rank-chart">
-        <SymptomReviewChart
-          symptoms={symptoms}
-          maxDays={maxDays}
-          ariaLabel={meta.label + '症状分布'}
-        />
+    </article>
+  );
+}
+
+function SymptomMultiCycleScatter({range = 'half'}){
+  const cycles = SYMPTOM_CYCLE_STACK[range] || SYMPTOM_CYCLE_STACK.half;
+  return (
+    <div className="review-symptom-cycle-stack is-phase-style" aria-label="按月经周期分组的症状分布">
+      {cycles.map(cycle=>(
+        <SymptomCycleScatterCard key={cycle.id} cycle={cycle} range={range}/>
+      ))}
+    </div>
+  );
+}
+
+function buildFlatSymptomScatter(range = 'd30'){
+  if(range === 'd30'){
+    return {
+      length: 30,
+      rows: SYMPTOM_ROW_ORDER
+        .map(key=>{
+          const src = SYMPTOM_TRAJ_ROWS.find(row => row.key === key);
+          return src ? {...SYMPTOM_SCATTER_DEFS[key], days:src.days.slice()} : null;
+        })
+        .filter(Boolean),
+      tickStep: 5,
+    };
+  }
+  const cycles = (SYMPTOM_CYCLE_STACK[range] || SYMPTOM_CYCLE_STACK.half).slice().reverse();
+  let offset = 0;
+  const daySets = {};
+  SYMPTOM_ROW_ORDER.forEach(key=>{ daySets[key] = new Set(); });
+  cycles.forEach(cycle=>{
+    if(!cycle.empty){
+      Object.keys(cycle.rows || {}).forEach(key=>{
+        if(!daySets[key]) daySets[key] = new Set();
+        (cycle.rows[key] || []).forEach(day=>{
+          daySets[key].add(offset + day);
+        });
+      });
+    }
+    offset += cycle.days || 0;
+  });
+  const length = Math.max(1, offset);
+  let tickStep = 30;
+  if(length > 240) tickStep = 60;
+  else if(length > 120) tickStep = 30;
+  else tickStep = 15;
+  return {
+    length,
+    rows: SYMPTOM_ROW_ORDER
+      .filter(key => (daySets[key] || new Set()).size > 0)
+      .map(key=>({
+        ...SYMPTOM_SCATTER_DEFS[key],
+        days: Array.from(daySets[key]).sort((a, b)=>a - b),
+      })),
+    tickStep,
+  };
+}
+
+function SymptomFlatScatterChart({range = 'd30'}){
+  const {length, rows, tickStep} = buildFlatSymptomScatter(range);
+  const softR = length > 90 ? 0.9 : 1.15;
+  const activeR = length > 90 ? 3.2 : 4;
+  const dayPitch = length > 180 ? 3.2 : (length > 90 ? 3.8 : 8);
+  const padL = Math.ceil(activeR) + 4;
+  const padR = Math.ceil(activeR) + 6;
+  const padT = 10;
+  const padB = 24;
+  const rowH = 24;
+  const W = Math.max(320, padL + padR + Math.max(1, length - 1) * dayPitch);
+  const H = padT + rows.length * rowH + padB;
+  const x0 = padL;
+  const x1 = W - padR;
+  const plotW = x1 - x0;
+  const X = day => length <= 1 ? (x0 + plotW / 2) : (x0 + ((day - 1) / (length - 1)) * plotW);
+  const days = [];
+  for(let d = 1; d <= length; d++) days.push(d);
+  const ticks = [];
+  for(let d = 1; d <= length; d += tickStep) ticks.push(d);
+  if(ticks[ticks.length - 1] !== length) ticks.push(length);
+  const yAxisTops = rows.map((_, index) => padT + rowH * (index + 0.5));
+  const drawSoft = length <= 120;
+  return (
+    <div className="review-mood-traj review-symptom-traj is-scatter-only is-flat-scatter">
+      <div className="review-mood-traj-plot">
+        <div className="review-mood-traj-yaxis review-symptom-traj-yaxis" aria-hidden="true">
+          {rows.map((row, index)=>(
+            <span key={row.key} style={{top:yAxisTops[index] + 'px'}}>{row.label}</span>
+          ))}
+        </div>
+        <div className="review-mood-traj-scroll" aria-label="左右滑动查看全部症状散点">
+          <div className="review-mood-traj-canvas" style={{minWidth:W + 'px', width:W + 'px'}}>
+            <svg viewBox={'0 0 ' + W + ' ' + H} width={W} height={H} preserveAspectRatio="xMidYMid meet" role="img" aria-label="全部症状散点">
+              {rows.map((row, rowIndex)=>{
+                const y = padT + rowH * (rowIndex + 0.5);
+                const active = new Set(row.days || []);
+                return (
+                  <g key={row.key}>
+                    <line
+                      x1={x0}
+                      y1={y}
+                      x2={x1}
+                      y2={y}
+                      stroke="rgba(0,0,0,0.04)"
+                      strokeWidth="1"
+                    />
+                    {drawSoft
+                      ? days.map(day=>{
+                          if(active.has(day)) return null;
+                          return (
+                            <circle
+                              key={row.key + '-soft-' + day}
+                              cx={X(day)}
+                              cy={y}
+                              r={softR}
+                              fill={SYMPTOM_TRAJ_DOT_SOFT}
+                            />
+                          );
+                        })
+                      : null}
+                    {(row.days || []).map(day=>(
+                      <circle
+                        key={row.key + '-on-' + day}
+                        cx={X(day)}
+                        cy={y}
+                        r={activeR}
+                        fill={row.color}
+                        stroke="#fff"
+                        strokeWidth="1.1"
+                      />
+                    ))}
+                  </g>
+                );
+              })}
+              <line x1={x0} y1={padT + rows.length * rowH} x2={x1} y2={padT + rows.length * rowH} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+              {ticks.map(day=>(
+                <text
+                  key={'tick-' + day}
+                  x={X(day)}
+                  y={H - 6}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="rgba(0,0,0,0.45)"
+                  fontFamily="PingFang SC, -apple-system, sans-serif"
+                >{day}</text>
+              ))}
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SymptomTrendSummary({range = 'd30', flatScatter = false}){
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
+  const isCycleStack = !flatScatter && meta.mode === 'cycles';
+  return (
+    <ReviewDetailSectionCard
+      iconClass="is-symptom"
+      icon={<ReviewSymptomIcon/>}
+      title="症状分布"
+      subtitle={meta.dateText}
+      className={'review-symptom-trend-section-card is-scatter-only' + (isCycleStack ? ' is-cycle-stack' : '') + (flatScatter ? ' is-flat-scatter' : '')}
+    >
+      <div className={'review-chart review-detail-chart review-symptom-scatter-chart' + (isCycleStack ? ' is-cycle-stack' : '') + (flatScatter ? ' is-flat-scatter' : '')}>
+        {flatScatter ? (
+          <SymptomFlatScatterChart range={range}/>
+        ) : isCycleStack ? (
+          <SymptomMultiCycleScatter range={range}/>
+        ) : (
+          <SymptomPhaseDistChart showHormone={false} showPhaseLabels/>
+        )}
       </div>
       <div className="review-mood-trend-foot">
         <div className="review-mood-trend-insight-row review-weight-stat-row">
@@ -11632,81 +12356,78 @@ function SymptomTrendSummary({range = 'd30'}){
           </div>
         </div>
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
-const SYMPTOM_TRAJ_ROWS = [
-  {key:'back', label:'腰酸', color:'#5b8fd9', days:[1,2,3,4,22,24,26]},
-  {key:'cramp', label:'腹痛', color:'#ff7a59', days:[1,2,3,14]},
-  {key:'tired', label:'疲惫', color:'#8e7bd9', days:[18,20,22,24,25,26]},
-  {key:'head', label:'头痛', color:'#e8a040', days:[2,23]},
-  {key:'breast', label:'乳胀', color:'#2db7a0', days:[20,22,24,25,27]},
-];
-const SYMPTOM_TRAJ_DOT_SOFT = 'rgba(0,0,0,0.05)';
-
-function SymptomPhaseDistChart({expanded = false} = {}){
-  const uid = expanded ? 'Exp' : '';
-  const W = expanded ? 760 : 360, H = 300;
+function SymptomPhaseDistChart({expanded = false, showHormone = true, showPhaseLabels = false, rows} = {}){
+  const trajRows = rows || SYMPTOM_TRAJ_ROWS;
+  const uid = (expanded ? 'Exp' : '') + (showHormone ? '' : 'Solo');
+  const W = expanded ? 760 : 360;
+  const H = showHormone ? 300 : (expanded ? 220 : 188);
   const softR = expanded ? 1.6 : 1.2;
   const activeR = expanded ? 5 : 4.2;
   const padL = Math.ceil(activeR) + 6;
   const padR = Math.ceil(activeR) + 8;
-  const padT = 36, padB = 26;
+  const padT = showHormone ? 36 : 14;
+  const padB = 26;
   const x0 = padL, x1 = W - padR;
   const plotW = x1 - x0;
   const dayW = plotW / (MOOD_TRAJ_DAYS - 1);
   const topAreaTop = padT;
-  const topAreaBottom = 156;
+  const topAreaBottom = showHormone ? 156 : (H - padB);
   const hormoneTop = 176;
   const hormoneBottom = H - padB;
+  const plotBottom = showHormone ? hormoneBottom : topAreaBottom;
   const X = day => x0 + ((day - 1) / (MOOD_TRAJ_DAYS - 1)) * plotW;
   const phaseLeft = ph => X(ph.start) - (ph.start === 1 ? 0 : dayW / 2);
   const phaseRight = ph => X(ph.end) + (ph.end === MOOD_TRAJ_DAYS ? 0 : dayW / 2);
-  const rowH = (topAreaBottom - topAreaTop) / SYMPTOM_TRAJ_ROWS.length;
+  const rowH = (topAreaBottom - topAreaTop) / trajRows.length;
   const rowY = index => topAreaTop + rowH * (index + 0.5);
   const HY = v => hormoneTop + (1 - Math.max(0, Math.min(1, v))) * (hormoneBottom - hormoneTop);
   const days = [];
   for(let d = 1; d <= MOOD_TRAJ_DAYS; d++) days.push(d);
-  const e2Pts = days.map(d => ({x:X(d), y:HY(moodTrajEstrogen(d))}));
-  const p4Pts = days.map(d => ({x:X(d), y:HY(moodTrajProgesterone(d))}));
-  const e2Line = moodTrajSmoothLine(e2Pts);
-  const p4Line = moodTrajSmoothLine(p4Pts);
+  const e2Pts = showHormone ? days.map(d => ({x:X(d), y:HY(moodTrajEstrogen(d))})) : [];
+  const p4Pts = showHormone ? days.map(d => ({x:X(d), y:HY(moodTrajProgesterone(d))})) : [];
+  const e2Line = showHormone ? moodTrajSmoothLine(e2Pts) : '';
+  const p4Line = showHormone ? moodTrajSmoothLine(p4Pts) : '';
   const toArea = (line, arr, baseY)=>{
     const last = arr[arr.length - 1];
     const first = arr[0];
     return line + ' L ' + last.x.toFixed(2) + ' ' + baseY.toFixed(2)
       + ' L ' + first.x.toFixed(2) + ' ' + baseY.toFixed(2) + ' Z';
   };
-  const yAxisTicks = SYMPTOM_TRAJ_ROWS.map((row, index)=>({
+  const yAxisTicks = trajRows.map((row, index)=>({
     ...row,
     top:rowY(index),
   }));
   const midY = (topAreaBottom + hormoneTop) / 2;
   return (
-    <div className={'review-mood-traj review-symptom-traj' + (expanded ? ' is-expanded' : '')}>
+    <div className={'review-mood-traj review-symptom-traj' + (expanded ? ' is-expanded' : '') + (showHormone ? '' : ' is-scatter-only')}>
       <div className="review-mood-traj-plot">
         <div className="review-mood-traj-yaxis review-symptom-traj-yaxis" aria-hidden="true">
           {yAxisTicks.map(item=>(
             <span key={item.key} style={{top:item.top + 'px'}}>{item.label}</span>
           ))}
         </div>
-        <div className="review-mood-traj-scroll" aria-label="左右滑动查看本周期症状">
+        <div className="review-mood-traj-scroll" aria-label="左右滑动查看症状分布">
           <div className="review-mood-traj-canvas">
-            <svg viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label="本周期症状分布与激素轨迹">
-              <defs>
-                <linearGradient id={'symptomTrajE2Fill' + uid} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor={MOOD_TRAJ_E2} stopOpacity="0.35"/>
-                  <stop offset="1" stopColor={MOOD_TRAJ_E2} stopOpacity="0.02"/>
-                </linearGradient>
-                <linearGradient id={'symptomTrajP4Fill' + uid} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor={MOOD_TRAJ_P4} stopOpacity="0.32"/>
-                  <stop offset="1" stopColor={MOOD_TRAJ_P4} stopOpacity="0.02"/>
-                </linearGradient>
-                <clipPath id={'symptomTrajBottomClip' + uid}>
-                  <rect x={x0} y={hormoneTop} width={plotW} height={hormoneBottom - hormoneTop}/>
-                </clipPath>
-              </defs>
+            <svg viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label={showHormone ? '本周期症状分布与激素轨迹' : '症状分布散点图'}>
+              {showHormone ? (
+                <defs>
+                  <linearGradient id={'symptomTrajE2Fill' + uid} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={MOOD_TRAJ_E2} stopOpacity="0.35"/>
+                    <stop offset="1" stopColor={MOOD_TRAJ_E2} stopOpacity="0.02"/>
+                  </linearGradient>
+                  <linearGradient id={'symptomTrajP4Fill' + uid} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={MOOD_TRAJ_P4} stopOpacity="0.32"/>
+                    <stop offset="1" stopColor={MOOD_TRAJ_P4} stopOpacity="0.02"/>
+                  </linearGradient>
+                  <clipPath id={'symptomTrajBottomClip' + uid}>
+                    <rect x={x0} y={hormoneTop} width={plotW} height={hormoneBottom - hormoneTop}/>
+                  </clipPath>
+                </defs>
+              ) : null}
 
               {MOOD_TRAJ_PHASES.map(ph=>{
                 const left = phaseLeft(ph);
@@ -11717,14 +12438,14 @@ function SymptomPhaseDistChart({expanded = false} = {}){
                     x={left}
                     y={topAreaTop}
                     width={Math.max(2, right - left)}
-                    height={hormoneBottom - topAreaTop}
+                    height={plotBottom - topAreaTop}
                     fill={ph.bg}
                   />
                 );
               })}
 
               <g>
-                {SYMPTOM_TRAJ_ROWS.map((row, rowIndex)=>{
+                {trajRows.map((row, rowIndex)=>{
                   const y = rowY(rowIndex);
                   const active = new Set(row.days);
                   return (
@@ -11748,24 +12469,27 @@ function SymptomPhaseDistChart({expanded = false} = {}){
                 })}
               </g>
 
-              <g clipPath={'url(#symptomTrajBottomClip' + uid + ')'}>
-                <path d={toArea(e2Line, e2Pts, hormoneBottom)} fill={'url(#symptomTrajE2Fill' + uid + ')'}/>
-                <path d={toArea(p4Line, p4Pts, hormoneBottom)} fill={'url(#symptomTrajP4Fill' + uid + ')'}/>
-                <path d={e2Line} fill="none" stroke={MOOD_TRAJ_E2} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
-                <path d={p4Line} fill="none" stroke={MOOD_TRAJ_P4} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
-              </g>
+              {showHormone ? (
+                <>
+                  <g clipPath={'url(#symptomTrajBottomClip' + uid + ')'}>
+                    <path d={toArea(e2Line, e2Pts, hormoneBottom)} fill={'url(#symptomTrajE2Fill' + uid + ')'}/>
+                    <path d={toArea(p4Line, p4Pts, hormoneBottom)} fill={'url(#symptomTrajP4Fill' + uid + ')'}/>
+                    <path d={e2Line} fill="none" stroke={MOOD_TRAJ_E2} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
+                    <path d={p4Line} fill="none" stroke={MOOD_TRAJ_P4} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
+                  </g>
+                  <line x1={x0} y1={midY} x2={x1} y2={midY} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+                  <text
+                    x={x0 + 2}
+                    y={midY + 14}
+                    textAnchor="start"
+                    fontSize="9"
+                    fill="rgba(0,0,0,0.35)"
+                    fontFamily="PingFang SC, -apple-system, sans-serif"
+                  >激素解读</text>
+                </>
+              ) : null}
 
-              <line x1={x0} y1={midY} x2={x1} y2={midY} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
-              <text
-                x={x0 + 2}
-                y={midY + 14}
-                textAnchor="start"
-                fontSize="9"
-                fill="rgba(0,0,0,0.35)"
-                fontFamily="PingFang SC, -apple-system, sans-serif"
-              >激素解读</text>
-
-              <line x1={x0} y1={hormoneBottom} x2={x1} y2={hormoneBottom} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+              <line x1={x0} y1={plotBottom} x2={x1} y2={plotBottom} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
               {MOOD_TRAJ_PHASES.map(ph=>{
                 const cx = (phaseLeft(ph) + phaseRight(ph)) / 2;
                 return (
@@ -11784,72 +12508,74 @@ function SymptomPhaseDistChart({expanded = false} = {}){
           </div>
         </div>
       </div>
-      {expanded ? null : (
+      {showHormone && !expanded ? (
         <div className="review-mood-traj-legend review-symptom-traj-legend" aria-hidden="true">
           <span><i className="is-e2"/>雌激素 E2</span>
           <span><i className="is-p4"/>孕激素 P4</span>
         </div>
-      )}
+      ) : null}
+      {!showHormone && showPhaseLabels ? (
+        <div className="review-mood-traj-legend review-symptom-phase-legend" aria-hidden="true">
+          <span><i className="is-period"/>月经期</span>
+          <span><i className="is-phase" style={{background:'#22B487'}}/>卵泡期</span>
+          <span><i className="is-phase" style={{background:'#9A6FD4'}}/>排卵期</span>
+          <span><i className="is-phase" style={{background:'#D4A017'}}/>黄体期</span>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function SymptomCycleCombinedCard({onExpand}){
+  const expandBtn = typeof onExpand === 'function' ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期症状变化" onClick={onExpand}>
+      <ReviewExpandIcon/>
+    </button>
+  ) : null;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">月经周期与症状</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <div className="review-love-cycle-block review-mood-traj-block">
-          <div className="review-love-cycle-subhead review-cycle-subhead-expand-row">
-            <div className="review-cycle-subhead-copy">
-              <span>本周期症状变化</span>
-              <em className="review-cycle-subhead-range">{WEIGHT_CYCLE_DATE_TEXT}</em>
-            </div>
-            {typeof onExpand === 'function' && (
-              <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期症状变化" onClick={onExpand}>
-                <ReviewExpandIcon/>
-              </button>
-            )}
-          </div>
-          <SymptomPhaseDistChart/>
-          <div className="review-love-insight">
-            本周期的症状分布，可能与体内激素节奏有关。月经期腰酸、腹痛更集中；进入<b>黄体期</b>后，随着<b>孕激素</b>变化，疲惫与乳胀更容易出现。提前了解这些阶段，可以更好安排休息与缓解。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-symptom"
+      icon={<ReviewCyclePhaseIcon/>}
+      title="本周期症状变化"
+      subtitle={WEIGHT_CYCLE_DATE_TEXT}
+      extra={expandBtn}
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <div className="review-love-cycle-block review-mood-traj-block">
+        <SymptomPhaseDistChart/>
+        <div className="review-love-insight">
+          本周期的症状分布，可能与体内激素节奏有关。月经期腰酸、腹痛更集中；进入<b>黄体期</b>后，随着<b>孕激素</b>变化，疲惫与乳胀更容易出现。提前了解这些阶段，可以更好安排休息与缓解。
         </div>
       </div>
+    </ReviewDetailSectionCard>
+  );
+}
+
+function SymptomDetailBody({range, flatScatter = false}){
+  return (
+    <div className="review-detail-section-stack">
+      <SymptomTrendSummary range={range} flatScatter={flatScatter}/>
+      {range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
     </div>
   );
 }
 
-function SymptomDetailBody({range, onExpandPhase}){
-  return (
-    <>
-      <SymptomTrendSummary range={range}/>
-      {range === 'd30' ? (
-        <div className="review-love-detail-lower">
-          <SymptomCycleCombinedCard onExpand={onExpandPhase}/>
-        </div>
-      ) : null}
-    </>
-  );
-}
-
 const SYMPTOM_ALL_RECORDS = [
-  {id:'sy1', date:'2026-10-22', text:'腹泻'},
-  {id:'sy2', date:'2026-10-21', text:'粉刺'},
-  {id:'sy3', date:'2026-10-15', text:'呕吐'},
+  {id:'sy1', date:'2026-10-22', text:'腹泻、腹痛'},
+  {id:'sy2', date:'2026-10-21', text:'粉刺、失眠'},
+  {id:'sy3', date:'2026-10-15', text:'头痛、眩晕'},
   {id:'sy4', date:'2026-9-30', text:'没有症状', empty:true},
-  {id:'sy5', date:'2026-9-23', text:'腰酸'},
-  {id:'sy6', date:'2026-9-16', text:'腰酸、腹痛'},
-  {id:'sy7', date:'2026-9-1', text:'乳房胀痛'},
-  {id:'sy8', date:'2026-8-31', text:'乳房胀痛、腰酸、疲惫、白带增多、出血、肛门坠胀、黄绿色', expandable:true},
-  {id:'sy9', date:'2026-8-25', text:'身体酸痛、眩晕、腰酸、出血、腰痛、褐色分泌物、排卵痛、疲惫', expandable:true},
-  {id:'sy10', date:'2026-8-18', text:'头痛、疲惫'},
-  {id:'sy11', date:'2026-8-10', text:'腰酸、腹痛、疲惫'},
-  {id:'sy12', date:'2026-8-3', text:'失眠'},
+  {id:'sy5', date:'2026-9-23', text:'乳胀、疲惫'},
+  {id:'sy6', date:'2026-9-16', text:'腹痛、腹泻、小腹坠胀'},
+  {id:'sy7', date:'2026-9-1', text:'便秘'},
+  {id:'sy8', date:'2026-8-31', text:'乳房胀痛、疲惫、粉刺、失眠、白带增多', expandable:true},
+  {id:'sy9', date:'2026-8-25', text:'身体酸痛、眩晕、头痛、排卵痛', expandable:true},
+  {id:'sy10', date:'2026-8-18', text:'腰酸、腹痛'},
+  {id:'sy11', date:'2026-8-10', text:'粉刺、皮肤干燥'},
+  {id:'sy12', date:'2026-8-3', text:'失眠、食欲不振'},
   {id:'sy13', date:'2026-7-28', text:'没有症状', empty:true},
-  {id:'sy14', date:'2026-7-20', text:'乳房胀痛、腰酸'},
-  {id:'sy15', date:'2026-7-12', text:'腹痛'},
+  {id:'sy14', date:'2026-7-20', text:'乳胀、腰酸'},
+  {id:'sy15', date:'2026-7-12', text:'腹痛、腹泻'},
 ];
 
 function SymptomAllRecordsPage({open, onClose}){
@@ -11924,10 +12650,9 @@ function SymptomAllRecordsPage({open, onClose}){
   );
 }
 
-function SymptomDetailPage({open, onClose}){
+function SymptomDetailPage({open, onClose, flatScatter = false}){
   const [range, setRange] = React.useState('d30');
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
-  const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
   const ranges = [
     {key:'d30', label:'近30天'},
     {key:'half', label:'近半年'},
@@ -11938,7 +12663,6 @@ function SymptomDetailPage({open, onClose}){
     if(open){
       setRange('d30');
       setAllRecordsOpen(false);
-      setPhaseLandscapeOpen(false);
     }
   }, [open]);
   return (
@@ -11971,26 +12695,79 @@ function SymptomDetailPage({open, onClose}){
             ))}
           </div>
         </div>
-        <SymptomDetailBody range={range} onExpandPhase={()=>setPhaseLandscapeOpen(true)}/>
+        <SymptomDetailBody range={range} flatScatter={flatScatter}/>
       </div>
     </section>
     <SymptomAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
-    <PhaseChartLandscapePage
-      open={open && phaseLandscapeOpen}
-      onClose={()=>setPhaseLandscapeOpen(false)}
-      title="本周期症状变化"
-      subtitle={WEIGHT_CYCLE_DATE_TEXT + ' · 左右滑动查看'}
-      legend={(
-        <>
-          <span className="review-mood-traj-legend-item"><i className="is-e2"/>雌激素 E2</span>
-          <span className="review-mood-traj-legend-item"><i className="is-p4"/>孕激素 P4</span>
-          <span className="review-cycle-landscape-tip">← 滑动查看更多 →</span>
-        </>
-      )}
-    >
-      <SymptomPhaseDistChart expanded/>
-    </PhaseChartLandscapePage>
     </>
+  );
+}
+
+const SYMPTOM_PHASE_MOST = [
+  {
+    key:'menstrual',
+    label:'月经期',
+    tone:'is-period',
+    bar:'#ff4d88',
+    symptom:{name:'腹痛', count:4, icon:SYMPTOM_DIST_ICON['腹痛']},
+  },
+  {
+    key:'ovulation',
+    label:'排卵期',
+    tone:'is-ovu',
+    bar:'#7ad6b0',
+    symptom:{name:'头痛', count:2, icon:SYMPTOM_DIST_ICON['头痛']},
+  },
+  {
+    key:'luteal',
+    label:'黄体期',
+    tone:'is-luteal',
+    bar:'#d8d8de',
+    symptom:{name:'乳胀', count:3, icon:SYMPTOM_DIST_ICON['乳胀']},
+  },
+];
+
+function SymptomPhaseMostChart(){
+  return (
+    <div className="review-symptom-phase-most" aria-label="各月经阶段最常出现的症状">
+      <div className="review-symptom-phase-most-count">
+        <span>记录次数</span>
+        <b>18</b>
+      </div>
+      <div className="review-symptom-phase-most-main">
+        <div className="review-symptom-phase-most-caption">阶段最常</div>
+        <div className="review-symptom-phase-most-slots">
+          {SYMPTOM_PHASE_MOST.map(phase=>{
+            const item = phase.symptom;
+            return (
+              <div className={'review-symptom-phase-most-slot ' + phase.tone + (item ? ' is-filled' : ' is-empty')} key={phase.key}>
+                {item ? (
+                  <div className="review-symptom-phase-most-pill">
+                    <div className="review-symptom-phase-most-icon-wrap">
+                      {item.icon ? <img src={item.icon} alt="" /> : null}
+                      {item.count > 1 ? <em>{item.count}x</em> : <em className="is-once">1x</em>}
+                    </div>
+                    <span>{item.name}</span>
+                  </div>
+                ) : (
+                  <div className="review-symptom-phase-most-placeholder">?</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="review-symptom-phase-most-bar" aria-hidden="true">
+          {SYMPTOM_PHASE_MOST.map(phase=>(
+            <i key={phase.key} style={{background:phase.bar}}/>
+          ))}
+        </div>
+        <div className="review-symptom-phase-most-labels" aria-hidden="true">
+          {SYMPTOM_PHASE_MOST.map(phase=>(
+            <span key={phase.key}>{phase.label}</span>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -12000,8 +12777,8 @@ function SymptomReviewCard({onOpen}){
       title="症状"
       iconClass="is-symptom"
       icon={<ReviewSymptomIcon/>}
-      chart={<SymptomReviewChart maxDays={10}/>}
-      legend={<span className="review-legend-note">按出现天数排序，同一天重复记录只计1天</span>}
+      chart={<SymptomPhaseMostChart/>}
+      legend={<span className="review-legend-note">展示月经期、排卵期、黄体期最常出现的症状；多次出现显示次数</span>}
       metrics={(
         <>
           <ReviewMetric value="5" unit="种" label="记录症状"/>
@@ -13312,11 +14089,13 @@ function StoolTrendSummary({range = 'd30'}){
   const chart = stoolDetailChartProps(range);
   const isLine = chart.mode === 'line';
   return (
-    <div className="review-love-trend-block is-detail-main">
-      <div className="review-love-trend-head">
-        <div className="review-love-trend-title">便便次数</div>
-        <div className="review-love-trend-range">{meta.dateText}</div>
-      </div>
+    <ReviewDetailSectionCard
+      iconClass="is-stool"
+      icon={<ReviewTrendLineIcon/>}
+      title="便便次数"
+      subtitle={meta.dateText}
+      className="review-stool-trend-section-card"
+    >
       <div className="review-chart review-detail-chart">
         {isLine ? (
           <StoolFreqLineChart
@@ -13356,7 +14135,7 @@ function StoolTrendSummary({range = 'd30'}){
           <div className="review-love-trend-metric-label">整体趋势</div>
         </div>
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -14361,41 +15140,42 @@ function StoolPhaseDistChart({expanded = false} = {}){
 }
 
 function StoolCycleCombinedCard({onExpand}){
+  const expandBtn = typeof onExpand === 'function' ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期排便感受" onClick={onExpand}>
+      <ReviewExpandIcon/>
+    </button>
+  ) : null;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">月经周期与便便</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">最近三个周期便便间隔天数</div>
-          <LoveCycleCompareChart
-            phases={STOOL_CYCLE_INTERVAL_PHASES}
-            max={3}
-            ticks={[0, 1, 2, 3]}
-            unit="天"
-            ariaLabel="最近三个周期便便间隔天数"
-            highlightOvulation={false}
-          />
-          <div className="review-love-insight">
-            你的便便间隔在 <span className="review-key-emphasis">黄体期</span> 更长，<span className="review-key-emphasis">排卵期</span> 相对更短，这与激素变化可能导致的肠道蠕动变化有关。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block review-stool-traj-block">
-          <div className="review-love-cycle-subhead review-cycle-subhead-expand-row">
-            <span>本周期排便感受</span>
-            {typeof onExpand === 'function' && (
-              <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期排便感受" onClick={onExpand}>
-                <ReviewExpandIcon/>
-              </button>
-            )}
-          </div>
-          <StoolPhaseDistChart/>
-          <div className="review-love-insight">
-            你的排便感受在<span className="review-key-emphasis">排卵前后</span>相对舒畅，进入<span className="review-key-emphasis">黄体期</span>后逐渐出现残便感与排便困难，可能与周期变化带来的<span className="review-key-emphasis">肠道蠕动变化</span>有关。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-stool"
+      icon={<ReviewCyclePhaseIcon/>}
+      title="月经周期与便便"
+      extra={expandBtn}
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">最近三个周期便便间隔天数</div>
+        <LoveCycleCompareChart
+          phases={STOOL_CYCLE_INTERVAL_PHASES}
+          max={3}
+          ticks={[0, 1, 2, 3]}
+          unit="天"
+          ariaLabel="最近三个周期便便间隔天数"
+          highlightOvulation={false}
+        />
+        <div className="review-love-insight">
+          你的便便间隔在 <span className="review-key-emphasis">黄体期</span> 更长，<span className="review-key-emphasis">排卵期</span> 相对更短，这与激素变化可能导致的肠道蠕动变化有关。
         </div>
       </div>
-    </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block review-stool-traj-block">
+        <div className="review-love-cycle-subhead">本周期排便感受</div>
+        <StoolPhaseDistChart/>
+        <div className="review-love-insight">
+          你的排便感受在<span className="review-key-emphasis">排卵前后</span>相对舒畅，进入<span className="review-key-emphasis">黄体期</span>后逐渐出现残便感与排便困难，可能与周期变化带来的<span className="review-key-emphasis">肠道蠕动变化</span>有关。
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -14557,42 +15337,44 @@ function StoolShapeShareCombinedCard(){
   const shapeTop = shapeRows.reduce((a, b)=>b.count >= a.count ? b : a);
   const volumeTop = volumeRows.reduce((a, b)=>b.count >= a.count ? b : a);
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">便便性状</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined review-stool-shape-share-card">
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">便便形状</div>
-          <StoolShareDonut
-            rows={shapeRows}
-            ariaLabel="近30天便便形状占比环形图"
-            renderArcIcon={row=>(
-              <g transform="scale(0.52)"><StoolShapeGlyph type={row.key}/></g>
-            )}
-            renderLegendIcon={row=><StoolShapeDonutIcon type={row.key}/>}
-          />
-          <div className="review-love-insight">
-            近30天记录 <b>{shapeTotal}</b> 次便便，以 <span className="review-key-emphasis">{shapeTop.label}</span> 为主（<b>{shapeTop.pct}%</b>）；偏硬与偏稀的性状也各有出现，整体以正常范围居多。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">便便分量</div>
-          <StoolShareDonut
-            rows={volumeRows}
-            ariaLabel="近30天便便分量占比环形图"
-            renderArcIcon={row=>(
-              <circle r={(row.dot || 5) * 0.62} fill={row.color}/>
-            )}
-            renderLegendIcon={row=>(
-              <StoolVolumeDonutIcon dot={row.dot} color={row.color}/>
-            )}
-          />
-          <div className="review-love-insight">
-            近30天便便分量以 <span className="review-key-emphasis">{volumeTop.label}</span> 为主（<b>{volumeTop.pct}%</b>）；非常少量与大量占比较低，整体排量较稳定。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-stool"
+      icon={<ReviewStoolIcon/>}
+      title="便便性状"
+      className="review-love-mini-card review-love-cycle-combined review-stool-shape-share-card"
+    >
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">便便形状</div>
+        <StoolShareDonut
+          rows={shapeRows}
+          ariaLabel="近30天便便形状占比环形图"
+          renderArcIcon={row=>(
+            <g transform="scale(0.52)"><StoolShapeGlyph type={row.key}/></g>
+          )}
+          renderLegendIcon={row=><StoolShapeDonutIcon type={row.key}/>}
+        />
+        <div className="review-love-insight">
+          近30天记录 <b>{shapeTotal}</b> 次便便，以 <span className="review-key-emphasis">{shapeTop.label}</span> 为主（<b>{shapeTop.pct}%</b>）；偏硬与偏稀的性状也各有出现，整体以正常范围居多。
         </div>
       </div>
-    </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">便便分量</div>
+        <StoolShareDonut
+          rows={volumeRows}
+          ariaLabel="近30天便便分量占比环形图"
+          renderArcIcon={row=>(
+            <circle r={(row.dot || 5) * 0.62} fill={row.color}/>
+          )}
+          renderLegendIcon={row=>(
+            <StoolVolumeDonutIcon dot={row.dot} color={row.color}/>
+          )}
+        />
+        <div className="review-love-insight">
+          近30天便便分量以 <span className="review-key-emphasis">{volumeTop.label}</span> 为主（<b>{volumeTop.pct}%</b>）；非常少量与大量占比较低，整体排量较稳定。
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -14663,57 +15445,57 @@ function StoolHabitCombinedCard({range = 'd30'}){
   const topInterval = intervals.reduce((a, b)=>a.pct >= b.pct ? a : b);
   const durationTop = durationRows.reduce((a, b)=>b.count >= a.count ? b : a);
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">便便习惯</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">便便时段分布</div>
-          <LoveHabitTimeChart hourly={hourly} ariaLabel="便便时段分布"/>
-          <div className="review-love-insight review-love-habit-insight">
-            {rangeLabel}共记录 <b>{total}</b> 次便便，其中 <b>{peakCount}</b> 次发生在早晨（6–12 时）。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">排便耗时</div>
-          <StoolShareDonut
-            rows={durationRows}
-            ariaLabel={rangeLabel + '排便耗时占比环形图'}
-            renderArcIcon={row=>(
-              <g transform="scale(0.58)"><StoolClockGlyph minutes={row.minutes} color={row.color}/></g>
-            )}
-            renderLegendIcon={row=>(
-              <StoolDurationClockIcon minutes={row.minutes} color={row.color}/>
-            )}
-          />
-          <div className="review-love-insight">
-            {rangeLabel}排便耗时以 <span className="review-key-emphasis">{durationTop.label}</span> 为主（<b>{durationTop.pct}%</b>）；多数记录在 10 分钟内完成，整体节奏较顺畅。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">便便间隔</div>
-          <LoveIntervalBarChart rows={intervals} ariaLabel="便便间隔分布"/>
-          <div className="review-love-insight">
-            {rangeLabel}便便间隔以 <b>{topInterval.label}</b> 为主（<b>{topInterval.pct}%</b>），整体节奏较规律。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-stool"
+      icon={<ReviewStoolIcon/>}
+      title="便便习惯"
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">便便时段分布</div>
+        <LoveHabitTimeChart hourly={hourly} ariaLabel="便便时段分布"/>
+        <div className="review-love-insight review-love-habit-insight">
+          {rangeLabel}共记录 <b>{total}</b> 次便便，其中 <b>{peakCount}</b> 次发生在早晨（6–12 时）。
         </div>
       </div>
-    </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">排便耗时</div>
+        <StoolShareDonut
+          rows={durationRows}
+          ariaLabel={rangeLabel + '排便耗时占比环形图'}
+          renderArcIcon={row=>(
+            <g transform="scale(0.58)"><StoolClockGlyph minutes={row.minutes} color={row.color}/></g>
+          )}
+          renderLegendIcon={row=>(
+            <StoolDurationClockIcon minutes={row.minutes} color={row.color}/>
+          )}
+        />
+        <div className="review-love-insight">
+          {rangeLabel}排便耗时以 <span className="review-key-emphasis">{durationTop.label}</span> 为主（<b>{durationTop.pct}%</b>）；多数记录在 10 分钟内完成，整体节奏较顺畅。
+        </div>
+      </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">便便间隔</div>
+        <LoveIntervalBarChart rows={intervals} ariaLabel="便便间隔分布"/>
+        <div className="review-love-insight">
+          {rangeLabel}便便间隔以 <b>{topInterval.label}</b> 为主（<b>{topInterval.pct}%</b>），整体节奏较规律。
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
   );
 }
 
 function StoolDetailBody({range, onExpandPhase}){
   const showCycle = range === 'd30';
   return (
-    <>
+    <div className="review-detail-section-stack">
       <StoolTrendSummary range={range}/>
-      <div className="review-love-detail-lower">
-        {showCycle ? <StoolCycleCombinedCard onExpand={onExpandPhase}/> : null}
-        {showCycle ? <StoolShapeShareCombinedCard/> : null}
-        <StoolHabitCombinedCard range={range}/>
-      </div>
-    </>
+      {showCycle ? <StoolCycleCombinedCard onExpand={onExpandPhase}/> : null}
+      {showCycle ? <StoolShapeShareCombinedCard/> : null}
+      <StoolHabitCombinedCard range={range}/>
+    </div>
   );
 }
 
@@ -15597,11 +16379,13 @@ function LoveTrendSummary({range = 'half'}){
       ? {avg:'3.5', total:String(LOVE_YEAR_TOTAL), totalLabel:'近1年爱爱次数', trend:'→ 平稳', tone:'flat'}
       : {avg:'3.5', total:String(LOVE_HALF_YEAR_TOTAL), totalLabel:'近半年爱爱次数', trend:'↗ 增长', tone:'up'});
   return (
-    <div className="review-love-trend-block is-detail-main">
-      <div className="review-love-trend-head">
-        <div className="review-love-trend-title">爱爱频次</div>
-        <div className="review-love-trend-range">{dateText}</div>
-      </div>
+    <ReviewDetailSectionCard
+      iconClass="is-love"
+      icon={<ReviewTrendLineIcon/>}
+      title="爱爱频次"
+      subtitle={dateText}
+      className="review-love-trend-section-card"
+    >
       {isLine
         ? <LoveFreqLineChart months={months}/>
         : <LoveFreqOverviewChart months={months}/>}
@@ -15622,39 +16406,40 @@ function LoveTrendSummary({range = 'half'}){
           <div className="review-love-trend-metric-label">整体趋势</div>
         </div>
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
 function LoveCycleCombinedCard({onExpand}){
+  const expandBtn = typeof onExpand === 'function' ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期爱爱变化" onClick={onExpand}>
+      <ReviewExpandIcon/>
+    </button>
+  ) : null;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">月经周期与爱爱</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">最近3个周期爱爱次数</div>
-          <LoveCycleCompareChart/>
-          <div className="review-love-insight">
-            你的爱爱集中在 <b>黄体期</b>，<b>排卵期</b>偏少——近 <b>3</b> 个周期都是这个规律。黄体期孕激素升高、更易放松亲密，若有备孕计划，可留意排卵前后。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead review-cycle-subhead-expand-row">
-            <span>本周期爱爱变化</span>
-            {typeof onExpand === 'function' && (
-              <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏查看本周期爱爱变化" onClick={onExpand}>
-                <ReviewExpandIcon/>
-              </button>
-            )}
-          </div>
-          <LovePhaseDistChart/>
-          <div className="review-love-insight">
-            你的爱爱记录主要集中在 <span className="review-key-emphasis">排卵前后</span>，与本周期激素变化规律基本一致。排卵期雌激素达到高水平时，<span className="review-key-emphasis">亲密意愿通常更强</span>；进入黄体期后，随着雌孕激素水平变化，<span className="review-key-emphasis">亲密需求可能逐渐回归平稳</span>。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-love"
+      icon={<ReviewCyclePhaseIcon/>}
+      title="月经周期与爱爱"
+      extra={expandBtn}
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">最近3个周期爱爱次数</div>
+        <LoveCycleCompareChart/>
+        <div className="review-love-insight">
+          你的爱爱集中在 <b>黄体期</b>，<b>排卵期</b>偏少——近 <b>3</b> 个周期都是这个规律。黄体期孕激素升高、更易放松亲密，若有备孕计划，可留意排卵前后。
         </div>
       </div>
-    </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">本周期爱爱变化</div>
+        <LovePhaseDistChart/>
+        <div className="review-love-insight">
+          你的爱爱记录主要集中在 <span className="review-key-emphasis">排卵前后</span>，与本周期激素变化规律基本一致。排卵期雌激素达到高水平时，<span className="review-key-emphasis">亲密意愿通常更强</span>；进入黄体期后，随着雌孕激素水平变化，<span className="review-key-emphasis">亲密需求可能逐渐回归平稳</span>。
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -15809,15 +16594,17 @@ function LoveMeasureCombinedCard({range = 'half'}){
   const stats = loveMeasureStats(range);
   const rangeLabel = LOVE_RANGE_LABEL[range] || LOVE_RANGE_LABEL.half;
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">爱爱措施</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <LoveMeasureDonut rows={stats.rows}/>
-        <div className="review-love-insight">
-          {rangeLabel}记录 <b>{stats.total}</b> 次爱爱，其中 <b>{stats.protectedCount}</b> 次采取了措施（<b>{stats.protectedPct}%</b>），以避孕套为主；另有 <b>{stats.unprotected}</b> 次无措施。
-        </div>
+    <ReviewDetailSectionCard
+      iconClass="is-love"
+      icon={<ReviewLoveIcon/>}
+      title="爱爱措施"
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <LoveMeasureDonut rows={stats.rows}/>
+      <div className="review-love-insight">
+        {rangeLabel}记录 <b>{stats.total}</b> 次爱爱，其中 <b>{stats.protectedCount}</b> 次采取了措施（<b>{stats.protectedPct}%</b>），以避孕套为主；另有 <b>{stats.unprotected}</b> 次无措施。
       </div>
-    </div>
+    </ReviewDetailSectionCard>
   );
 }
 
@@ -15968,40 +16755,40 @@ function LoveHabitCombinedCard({range = 'half'}){
   const peakCount = hourly.slice(18, 24).reduce((s, n)=>s + n, 0);
   const topInterval = intervals.reduce((a, b)=>a.pct >= b.pct ? a : b);
   return (
-    <div className="review-love-cycle-combined-wrap">
-      <div className="review-love-trend-title">爱爱习惯</div>
-      <div className="review-detail-card review-love-mini-card review-love-cycle-combined">
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">爱爱时段分布</div>
-          <LoveHabitTimeChart hourly={hourly}/>
-          <div className="review-love-insight review-love-habit-insight">
-            {rangeLabel}共记录 <b>{total}</b> 次爱爱，其中 <b>{peakCount}</b> 次发生在夜晚（18–24 时）。
-          </div>
-        </div>
-        <div className="review-love-cycle-divider" aria-hidden="true"/>
-        <div className="review-love-cycle-block">
-          <div className="review-love-cycle-subhead">爱爱间隔</div>
-          <LoveIntervalBarChart rows={intervals}/>
-          <div className="review-love-insight">
-            {rangeLabel}爱爱间隔以 <b>{topInterval.label}</b> 为主（<b>{topInterval.pct}%</b>），整体节奏较规律。
-          </div>
+    <ReviewDetailSectionCard
+      iconClass="is-love"
+      icon={<ReviewLoveIcon/>}
+      title="爱爱习惯"
+      className="review-love-mini-card review-love-cycle-combined"
+    >
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">爱爱时段分布</div>
+        <LoveHabitTimeChart hourly={hourly}/>
+        <div className="review-love-insight review-love-habit-insight">
+          {rangeLabel}共记录 <b>{total}</b> 次爱爱，其中 <b>{peakCount}</b> 次发生在夜晚（18–24 时）。
         </div>
       </div>
-    </div>
+      <div className="review-love-cycle-divider" aria-hidden="true"/>
+      <div className="review-love-cycle-block">
+        <div className="review-love-cycle-subhead">爱爱间隔</div>
+        <LoveIntervalBarChart rows={intervals}/>
+        <div className="review-love-insight">
+          {rangeLabel}爱爱间隔以 <b>{topInterval.label}</b> 为主（<b>{topInterval.pct}%</b>），整体节奏较规律。
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
   );
 }
 
 function LoveDetailBody({range, onExpandPhase}){
   const showCycle = range === 'half';
   return (
-    <>
+    <div className="review-detail-section-stack">
       <LoveTrendSummary range={range}/>
-      <div className="review-love-detail-lower">
-        {showCycle ? <LoveCycleCombinedCard onExpand={onExpandPhase}/> : null}
-        <LoveMeasureCombinedCard range={range}/>
-        <LoveHabitCombinedCard range={range}/>
-      </div>
-    </>
+      {showCycle ? <LoveCycleCombinedCard onExpand={onExpandPhase}/> : null}
+      <LoveMeasureCombinedCard range={range}/>
+      <LoveHabitCombinedCard range={range}/>
+    </div>
   );
 }
 
@@ -16135,7 +16922,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         <span className="review-nav-title">回顾</span>
       </div>
       <div className="review-content">
-        <p className="review-page-greeting">已记录 <b>350</b>天，共<b>{isPeriodMode ? 10 : 7}</b>项{isPeriodMode ? '回顾' : '可回顾'}</p>
+        <p className="review-page-greeting">已记录 <b>350</b>天，共<b>{isPeriodMode ? 9 : 7}</b>项{isPeriodMode ? '回顾' : '可回顾'}</p>
 
       {isPeriodMode ? (
         <>
@@ -16143,8 +16930,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         <ReviewPeriodOverview
           cycleUpdated={cycleUpdated}
           weightManagePhase={weightManagePhase}
-          onWeightManageActivateGoal={()=>setWeightAssessOpen(true)}
-          onOpenWeightGoal={()=>setWeightGoalDetailOpen(true)}
+          isSample={false}
           onOpenCycle={()=>{
             setCycleUpdated(false);
             setCycleDetailOpen(true);
@@ -16245,11 +17031,8 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <WeightDetailPage
         open={weightDetailOpen}
         planGuidePhase={weightManagePhase}
-        onCreatePlan={()=>{
-          if(weightManagePhase === 'none') onWeightManageChange?.('goal');
-          else onWeightManageChange?.('plan');
-          setWeightGoalDetailOpen(true);
-        }}
+        onCreatePlan={()=>setWeightAssessOpen(true)}
+        onAdjustGoal={()=>setWeightAssessOpen(true)}
         onClose={()=>{
           setWeightDetailOpen(false);
           onWeightDetailReturn?.();
@@ -16276,7 +17059,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         onComplete={()=>{
           setWeightAssessOpen(false);
           onWeightManageChange?.('plan');
-          setWeightGoalDetailOpen(true);
+          setWeightDetailOpen(true);
         }}
       />
       <WeightDeepAssessPage
@@ -16286,7 +17069,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
           setWeightDeepAssessOpen(false);
           onWeightManageChange?.('plan');
           onMemberChange?.(true);
-          setWeightGoalDetailOpen(true);
+          setWeightDetailOpen(true);
         }}
       />
       <StoolDetailPage open={stoolDetailOpen} onClose={()=>setStoolDetailOpen(false)}/>

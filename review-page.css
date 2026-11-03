@@ -910,6 +910,15 @@
 .review-weight-goal-progress-card.is-stage{
   padding:16px;
 }
+.review-weight-goal-stage-body{
+  position:relative;
+}
+.review-weight-goal-stage-body.is-sample-body{
+  position:relative;
+}
+.review-weight-goal-progress-card.is-sample .review-weight-plan-guide.is-cta{
+  margin-top:12px;
+}
 .review-weight-goal-stage-head{
   display:flex;
   align-items:flex-start;
@@ -2607,6 +2616,198 @@
   color:var(--my-text-primary);
   overflow:hidden;
 }
+.review-overview-body.is-sample-body,
+.review-period-health-l1-body.is-sample-body,
+.review-overview-sample-body.is-sample-body{
+  position:relative;
+}
+.review-overview-sample-body{
+  position:relative;
+}
+.review-sample-mark{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  background:rgba(255,255,255,0.42);
+  backdrop-filter:blur(1.5px);
+  -webkit-backdrop-filter:blur(1.5px);
+  pointer-events:none;
+}
+.review-sample-mark span{
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  font-size:18px;
+  font-weight:500;
+  line-height:1.2;
+  letter-spacing:0.06em;
+  color:rgba(0,0,0,0.32);
+  white-space:nowrap;
+  user-select:none;
+}
+.review-period-health-l1{
+  min-height:0;
+  padding:13px 14px 14px;
+}
+.review-overview-icon.is-period-health{
+  width:22px;
+  height:22px;
+  flex:0 0 22px;
+  border-radius:6px;
+  background:linear-gradient(145deg,#ff8bb3,#ff4d88);
+}
+.review-period-health-ai{
+  font-size:11px;
+  font-weight:500;
+  font-style:italic;
+  line-height:1;
+  color:#fff;
+  letter-spacing:-0.02em;
+}
+.review-period-health-l1 .review-health-score-vip{
+  margin-left:2px;
+}
+.review-period-health-l1-body{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin-top:10px;
+}
+.review-period-health-l1-gauge-wrap{
+  flex:0 0 118px;
+  width:118px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.review-period-health-l1-gauge{
+  position:relative;
+  width:118px;
+  height:86px;
+}
+.review-period-health-l1-gauge > svg{
+  display:block;
+  width:100%;
+  height:78px;
+}
+.review-period-health-l1-track,
+.review-period-health-l1-arc{
+  fill:none;
+  stroke-width:12;
+  stroke-linecap:round;
+}
+.review-period-health-l1-track{stroke:#ededed}
+.review-period-health-l1-arc{
+  stroke:url(#reviewPeriodHealthL1Arc);
+  stroke-dasharray:150.8;
+  stroke-dashoffset:18;
+}
+.review-period-health-l1-score{
+  position:absolute;
+  left:50%;
+  bottom:2px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+.review-period-health-l1-score span{
+  font-size:11px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.4);
+}
+.review-period-health-l1-score strong{
+  font-size:36px;
+  font-weight:500;
+  line-height:1;
+  letter-spacing:-1px;
+  color:rgba(0,0,0,0.8);
+}
+.review-period-health-l1-change{
+  margin-top:4px;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 10px;
+  border-radius:20px;
+  background:rgba(255,77,136,0.08);
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.55);
+  white-space:nowrap;
+}
+.review-period-health-l1-change b{
+  font-weight:500;
+  color:#ff4d88;
+}
+.review-period-health-l1-summary{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  padding-top:4px;
+}
+.review-period-health-l1-summary h3{
+  margin:0 0 10px;
+  font-size:21px;
+  font-weight:500;
+  line-height:1.19;
+  color:rgba(0,0,0,0.8);
+}
+.review-period-health-l1-metric{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:8px;
+  white-space:nowrap;
+  font-size:14px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.8);
+}
+.review-period-health-l1-metric b{
+  font-weight:500;
+}
+.review-period-health-l1-metric em{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:2px 6px;
+  border-radius:4px;
+  font-size:11px;
+  font-style:normal;
+  font-weight:500;
+  line-height:1.5;
+}
+.review-period-health-l1-metric em.is-normal{
+  background:rgba(0,204,153,0.1);
+  color:#00b88a;
+}
+.review-period-health-l1-metric em.is-strong{
+  background:rgba(255,77,77,0.1);
+  color:#ff4d4d;
+}
+.review-period-health-l1-cta{
+  margin-top:4px;
+  width:96px;
+  height:32px;
+  border:0;
+  border-radius:80px;
+  background:#ff4d88;
+  color:#fff;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:500;
+  line-height:32px;
+  cursor:pointer;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.review-period-health-l1-cta:active{
+  opacity:0.82;
+}
 .review-overview-card.is-actionable{
   cursor:pointer;
 }
@@ -2676,16 +2877,111 @@
 .review-overview-icon.is-love svg{fill:currentColor;stroke:none}
 .review-overview-icon.is-symptom{color:#6f9fdc}
 .review-overview-card.is-symptom-l1 .review-overview-metric strong{
-  white-space:normal;
+  font-size:28px;
+  line-height:32px;
+  font-weight:500;
+  white-space:nowrap;
 }
 .review-overview-card.is-symptom-l1 .review-overview-trend-label{
   max-width:100%;
   overflow:hidden;
   text-overflow:ellipsis;
 }
+.review-overview-card.is-symptom-l1 .review-overview-trend-label b:empty{
+  display:none;
+}
 .review-overview-card.is-symptom-l1 .review-overview-chart{
-  height:48px;
-  overflow:hidden;
+  height:72px;
+  overflow:visible;
+}
+.review-overview-card.is-symptom-l1 .review-overview-body{
+  min-height:96px;
+  align-items:end;
+}
+.review-symptom-overview-phase{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.review-symptom-overview-phase-slots{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:6px;
+  align-items:end;
+}
+.review-symptom-overview-phase-slot{
+  display:flex;
+  justify-content:center;
+}
+.review-symptom-overview-phase-pill{
+  position:relative;
+  width:100%;
+  max-width:58px;
+  padding:5px 2px 7px;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 0 0 0.5px rgba(0,0,0,0.06);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+}
+.review-symptom-overview-phase-pill::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-4px;
+  width:8px;
+  height:8px;
+  background:#fff;
+  border-right:0.5px solid rgba(0,0,0,0.06);
+  border-bottom:0.5px solid rgba(0,0,0,0.06);
+  transform:translateX(-50%) rotate(45deg);
+}
+.review-symptom-overview-phase-pill span{
+  font-size:10px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.7);
+}
+.review-symptom-overview-phase-icon{
+  position:relative;
+  width:22px;
+  height:22px;
+}
+.review-symptom-overview-phase-icon img{
+  width:22px;
+  height:22px;
+  display:block;
+  object-fit:contain;
+}
+.review-symptom-overview-phase-icon em{
+  position:absolute;
+  right:-7px;
+  top:-5px;
+  min-width:16px;
+  height:12px;
+  padding:0 3px;
+  border-radius:7px;
+  background:#f0c36a;
+  color:#fff;
+  font-size:9px;
+  font-weight:500;
+  font-style:normal;
+  line-height:12px;
+  text-align:center;
+}
+.review-symptom-overview-phase-bar{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:2px;
+  height:6px;
+  margin-top:2px;
+}
+.review-symptom-overview-phase-bar i{
+  display:block;
+  height:100%;
+  border-radius:3px;
 }
 .review-symptom-overview-rank{
   width:100%;
@@ -10004,34 +10300,165 @@
 
 /* ===== 爱爱详情（AxC 中立方案） ===== */
 .review-love-detail-content{
-  padding:0;
-  background:#fff;
+  padding:0 0 calc(28px + var(--my-safe-bottom, 0px));
+  background:var(--my-bg);
 }
 .review-love-detail-top{
-  padding:8px 16px 0;
-  background:#fff;
+  padding:8px 16px 12px;
+  background:transparent;
 }
 .review-love-detail-top .review-segment{
-  margin-bottom:8px;
+  margin-bottom:0;
 }
 .review-love-detail-top .review-segment button{
   font-size:12px;
   padding:0 2px;
 }
+.review-love-detail-top .review-segment.is-symptom-range button{
+  font-size:11px;
+  padding:0 1px;
+  white-space:nowrap;
+}
 .review-mood-detail-content{
-  padding:0;
-  background:#fff;
+  padding:0 0 calc(28px + var(--my-safe-bottom, 0px));
+  background:var(--my-bg);
 }
 .review-mood-detail-top{
-  padding:8px 16px 0;
-  background:#fff;
+  padding:8px 16px 12px;
+  background:transparent;
 }
 .review-mood-detail-top .review-segment{
-  margin-bottom:8px;
+  margin-bottom:0;
+}
+.review-detail-section-stack{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:0 16px;
+}
+.review-detail-section-stack > .review-detail-card + .review-detail-card{
+  margin-top:0;
+}
+.review-detail-section-card{
+  margin:0;
+  padding:12px 16px 14px;
+  border-radius:12px;
+}
+.review-detail-section-card.review-love-mini-card{
+  padding:12px 16px 14px;
+}
+.review-detail-section-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:4px;
+}
+.review-detail-section-head.has-subtitle{
+  margin-bottom:0;
+}
+.review-detail-section-card .review-chart,
+.review-detail-section-card .review-mood-traj,
+.review-detail-section-card .review-love-trend-svg{
+  margin-top:0;
+}
+.review-detail-section-card .review-detail-chart{
+  margin-top:0;
+}
+.review-detail-section-card .review-weight-traj .review-mood-traj-canvas{
+  height:268px;
+}
+.review-detail-section-card .review-weight-traj .review-mood-traj-plot,
+.review-detail-section-card .review-weight-traj .review-mood-traj-yaxis,
+.review-detail-section-card .review-weight-traj .review-mood-traj-scroll{
+  height:268px;
+}
+.review-detail-section-title{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  min-width:0;
+}
+.review-detail-section-title .review-card-icon{
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  border-radius:8px;
+  margin-top:1px;
+}
+.review-detail-section-title .review-card-icon svg{
+  width:16px;
+  height:16px;
+}
+.review-detail-section-title-text{
+  min-width:0;
+}
+.review-detail-section-title-text h3{
+  margin:0;
+  font-size:16px;
+  font-weight:500;
+  line-height:1.2;
+  color:rgba(0,0,0,0.8);
+}
+.review-detail-section-title-text p{
+  margin:2px 0 0;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.4);
+}
+.review-detail-section-head .review-cycle-card-expand-btn{
+  margin-top:0;
+}
+.review-detail-section-body{
+  min-width:0;
+}
+.review-detail-section-card.is-actionable{
+  cursor:pointer;
+}
+.review-detail-section-card.is-actionable:active{
+  background:#fafafa;
+}
+.review-detail-section-entry{
+  flex:0 0 auto;
+  width:28px;
+  height:28px;
+  margin-top:0;
+  border-radius:8px;
+  background:rgba(0,0,0,0.04);
+  display:grid;
+  place-items:center;
+  color:rgba(0,0,0,0.5);
+}
+.review-detail-section-entry-gt{
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  font-size:18px;
+  font-weight:500;
+  line-height:1;
+  transform:translateY(-1px);
+}
+.review-detail-section-card.is-actionable:active .review-detail-section-entry{
+  background:rgba(0,0,0,0.08);
+  color:rgba(0,0,0,0.7);
+}
+.review-weight-trend-section-card.is-actionable .review-detail-section-head{
+  align-items:center;
+}
+.review-weight-trend-detail{
+  z-index:172;
+}
+.review-detail-section-card .review-mood-trend-foot{
+  padding-bottom:0;
+}
+.review-weight-detail-goal-progress{
+  padding:0;
+  background:transparent;
+}
+.review-weight-detail-goal-progress .review-weight-goal-progress-card{
+  margin:0;
 }
 .review-mood-trend-block{
-  padding:4px 16px 0;
-  background:#fff;
+  padding:0;
+  background:transparent;
 }
 .review-mood-trend-head-main{
   margin-bottom:8px;
@@ -10163,18 +10590,15 @@
   font-family:inherit;
   box-sizing:border-box;
 }
-.review-weight-plan-guide.is-lite{
+.review-weight-plan-guide.is-cta{
   margin-top:12px;
-  padding:12px 0 4px;
-  border-top:0.5px solid rgba(0,0,0,.06);
+  padding:12px;
+  border-radius:8px;
+  background:#FFF4DF;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  cursor:pointer;
-}
-.review-weight-plan-guide.is-lite:active{
-  opacity:.72;
 }
 .review-weight-plan-guide-copy{
   flex:1;
@@ -10197,23 +10621,25 @@
   font-weight:400;
   color:rgba(0,0,0,.45);
 }
-.review-weight-plan-guide-chevron{
+.review-weight-plan-guide-btn{
   flex:0 0 auto;
-  width:18px;
-  height:18px;
-  display:grid;
-  place-items:center;
-  color:rgba(0,0,0,.28);
+  height:32px;
+  padding:0 14px;
+  border:none;
+  border-radius:80px;
+  background:#FFB020;
+  color:#fff;
+  font-family:inherit;
+  font-size:14px;
+  line-height:32px;
+  font-weight:500;
+  cursor:pointer;
+  -webkit-appearance:none;
+  appearance:none;
+  white-space:nowrap;
 }
-.review-weight-plan-guide-chevron svg{
-  width:18px;
-  height:18px;
-  display:block;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+.review-weight-plan-guide-btn:active{
+  opacity:.88;
 }
 .review-weight-stat-card{
   padding:12px 10px;
@@ -10760,8 +11186,12 @@
   height:164px;
 }
 .review-love-detail-lower{
-  background:var(--my-bg);
-  padding:16px 16px calc(28px + var(--my-safe-bottom, 0px));
+  background:transparent;
+  padding:0;
+}
+.review-mood-detail-lower{
+  background:transparent;
+  padding:0;
 }
 .review-love-mini-card{
   padding:16px;
@@ -13414,6 +13844,286 @@
 /* —— 症状回顾二级页 —— */
 .review-symptom-trend-block{
   padding-bottom:4px;
+}
+.review-symptom-trend-block.is-scatter-only .review-symptom-scatter-chart,
+.review-symptom-trend-section-card.is-scatter-only .review-symptom-scatter-chart{
+  margin-top:4px;
+  aspect-ratio:auto !important;
+  height:auto !important;
+  overflow:visible;
+}
+.review-symptom-trend-block.is-scatter-only .review-symptom-traj,
+.review-symptom-trend-section-card.is-scatter-only .review-symptom-traj{
+  margin-top:0;
+}
+.review-symptom-trend-block.is-scatter-only .review-mood-traj-scroll,
+.review-symptom-trend-section-card.is-scatter-only .review-mood-traj-scroll{
+  overflow-x:auto;
+}
+.review-symptom-trend-block.is-cycle-stack .review-mood-trend-foot,
+.review-symptom-trend-section-card.is-cycle-stack .review-mood-trend-foot{
+  margin-top:12px;
+}
+.review-symptom-trend-block.is-cycle-stack .review-symptom-scatter-chart.is-cycle-stack,
+.review-symptom-trend-section-card.is-cycle-stack .review-symptom-scatter-chart.is-cycle-stack{
+  margin-top:4px;
+}
+.review-symptom-trend-block.is-flat-scatter .review-symptom-scatter-chart.is-flat-scatter,
+.review-symptom-trend-section-card.is-flat-scatter .review-symptom-scatter-chart.is-flat-scatter{
+  margin-top:4px;
+}
+.review-symptom-traj.is-flat-scatter .review-mood-traj-plot{
+  min-height:0;
+}
+.review-symptom-traj.is-flat-scatter .review-mood-traj-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.review-symptom-traj.is-flat-scatter .review-mood-traj-canvas{
+  display:block;
+}
+.review-symptom-traj.is-flat-scatter .review-mood-traj-yaxis{
+  align-self:stretch;
+}
+.review-symptom-phase-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.55);
+}
+.review-symptom-phase-legend i{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:4px;
+  border-radius:50%;
+  vertical-align:middle;
+}
+.review-symptom-phase-legend i.is-period{
+  border-radius:4px;
+  width:12px;
+  height:6px;
+  background:#ff4d88;
+}
+.review-symptom-cycle-stack{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.review-symptom-cycle-stack.is-phase-style{
+  gap:8px;
+}
+.review-symptom-cycle-card{
+  padding:12px 0;
+  border-radius:0;
+  background:transparent;
+  border-bottom:0.5px solid rgba(0,0,0,0.06);
+}
+.review-symptom-cycle-card:last-child{
+  border-bottom:0;
+}
+.review-symptom-cycle-card.is-empty{
+  padding:14px 0;
+}
+.review-symptom-cycle-card.is-phase-style{
+  padding:14px 0 16px;
+}
+.review-symptom-cycle-card-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.review-symptom-cycle-card-head.is-inline{
+  margin-bottom:0;
+}
+.review-symptom-cycle-card-head strong{
+  font-size:14px;
+  font-weight:500;
+  color:rgba(0,0,0,0.8);
+  line-height:1.2;
+}
+.review-symptom-cycle-empty{
+  font-size:13px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.35);
+}
+.review-symptom-cycle-card .review-symptom-traj.is-cycle-card{
+  margin-top:0;
+}
+.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-plot{
+  min-height:0;
+}
+.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-scroll{
+  overflow-x:auto;
+}
+.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-canvas{
+  min-width:320px;
+  width:320px;
+}
+.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-yaxis{
+  align-self:stretch;
+}
+.review-symptom-phase-most{
+  display:flex;
+  align-items:stretch;
+  gap:12px;
+  min-height:118px;
+}
+.review-symptom-phase-most-count{
+  flex:0 0 84px;
+  width:84px;
+  border-radius:12px;
+  background:linear-gradient(180deg, #eef3ff 0%, #f5f0ff 100%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:12px 8px;
+}
+.review-symptom-phase-most-count span{
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.45);
+  text-align:center;
+}
+.review-symptom-phase-most-count b{
+  font-size:36px;
+  font-weight:500;
+  line-height:1;
+  color:rgba(0,0,0,0.8);
+  font-variant-numeric:tabular-nums;
+}
+.review-symptom-phase-most-main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.review-symptom-phase-most-caption{
+  font-size:12px;
+  font-weight:500;
+  line-height:1.29;
+  color:rgba(0,0,0,0.55);
+  margin-bottom:8px;
+}
+.review-symptom-phase-most-slots{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:8px;
+  align-items:end;
+  min-height:58px;
+}
+.review-symptom-phase-most-slot{
+  display:flex;
+  justify-content:center;
+}
+.review-symptom-phase-most-pill{
+  position:relative;
+  width:100%;
+  max-width:72px;
+  padding:8px 4px 10px;
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 0 0 0.5px rgba(0,0,0,0.06);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.review-symptom-phase-most-pill::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-5px;
+  width:10px;
+  height:10px;
+  background:#fff;
+  border-right:0.5px solid rgba(0,0,0,0.06);
+  border-bottom:0.5px solid rgba(0,0,0,0.06);
+  transform:translateX(-50%) rotate(45deg);
+}
+.review-symptom-phase-most-pill span{
+  font-size:11px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.7);
+}
+.review-symptom-phase-most-icon-wrap{
+  position:relative;
+  width:28px;
+  height:28px;
+}
+.review-symptom-phase-most-icon-wrap img{
+  width:28px;
+  height:28px;
+  display:block;
+  object-fit:contain;
+}
+.review-symptom-phase-most-icon-wrap em{
+  position:absolute;
+  right:-6px;
+  top:-5px;
+  min-width:18px;
+  height:14px;
+  padding:0 4px;
+  border-radius:8px;
+  background:#f0c36a;
+  color:#fff;
+  font-size:10px;
+  font-weight:500;
+  font-style:normal;
+  line-height:14px;
+  text-align:center;
+}
+.review-symptom-phase-most-placeholder{
+  width:100%;
+  max-width:72px;
+  height:52px;
+  border-radius:10px;
+  border:1.5px dashed rgba(255,77,136,0.35);
+  color:rgba(255,77,136,0.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  line-height:1;
+}
+.review-symptom-phase-most-slot.is-ovu .review-symptom-phase-most-placeholder{
+  border-color:rgba(34,180,135,0.4);
+  color:rgba(34,180,135,0.45);
+}
+.review-symptom-phase-most-slot.is-luteal .review-symptom-phase-most-placeholder{
+  border-color:rgba(0,0,0,0.18);
+  color:rgba(0,0,0,0.25);
+}
+.review-symptom-phase-most-bar{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:3px;
+  margin-top:10px;
+  height:8px;
+}
+.review-symptom-phase-most-bar i{
+  display:block;
+  height:100%;
+  border-radius:4px;
+}
+.review-symptom-phase-most-labels{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:8px;
+  margin-top:4px;
+}
+.review-symptom-phase-most-labels span{
+  text-align:center;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.45);
 }
 .review-symptom-rank-chart{
   margin-top:4px;

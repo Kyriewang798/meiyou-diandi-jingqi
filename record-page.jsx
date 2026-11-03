@@ -3593,7 +3593,7 @@ function RecordPage({
       ...prev,
       goal: displayText,
     }));
-    if(weightManagePhase === 'none') onWeightManagePhaseChange?.('goal');
+    if(weightManagePhase !== 'plan' && weightManagePhase !== 'goal') onWeightManagePhaseChange?.('goal');
     onHealthRecordSubmit?.({
       type: 'goal',
       label: '目标',
