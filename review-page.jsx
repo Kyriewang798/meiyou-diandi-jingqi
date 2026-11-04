@@ -969,9 +969,9 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight, goa
 const WEIGHT_ASSESS_REC_W = 47.86;
 const WEIGHT_ASSESS_PROF_H = 158;
 const WEIGHT_ASSESS_BIRTH = {y:2008, m:1, d:1};
+// demo 暂不开放「保持」入口，区间卡仍保留代码便于后续打开
 const WEIGHT_ASSESS_MODES = [
   {key:'lose', label:'减重'},
-  {key:'keep', label:'保持'},
   {key:'gain', label:'增重'},
 ];
 const WEIGHT_ASSESS_WHEEL_H = 40;
@@ -1280,10 +1280,11 @@ function WeightAssessPage({open, onClose, onComplete, prefill=false, initialValu
     setBirthYmd(seed?.birthYmd ?? WEIGHT_ASSESS_BIRTH);
     setWeightKg(seed?.weightKg ?? WEIGHT_ASSESS_REC_W);
     setHeightCm(seed?.heightCm ?? WEIGHT_ASSESS_PROF_H);
-    setMode(seed?.mode ?? 'lose');
+    const nextMode = seed?.mode === 'gain' ? 'gain' : 'lose';
+    setMode(nextMode);
     setTargetKg(seed?.targetKg ?? null);
-    setKeepLo(seed?.keepLo ?? null);
-    setKeepHi(seed?.keepHi ?? null);
+    setKeepLo(null);
+    setKeepHi(null);
     setEndYmd(seed?.endYmd ?? null);
     setPickerKey(null);
     setPickerOptions([]);
