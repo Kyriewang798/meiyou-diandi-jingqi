@@ -756,21 +756,28 @@ function WeightAssessEntry({onAssess}){
   );
 }
 
-function weightKeepAxis(lo, hi, cur){
+const WEIGHT_KEEP_DEMO_DAYS = 28;
+const WEIGHT_KEEP_DEMO_HIT_PCT = 86;
+const WEIGHT_KEEP_DEMO_RECORDS = 14;
+const WEIGHT_KEEP_DEMO_IN_RANGE = 12;
+
+function weightKeepAxis(lo, hi, cur, padOverride){
   const loN = Number(lo);
   const hiN = Number(hi);
   const curN = Number(cur);
   const span = Math.max(0.5, hiN - loN);
-  const pad = Math.max(1.2, span * 0.75);
-  const minV = Math.min(loN - pad, curN - 0.4);
-  const maxV = Math.max(hiN + pad, curN + 0.4);
+  const pad = padOverride != null ? Number(padOverride) : Math.max(1.5, span * 0.75);
+  const minV = Math.min(loN - pad, curN - 0.2);
+  const maxV = Math.max(hiN + pad, curN + 0.2);
   const pct = (value)=>{
     const raw = ((Number(value) - minV) / (maxV - minV)) * 100;
-    return Math.max(3, Math.min(97, raw));
+    return Math.max(2, Math.min(98, raw));
   };
   const loPct = pct(loN);
   const hiPct = pct(hiN);
   return {
+    minV,
+    maxV,
     loPct,
     hiPct,
     curPct: pct(curN),
@@ -784,73 +791,132 @@ function weightKeepStatus(lo, hi, cur){
   const high = Number(hi);
   if(current < low){
     const delta = Number((low - current).toFixed(1));
-    return { key:'low', label:'偏低', detail:'偏低 ' + delta + ' 公斤', inRange:false, delta };
+    return { key:'low', label:'偏低', detail:'偏低 ' + delta + 'kg', inRange:false, delta };
   }
   if(current > high){
     const delta = Number((current - high).toFixed(1));
-    return { key:'high', label:'偏高', detail:'偏高 ' + delta + ' 公斤', inRange:false, delta };
+    return { key:'high', label:'偏高', detail:'偏高 ' + delta + 'kg', inRange:false, delta };
   }
-  return { key:'in', label:'区间内', detail:'落在目标区间内', inRange:true, delta:0 };
+  const toHi = Number((high - current).toFixed(1));
+  const toLo = Number((current - low).toFixed(1));
+  const detail = toHi <= toLo
+    ? ('距上限 ' + toHi + 'kg')
+    : ('距下限 ' + toLo + 'kg');
+  return { key:'in', label:'在区间内', detail, inRange:true, delta:0 };
 }
 
-function WeightKeepArrowIcon(){
+function WeightKeepCheckIcon(){
   return (
-    <svg viewBox="0 0 12 14" aria-hidden="true">
-      <path d="M6 13L1.2 5.2h9.6L6 13z"/>
-      <path d="M6 1.2v5.2" fill="none"/>
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M3.6 6.1l1.6 1.6 3.2-3.2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-function WeightKeepRangeTrack({ keepLo, keepHi, current, size='m' }){
-  const axis = weightKeepAxis(keepLo, keepHi, current);
+function WeightKeepRangeTrack({
+  keepLo,
+  keepHi,
+  current,
+  size='m',
+  showAxisEnds=false,
+  showBandTag=false,
+  pad,
+}){
+  const axis = weightKeepAxis(keepLo, keepHi, current, pad);
   const status = weightKeepStatus(keepLo, keepHi, current);
   return (
     <div
       className={'review-weight-keep-track is-' + size + (status.inRange ? ' is-in' : ' is-out')}
       aria-hidden="true"
     >
+      {showBandTag ? <span className="review-weight-keep-track-tag">保持区间</span> : null}
       <div className="review-weight-keep-track-rail">
         <i
           className="review-weight-keep-track-band"
-          style={{ left: axis.loPct + '%', width: axis.bandWidth + '%' }}
+          style={{
+            left: axis.loPct + '%',
+            width: axis.bandWidth + '%',
+            '--keep-band-left': axis.loPct + '%',
+            '--keep-band-width': axis.bandWidth + '%',
+          }}
         />
-        <span className="review-weight-keep-track-edge is-lo" style={{ left: axis.loPct + '%' }}/>
-        <span className="review-weight-keep-track-edge is-hi" style={{ left: axis.hiPct + '%' }}/>
         <span
-          className="review-weight-keep-track-arrow"
-          style={{ left: axis.curPct + '%' }}
-        >
-          <WeightKeepArrowIcon/>
-        </span>
+          className="review-weight-keep-track-knob"
+          style={{
+            left: axis.curPct + '%',
+            '--keep-knob-left': axis.curPct + '%',
+            '--keep-band-left': axis.loPct + '%',
+          }}
+        />
       </div>
       <div className="review-weight-keep-track-labels">
+        {showAxisEnds ? (
+          <span className="is-axis is-min">{axis.minV.toFixed(1)}</span>
+        ) : null}
         <span className="is-lo" style={{ left: axis.loPct + '%' }}>{Number(keepLo).toFixed(1)}</span>
         <span className="is-cur" style={{ left: axis.curPct + '%' }}>
           {Number(current).toFixed(1)}
         </span>
         <span className="is-hi" style={{ left: axis.hiPct + '%' }}>{Number(keepHi).toFixed(1)}</span>
+        {showAxisEnds ? (
+          <span className="is-axis is-max">{axis.maxV.toFixed(1)}</span>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function WeightManageKeepBody({ keepLo, keepHi, current }){
+function WeightManageKeepBody({ keepLo, keepHi, current, keptDays=WEIGHT_KEEP_DEMO_DAYS }){
   const status = weightKeepStatus(keepLo, keepHi, current);
+  const labelPrefix = status.inRange ? '区间内已保持' : (status.label + ' · 已保持');
   return (
     <div className="review-overview-body is-weight-manage is-keep">
       <div className="review-overview-metric">
-        <span>保持状态</span>
-        <strong className={status.inRange ? 'is-keep-ok' : 'is-keep-out'}>
-          {status.label}
+        <span>最新记录</span>
+        <strong>
+          {Number(current).toFixed(1)}
+          <small>公斤</small>
         </strong>
       </div>
       <div className="review-overview-trend is-weight-manage">
         <div className="review-overview-trend-label">
-          <span>目标区间</span>
-          <b>{Number(keepLo).toFixed(1)}–{Number(keepHi).toFixed(1)} 公斤</b>
+          <span>{labelPrefix}</span>
+          <b>{keptDays} 天</b>
         </div>
-        <WeightKeepRangeTrack keepLo={keepLo} keepHi={keepHi} current={current} size="s"/>
+        <WeightKeepRangeTrack keepLo={keepLo} keepHi={keepHi} current={current} size="s" pad={0.6}/>
+      </div>
+    </div>
+  );
+}
+
+function WeightKeepHitRing({ progress }){
+  const pct = Math.max(0, Math.min(100, Number(progress) || 0));
+  const r = 34;
+  const c = 2 * Math.PI * r;
+  const dash = (pct / 100) * c;
+  return (
+    <div className="wg-keep-hit-ring" aria-hidden="true">
+      <svg viewBox="0 0 96 96" width="96" height="96">
+        <defs>
+          <linearGradient id="wg-keep-hit-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#7BE0B0"/>
+            <stop offset="100%" stopColor="#00cc99"/>
+          </linearGradient>
+        </defs>
+        <circle cx="48" cy="48" r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="9"/>
+        <circle
+          className="wg-keep-hit-ring-arc"
+          cx="48" cy="48" r={r}
+          fill="none" stroke="url(#wg-keep-hit-grad)" strokeWidth="9" strokeLinecap="round"
+          strokeDasharray={dash + ' ' + c}
+          style={{'--wg-keep-ring-c':c, '--wg-keep-ring-dash':dash}}
+          transform="rotate(-90 48 48)"
+        />
+      </svg>
+      <div className="wg-keep-hit-ring-copy">
+        <b>{pct}<i>%</i></b>
+        <small>达标率</small>
       </div>
     </div>
   );
@@ -939,6 +1005,7 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight, goa
               keepLo={goalValues.keepLo}
               keepHi={goalValues.keepHi}
               current={keepCurrent}
+              keptDays={goalValues.keptDays ?? WEIGHT_KEEP_DEMO_DAYS}
             />
           ) : (
             <WeightManageProgressBody/>
@@ -969,9 +1036,9 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight, goa
 const WEIGHT_ASSESS_REC_W = 47.86;
 const WEIGHT_ASSESS_PROF_H = 158;
 const WEIGHT_ASSESS_BIRTH = {y:2008, m:1, d:1};
-// demo 暂不开放「保持」入口，区间卡仍保留代码便于后续打开
 const WEIGHT_ASSESS_MODES = [
   {key:'lose', label:'减重'},
+  {key:'keep', label:'保持'},
   {key:'gain', label:'增重'},
 ];
 const WEIGHT_ASSESS_WHEEL_H = 40;
@@ -1280,11 +1347,10 @@ function WeightAssessPage({open, onClose, onComplete, prefill=false, initialValu
     setBirthYmd(seed?.birthYmd ?? WEIGHT_ASSESS_BIRTH);
     setWeightKg(seed?.weightKg ?? WEIGHT_ASSESS_REC_W);
     setHeightCm(seed?.heightCm ?? WEIGHT_ASSESS_PROF_H);
-    const nextMode = seed?.mode === 'gain' ? 'gain' : 'lose';
-    setMode(nextMode);
+    setMode(seed?.mode ?? 'lose');
     setTargetKg(seed?.targetKg ?? null);
-    setKeepLo(null);
-    setKeepHi(null);
+    setKeepLo(seed?.keepLo ?? null);
+    setKeepHi(seed?.keepHi ?? null);
     setEndYmd(seed?.endYmd ?? null);
     setPickerKey(null);
     setPickerOptions([]);
@@ -2480,6 +2546,8 @@ function WeightGoalKeepProgressCard({onAdjustGoal, sample=false, planGuidePhase=
   const keepLo = Number(goalValues?.keepLo);
   const keepHi = Number(goalValues?.keepHi);
   const displayWt = Number(goalValues?.weightKg ?? WEIGHT_GOAL_CUR);
+  const keptDays = Number(goalValues?.keptDays ?? WEIGHT_KEEP_DEMO_DAYS);
+  const hitPct = Number(goalValues?.hitPct ?? WEIGHT_KEEP_DEMO_HIT_PCT);
   const status = weightKeepStatus(keepLo, keepHi, displayWt);
   const title = '目标进度';
   const cardAction = sample ? onCreatePlan : onAdjustGoal;
@@ -2497,7 +2565,7 @@ function WeightGoalKeepProgressCard({onAdjustGoal, sample=false, planGuidePhase=
         <div className="review-weight-goal-stage-title">
           <h3>{title}</h3>
           <small className={sample ? 'wg-prog-sub is-sample-blur' : 'wg-prog-sub'} aria-hidden={sample || undefined}>
-            保持体重 · 目标区间 {keepLo.toFixed(1)}–{keepHi.toFixed(1)} 公斤
+            已保持 <b className="wg-prog-day">{keptDays}</b> 天
           </small>
         </div>
         {sample ? null : (
@@ -2515,28 +2583,29 @@ function WeightGoalKeepProgressCard({onAdjustGoal, sample=false, planGuidePhase=
         )}
       </header>
       <div className={'review-weight-goal-stage-body wg-prog-body' + (sample ? ' is-sample-body' : '')}>
-        <div className="wg-prog-hero is-keep">
+        <div className="wg-prog-hero">
           <div className="wg-prog-hero-main">
-            <span className="wg-prog-hero-label">当前体重</span>
+            <span className="wg-prog-hero-label">最新记录</span>
             <span className="wg-prog-hero-cur">{displayWt.toFixed(1)}<i>kg</i></span>
             <div className="wg-prog-hero-chips">
               <span className={'wg-prog-chip' + (status.inRange ? ' is-ok' : ' is-behind')}>
-                {status.label}
+                {status.inRange ? '区间内已保持' : status.label} {keptDays}天
               </span>
-              {!status.inRange ? (
-                <span className="wg-prog-chip is-left">{status.detail}</span>
-              ) : (
-                <span className="wg-prog-chip is-left">{keepLo.toFixed(1)}–{keepHi.toFixed(1)} kg</span>
-              )}
+              <span className="wg-prog-chip is-left">{status.detail}</span>
             </div>
           </div>
-          <div className={'wg-keep-status-badge' + (status.inRange ? ' is-in' : ' is-out')} aria-hidden="true">
-            <b>{status.inRange ? '稳' : (status.key === 'high' ? '高' : '低')}</b>
-            <small>{status.inRange ? '区间内' : status.label}</small>
-          </div>
+          <WeightKeepHitRing progress={hitPct}/>
         </div>
 
-        <WeightKeepRangeTrack keepLo={keepLo} keepHi={keepHi} current={displayWt} size="l"/>
+        <div className="wg-prog-track is-keep" aria-hidden="true">
+          <WeightKeepRangeTrack
+            keepLo={keepLo}
+            keepHi={keepHi}
+            current={displayWt}
+            size="l"
+            pad={0.8}
+          />
+        </div>
 
         {sample ? <ReviewSampleMark/> : null}
       </div>

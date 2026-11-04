@@ -14,14 +14,19 @@ function StatusBar({
         <div className="demo-member-switch is-plan-phase" role="group" aria-label="体重目标状态演示切换">
           <button
             type="button"
-            className={planPhase !== 'plan' ? 'is-active' : ''}
+            className={planPhase === 'none' ? 'is-active' : ''}
             onClick={()=>onPlanPhaseChange?.('none')}
           >无目标</button>
           <button
             type="button"
-            className={planPhase === 'plan' ? 'is-active' : ''}
-            onClick={()=>onPlanPhaseChange?.('plan')}
-          >有目标</button>
+            className={planPhase === 'lose' ? 'is-active' : ''}
+            onClick={()=>onPlanPhaseChange?.('lose')}
+          >减重</button>
+          <button
+            type="button"
+            className={planPhase === 'keep' ? 'is-active' : ''}
+            onClick={()=>onPlanPhaseChange?.('keep')}
+          >保持</button>
         </div>
       ) : showMemberSwitch ? (
         <div className="demo-member-switch" role="group" aria-label="会员演示切换">

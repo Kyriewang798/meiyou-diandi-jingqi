@@ -396,6 +396,20 @@ function App(){
   const [weightAssessValues, setWeightAssessValues] = useState(null);
   const [weightGoalPlanSeed, setWeightGoalPlanSeed] = useState(null);
   const goalTimelinePostedRef = useRef(false);
+  const WEIGHT_KEEP_DEMO = {
+    mode: 'keep',
+    weightKg: 48.6,
+    heightCm: 158,
+    targetKg: 48.5,
+    keepLo: 47.5,
+    keepHi: 49.5,
+    keptDays: 28,
+    hitPct: 86,
+    recordCount: 14,
+    inRangeCount: 12,
+    endYmd: null,
+    weeks: null,
+  };
   const [recordLifeMode, setRecordLifeMode] = useState('经期');
   const [reviewShareState, setReviewShareState] = useState(DEFAULT_REVIEW_SHARE_STATE);
   const [partnerPreviewOpen, setPartnerPreviewOpen] = useState(false);
@@ -875,14 +889,21 @@ function App(){
       setWeightAssessValues(null);
       return;
     }
-    // 顶栏「有目标」只演示减重卡，不直达保持
-    if(phase === 'plan'){
+    if(phase === 'keep'){
+      setWeightManagePhase('plan');
+      setWeightAssessValues(WEIGHT_KEEP_DEMO);
+      return;
+    }
+    if(phase === 'lose' || phase === 'plan'){
       setWeightManagePhase('plan');
       setWeightAssessValues(null);
       return;
     }
     setWeightManagePhase(phase);
   };
+  const planDemoPhase = weightManagePhase === 'none'
+    ? 'none'
+    : (weightAssessValues?.mode === 'keep' ? 'keep' : 'lose');
 
   React.useEffect(()=>{
     if(weightManagePhase !== 'plan' && weightManagePhase !== 'goal'){
@@ -2909,7 +2930,7 @@ function App(){
         onPointerDown={handlePhonePointerDown}
       >
         <StatusBar
-          planPhase={weightManagePhase}
+          planPhase={planDemoPhase}
           onPlanPhaseChange={changeWeightManagePhase}
           isMember={isMember}
           onMemberChange={setIsMember}
