@@ -756,6 +756,106 @@ function WeightAssessEntry({onAssess}){
   );
 }
 
+function weightKeepAxis(lo, hi, cur){
+  const loN = Number(lo);
+  const hiN = Number(hi);
+  const curN = Number(cur);
+  const span = Math.max(0.5, hiN - loN);
+  const pad = Math.max(1.2, span * 0.75);
+  const minV = Math.min(loN - pad, curN - 0.4);
+  const maxV = Math.max(hiN + pad, curN + 0.4);
+  const pct = (value)=>{
+    const raw = ((Number(value) - minV) / (maxV - minV)) * 100;
+    return Math.max(3, Math.min(97, raw));
+  };
+  const loPct = pct(loN);
+  const hiPct = pct(hiN);
+  return {
+    loPct,
+    hiPct,
+    curPct: pct(curN),
+    bandWidth: Math.max(6, hiPct - loPct),
+  };
+}
+
+function weightKeepStatus(lo, hi, cur){
+  const current = Number(cur);
+  const low = Number(lo);
+  const high = Number(hi);
+  if(current < low){
+    const delta = Number((low - current).toFixed(1));
+    return { key:'low', label:'偏低', detail:'偏低 ' + delta + ' 公斤', inRange:false, delta };
+  }
+  if(current > high){
+    const delta = Number((current - high).toFixed(1));
+    return { key:'high', label:'偏高', detail:'偏高 ' + delta + ' 公斤', inRange:false, delta };
+  }
+  return { key:'in', label:'区间内', detail:'落在目标区间内', inRange:true, delta:0 };
+}
+
+function WeightKeepArrowIcon(){
+  return (
+    <svg viewBox="0 0 12 14" aria-hidden="true">
+      <path d="M6 13L1.2 5.2h9.6L6 13z"/>
+      <path d="M6 1.2v5.2" fill="none"/>
+    </svg>
+  );
+}
+
+function WeightKeepRangeTrack({ keepLo, keepHi, current, size='m' }){
+  const axis = weightKeepAxis(keepLo, keepHi, current);
+  const status = weightKeepStatus(keepLo, keepHi, current);
+  return (
+    <div
+      className={'review-weight-keep-track is-' + size + (status.inRange ? ' is-in' : ' is-out')}
+      aria-hidden="true"
+    >
+      <div className="review-weight-keep-track-rail">
+        <i
+          className="review-weight-keep-track-band"
+          style={{ left: axis.loPct + '%', width: axis.bandWidth + '%' }}
+        />
+        <span className="review-weight-keep-track-edge is-lo" style={{ left: axis.loPct + '%' }}/>
+        <span className="review-weight-keep-track-edge is-hi" style={{ left: axis.hiPct + '%' }}/>
+        <span
+          className="review-weight-keep-track-arrow"
+          style={{ left: axis.curPct + '%' }}
+        >
+          <WeightKeepArrowIcon/>
+        </span>
+      </div>
+      <div className="review-weight-keep-track-labels">
+        <span className="is-lo" style={{ left: axis.loPct + '%' }}>{Number(keepLo).toFixed(1)}</span>
+        <span className="is-cur" style={{ left: axis.curPct + '%' }}>
+          {Number(current).toFixed(1)}
+        </span>
+        <span className="is-hi" style={{ left: axis.hiPct + '%' }}>{Number(keepHi).toFixed(1)}</span>
+      </div>
+    </div>
+  );
+}
+
+function WeightManageKeepBody({ keepLo, keepHi, current }){
+  const status = weightKeepStatus(keepLo, keepHi, current);
+  return (
+    <div className="review-overview-body is-weight-manage is-keep">
+      <div className="review-overview-metric">
+        <span>保持状态</span>
+        <strong className={status.inRange ? 'is-keep-ok' : 'is-keep-out'}>
+          {status.label}
+        </strong>
+      </div>
+      <div className="review-overview-trend is-weight-manage">
+        <div className="review-overview-trend-label">
+          <span>目标区间</span>
+          <b>{Number(keepLo).toFixed(1)}–{Number(keepHi).toFixed(1)} 公斤</b>
+        </div>
+        <WeightKeepRangeTrack keepLo={keepLo} keepHi={keepHi} current={current} size="s"/>
+      </div>
+    </div>
+  );
+}
+
 function WeightManageProgressBody(){
   const totLost = weightGoalTotLost();
   const progress = weightGoalTotPct();
@@ -802,8 +902,10 @@ function WeightManageProgressBody(){
 }
 
 /** 体重一级卡：有计划展示管理进度；无计划展示趋势。均进入体重详情页 */
-function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight}){
-  const isPlan = phase === 'plan';
+function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight, goalValues=null}){
+  const isPlan = phase === 'plan' || phase === 'goal';
+  const isKeep = isPlan && goalValues?.mode === 'keep' && goalValues?.keepLo != null && goalValues?.keepHi != null;
+  const keepCurrent = Number(goalValues?.weightKg ?? WEIGHT_GOAL_CUR);
   const handleKeyDown = event=>{
     if(!onOpenWeight) return;
     if(event.key === 'Enter' || event.key === ' '){
@@ -812,16 +914,19 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight}){
     }
   };
   const totLost = weightGoalTotLost();
+  const keepStatus = isKeep ? weightKeepStatus(goalValues.keepLo, goalValues.keepHi, keepCurrent) : null;
 
   if(isPlan){
     return (
       <article
-        className={'review-overview-card review-weight-manage-card is-active is-actionable' + (sample ? ' is-sample' : '')}
+        className={'review-overview-card review-weight-manage-card is-active is-actionable' + (isKeep ? ' is-keep' : '') + (sample ? ' is-sample' : '')}
         role={onOpenWeight ? 'button' : undefined}
         tabIndex={onOpenWeight ? 0 : undefined}
         onClick={onOpenWeight}
         onKeyDown={handleKeyDown}
-        aria-label={'体重，累计减重' + totLost + '公斤'}
+        aria-label={isKeep
+          ? ('体重，保持状态' + (keepStatus?.label || ''))
+          : ('体重，累计减重' + totLost + '公斤')}
       >
         <header className="review-overview-head">
           <span className="review-overview-icon is-weight" aria-hidden="true"><ReviewScaleIcon/></span>
@@ -829,7 +934,15 @@ function WeightPeriodOverviewCard({phase='none', sample=false, onOpenWeight}){
           <span className="review-overview-chevron" aria-hidden="true"><ReviewChevron/></span>
         </header>
         <div className={'review-overview-sample-body' + (sample ? ' is-sample-body' : '')}>
-          <WeightManageProgressBody/>
+          {isKeep ? (
+            <WeightManageKeepBody
+              keepLo={goalValues.keepLo}
+              keepHi={goalValues.keepHi}
+              current={keepCurrent}
+            />
+          ) : (
+            <WeightManageProgressBody/>
+          )}
           {sample ? <ReviewSampleMark/> : null}
         </div>
       </article>
@@ -2362,7 +2475,90 @@ function WeightGoalProgressRing({progress}){
   );
 }
 
-function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePhase='none', onCreatePlan}){
+function WeightGoalKeepProgressCard({onAdjustGoal, sample=false, planGuidePhase='none', onCreatePlan, goalValues}){
+  const keepLo = Number(goalValues?.keepLo);
+  const keepHi = Number(goalValues?.keepHi);
+  const displayWt = Number(goalValues?.weightKg ?? WEIGHT_GOAL_CUR);
+  const status = weightKeepStatus(keepLo, keepHi, displayWt);
+  const title = '目标进度';
+  const cardAction = sample ? onCreatePlan : onAdjustGoal;
+  return (
+    <section
+      className={'review-detail-card review-weight-goal-progress-card is-stage wg-prog is-keep' + (sample ? ' is-sample' : '') + (cardAction ? ' is-tappable' : '')}
+      aria-label={(sample ? '示例数据，' : '') + title + '，保持'}
+      role={cardAction ? 'button' : undefined}
+      tabIndex={cardAction ? 0 : undefined}
+      onClick={cardAction || undefined}
+      onKeyDown={cardAction ? (event)=>{ if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); cardAction(); } } : undefined}
+    >
+      <header className="review-weight-goal-stage-head">
+        <span className="review-card-icon is-diet-target" aria-hidden="true"><ReviewDietTargetIcon/></span>
+        <div className="review-weight-goal-stage-title">
+          <h3>{title}</h3>
+          <small className={sample ? 'wg-prog-sub is-sample-blur' : 'wg-prog-sub'} aria-hidden={sample || undefined}>
+            保持体重 · 目标区间 {keepLo.toFixed(1)}–{keepHi.toFixed(1)} 公斤
+          </small>
+        </div>
+        {sample ? null : (
+          <button
+            type="button"
+            className="review-weight-goal-text-action"
+            onClick={(event)=>{
+              event.stopPropagation();
+              onAdjustGoal?.();
+            }}
+          >
+            调整目标
+            <span className="review-weight-goal-text-action-chevron" aria-hidden="true"><ReviewChevron/></span>
+          </button>
+        )}
+      </header>
+      <div className={'review-weight-goal-stage-body wg-prog-body' + (sample ? ' is-sample-body' : '')}>
+        <div className="wg-prog-hero is-keep">
+          <div className="wg-prog-hero-main">
+            <span className="wg-prog-hero-label">当前体重</span>
+            <span className="wg-prog-hero-cur">{displayWt.toFixed(1)}<i>kg</i></span>
+            <div className="wg-prog-hero-chips">
+              <span className={'wg-prog-chip' + (status.inRange ? ' is-ok' : ' is-behind')}>
+                {status.label}
+              </span>
+              {!status.inRange ? (
+                <span className="wg-prog-chip is-left">{status.detail}</span>
+              ) : (
+                <span className="wg-prog-chip is-left">{keepLo.toFixed(1)}–{keepHi.toFixed(1)} kg</span>
+              )}
+            </div>
+          </div>
+          <div className={'wg-keep-status-badge' + (status.inRange ? ' is-in' : ' is-out')} aria-hidden="true">
+            <b>{status.inRange ? '稳' : (status.key === 'high' ? '高' : '低')}</b>
+            <small>{status.inRange ? '区间内' : status.label}</small>
+          </div>
+        </div>
+
+        <WeightKeepRangeTrack keepLo={keepLo} keepHi={keepHi} current={displayWt} size="l"/>
+
+        {sample ? <ReviewSampleMark/> : null}
+      </div>
+      {sample ? (
+        <WeightPlanGuideBanner phase={planGuidePhase} onCreatePlan={onCreatePlan}/>
+      ) : null}
+    </section>
+  );
+}
+
+function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePhase='none', onCreatePlan, goalValues=null}){
+  const isKeep = !sample && goalValues?.mode === 'keep' && goalValues?.keepLo != null && goalValues?.keepHi != null;
+  if(isKeep){
+    return (
+      <WeightGoalKeepProgressCard
+        onAdjustGoal={onAdjustGoal}
+        sample={sample}
+        planGuidePhase={planGuidePhase}
+        onCreatePlan={onCreatePlan}
+        goalValues={goalValues}
+      />
+    );
+  }
   const isAll = weightGoalIsAllTab(range);
   const weekIndex = WEIGHT_GOAL_WEEK_KEYS[range] ?? WEIGHT_GOAL_CURRENT_WEEK;
   const week = WEIGHT_GOAL_WEEK_STATS[weekIndex] || WEIGHT_GOAL_WEEK_STATS[WEIGHT_GOAL_CURRENT_WEEK];
@@ -2378,27 +2574,13 @@ function WeightGoalProgressCard({range, onAdjustGoal, sample=false, planGuidePha
   const dayNo = isAll
     ? WEIGHT_GOAL_PLAN_WEEKS * 7
     : ((isCurrent ? WEIGHT_GOAL_PLAN_WEEKS : (weekIndex + 1)) * 7);
-  const timePct = Math.round(dayNo / totalDays * 100);
-  // 里程碑：每完成 25% 一个
   const milestones = [25, 50, 75].map(pct=>({
     pct,
     wt:Number((WEIGHT_GOAL_START - span * pct / 100).toFixed(1)),
     done:progress >= pct,
   }));
   const nextMs = milestones.find(item=>!item.done);
-  const toNext = nextMs ? Math.max(0.1, Number((displayWt - nextMs.wt).toFixed(1))) : null;
-  // 按当前节奏预估达成日
-  const weeksUsed = Math.max(1, dayNo / 7);
-  const pace = totLost > 0 ? totLost / weeksUsed : 0;
-  const lastTs = (WEIGHT_GOAL_ALL_DAYS[WEIGHT_GOAL_ALL_DAYS.length - 1] || {}).ts || Date.now();
-  const etaWeeks = pace > 0 ? Math.ceil(left / pace) : null;
-  const etaText = etaWeeks != null ? weightGoalFmtMd(lastTs + etaWeeks * 7 * 864e5) : null;
-  const ahead = progress - timePct;
-  const pacing = progress >= 100
-    ? {tone:'is-done', label:'已达成'}
-    : (ahead >= 3 ? {tone:'is-ahead', label:'领先计划'} : (ahead >= -5 ? {tone:'is-ok', label:'节奏正常'} : {tone:'is-behind', label:'稍慢一点'}));
   const title = '目标进度';
-  // 整卡热区：示例态 → 制定目标；有目标 → 调整目标（同一个目标体重制定页）
   const cardAction = sample ? onCreatePlan : onAdjustGoal;
   return (
     <section
@@ -3938,6 +4120,7 @@ function WeightGoalDetailPage({open, onClose, onAssess, onUpgrade, onGoCheckIn, 
 function ReviewPeriodOverview({
   cycleUpdated,
   weightManagePhase='none',
+  weightGoalValues=null,
   isSample=false,
   onOpenCycle,
   onOpenWeight,
@@ -3970,6 +4153,7 @@ function ReviewPeriodOverview({
         phase={weightManagePhase}
         sample={isSample}
         onOpenWeight={onOpenWeight}
+        goalValues={weightGoalValues}
       />
       <ReviewOverviewCard
         title="心情"
@@ -6069,7 +6253,7 @@ function WeightCycleCombinedCard({onExpand, showCompare = true, showPhase = true
   );
 }
 
-function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, onOpenDietSport, showCycle=false}){
+function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreatePlan, onAdjustGoal, onOpenTrend, onOpenDietSport, showCycle=false, goalValues=null}){
   // none：示例进度；goal/plan：真实目标进度（点滴「查看完整目标进度」进二级页可见）
   const showGoalSample = planGuidePhase === 'none';
   const showGoalCard = showGoalSample || planGuidePhase === 'goal' || planGuidePhase === 'plan';
@@ -6083,6 +6267,7 @@ function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreate
           planGuidePhase={planGuidePhase}
           onCreatePlan={onCreatePlan}
           onAdjustGoal={showGoalSample ? undefined : (onAdjustGoal || onCreatePlan)}
+          goalValues={goalValues}
         />
       ) : null}
       <WeightTrendSummary
@@ -6156,7 +6341,7 @@ function WeightTrendDetailPage({open, onClose, onExpandPhase}){
   );
 }
 
-function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, onAdjustGoal}){
+function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, onAdjustGoal, goalValues=null}){
   const [phaseLandscapeOpen, setPhaseLandscapeOpen] = React.useState(false);
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
   const [goalRecordsOpen, setGoalRecordsOpen] = React.useState(false);
@@ -6192,6 +6377,7 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, o
           onAdjustGoal={onAdjustGoal}
           onOpenTrend={()=>setTrendDetailOpen(true)}
           onOpenDietSport={()=>setGoalRecordsOpen(true)}
+          goalValues={goalValues}
         />
       </div>
     </section>
@@ -17789,7 +17975,7 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, weightAssessValues=null, onWeightAssessValuesChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
@@ -17802,7 +17988,6 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
   const lastWeightGoalDetailReqRef = React.useRef(openWeightGoalDetailRequest > 0 ? openWeightGoalDetailRequest : 0);
   const [weightAssessOpen, setWeightAssessOpen] = useState(false);
   const [weightAssessPrefill, setWeightAssessPrefill] = useState(false);
-  const [weightAssessValues, setWeightAssessValues] = useState(null);
   const [weightDeepAssessOpen, setWeightDeepAssessOpen] = useState(false);
   const [stoolDetailOpen, setStoolDetailOpen] = useState(false);
   const [loveDetailOpen, setLoveDetailOpen] = useState(false);
@@ -17869,6 +18054,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         <ReviewPeriodOverview
           cycleUpdated={cycleUpdated}
           weightManagePhase={weightManagePhase}
+          weightGoalValues={weightAssessValues}
           isSample={false}
           onOpenCycle={()=>{
             setCycleUpdated(false);
@@ -17970,6 +18156,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <WeightDetailPage
         open={weightDetailOpen}
         planGuidePhase={weightManagePhase}
+        goalValues={weightAssessValues}
         onCreatePlan={()=>{
           setWeightAssessPrefill(false);
           setWeightAssessOpen(true);
@@ -18007,7 +18194,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
         initialValues={weightAssessValues}
         onClose={()=>setWeightAssessOpen(false)}
         onComplete={(data)=>{
-          setWeightAssessValues(data || null);
+          onWeightAssessValuesChange?.(data || null);
           setWeightAssessOpen(false);
           onWeightManageChange?.('plan');
           setWeightDetailOpen(true);

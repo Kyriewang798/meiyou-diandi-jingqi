@@ -393,8 +393,29 @@ function App(){
   const [reviewMoodReturnTab, setReviewMoodReturnTab] = useState(null);
   const [isMember, setIsMember] = useState(false);
   const [weightManagePhase, setWeightManagePhase] = useState('none');
+  const [weightAssessValues, setWeightAssessValues] = useState(null);
   const [weightGoalPlanSeed, setWeightGoalPlanSeed] = useState(null);
   const goalTimelinePostedRef = useRef(false);
+  const WEIGHT_LOSE_DEMO = {
+    mode: 'lose',
+    weightKg: 48.6,
+    heightCm: 158,
+    targetKg: 45,
+    keepLo: null,
+    keepHi: null,
+    endYmd: { y: 2026, m: 12, d: 29 },
+    weeks: 8,
+  };
+  const WEIGHT_KEEP_DEMO = {
+    mode: 'keep',
+    weightKg: 48.6,
+    heightCm: 158,
+    targetKg: 48.5,
+    keepLo: 47.5,
+    keepHi: 49.5,
+    endYmd: null,
+    weeks: null,
+  };
   const [recordLifeMode, setRecordLifeMode] = useState('经期');
   const [reviewShareState, setReviewShareState] = useState(DEFAULT_REVIEW_SHARE_STATE);
   const [partnerPreviewOpen, setPartnerPreviewOpen] = useState(false);
@@ -869,8 +890,27 @@ function App(){
   };
 
   const changeWeightManagePhase = (phase)=>{
+    if(phase === 'none'){
+      setWeightManagePhase('none');
+      setWeightAssessValues(null);
+      return;
+    }
+    if(phase === 'keep'){
+      setWeightManagePhase('plan');
+      setWeightAssessValues(WEIGHT_KEEP_DEMO);
+      return;
+    }
+    if(phase === 'lose'){
+      setWeightManagePhase('plan');
+      setWeightAssessValues(WEIGHT_LOSE_DEMO);
+      return;
+    }
+    // plan / goal：来自评估完成或记录 tab，不覆盖已有 assess 值
     setWeightManagePhase(phase);
   };
+  const planDemoPhase = weightManagePhase === 'none'
+    ? 'none'
+    : (weightAssessValues?.mode === 'keep' ? 'keep' : 'lose');
 
   React.useEffect(()=>{
     if(weightManagePhase !== 'plan' && weightManagePhase !== 'goal'){
@@ -2897,7 +2937,7 @@ function App(){
         onPointerDown={handlePhonePointerDown}
       >
         <StatusBar
-          planPhase={weightManagePhase}
+          planPhase={planDemoPhase}
           onPlanPhaseChange={changeWeightManagePhase}
           isMember={isMember}
           onMemberChange={setIsMember}
@@ -2986,6 +3026,8 @@ function App(){
           onMemberChange={setIsMember}
           weightManagePhase={weightManagePhase}
           onWeightManageChange={changeWeightManagePhase}
+          weightAssessValues={weightAssessValues}
+          onWeightAssessValuesChange={setWeightAssessValues}
           openCycleDetailRequest={reviewCycleOpenRequest}
           onCycleDetailRequestHandled={()=>setReviewCycleOpenRequest(0)}
           onCycleDetailReturn={()=>{
