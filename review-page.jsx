@@ -892,7 +892,7 @@ function WeightManageKeepBody({ keepLo, keepHi, current, keptDays=WEIGHT_KEEP_DE
 
 function WeightKeepHitRing({ progress }){
   const pct = Math.max(0, Math.min(100, Number(progress) || 0));
-  const r = 34;
+  const r = 39;
   const c = 2 * Math.PI * r;
   const dash = (pct / 100) * c;
   return (
@@ -2591,7 +2591,6 @@ function WeightGoalKeepProgressCard({onAdjustGoal, sample=false, planGuidePhase=
               <span className={'wg-prog-chip' + (status.inRange ? ' is-ok' : ' is-behind')}>
                 {status.inRange ? '区间内已保持' : status.label} {keptDays}天
               </span>
-              <span className="wg-prog-chip is-left">{status.detail}</span>
             </div>
           </div>
           <WeightKeepHitRing progress={hitPct}/>
