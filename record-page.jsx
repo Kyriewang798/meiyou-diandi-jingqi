@@ -43,12 +43,14 @@ const ICON_TODAY = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIH
 const ICON_YELLOW_BARS = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTUgMi41QzUgMS45NDc3MiA1LjQ0NzcyIDEuNSA2IDEuNUM2LjU1MjI4IDEuNSA3IDEuOTQ3NzIgNyAyLjVWOS41QzcgMTAuMDUyMyA2LjU1MjI4IDEwLjUgNiAxMC41QzUuNDQ3NzIgMTAuNSA1IDEwLjA1MjMgNSA5LjVWMi41WiIgZmlsbD0iI2ZmZDkxOSIvPjxwYXRoIGQ9Ik04LjI1IDQuNjI1QzguMjUgNC4wNzI3MiA4LjY5NzcyIDMuNjI1IDkuMjUgMy42MjVDOS44MDIyOCAzLjYyNSAxMC4yNSA0LjA3MjcyIDEwLjI1IDQuNjI1VjkuNUMxMC4yNSAxMC4wNTIzIDkuODAyMjggMTAuNSA5LjI1IDEwLjVDOC42OTc3MiAxMC41IDguMjUgMTAuMDUyMyA4LjI1IDkuNVY0LjYyNVoiIGZpbGw9IiNmZmQ5MTkiLz48cGF0aCBkPSJNMS43NSA1Ljg3NUMxLjc1IDUuMzIyNzIgMi4xOTc3MiA0Ljg3NSAyLjc1IDQuODc1QzMuMzAyMjggNC44NzUgMy43NSA1LjMyMjcyIDMuNzUgNS44NzVWOS41QzMuNzUgMTAuMDUyMyAzLjMwMjI4IDEwLjUgMi43NSAxMC41QzIuMTk3NzIgMTAuNSAxLjc1IDEwLjA1MjMgMS43NSA5LjVWNS44NzVaIiBmaWxsPSIjZmZkOTE5Ii8+PC9zdmc+';
 const ICON_DISCHARGE_DROP = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTYgMS44QzcuNiA0IDkgNi4xIDkgOC4xQTkgMy4yIDAgMCAxIDYgMTEuMkE5IDMuMiAwIDAgMSAzIDguMUMzIDYuMSA0LjQgNCA2IDEuOHoiIGZpbGw9IiM5REQzRkYiLz48L3N2Zz4=';
 const ICON_FLAG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none"><path d="M3.2 1.2v9.6" stroke="#ff4d88" stroke-width="1.3" stroke-linecap="round"/><path d="M3.85 1.45h5.1l-1.35 1.95 1.35 1.95H3.85V1.45z" fill="#ff4d88"/></svg>');
+const ICON_PLAN_CHECK = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none"><rect x="1.2" y="1.2" width="9.6" height="9.6" rx="2.2" fill="#5B9CFF"/><path d="M3.5 6.1l1.7 1.7 3.3-3.4" stroke="#fff" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 const ICON_GOAL_TARGET = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="1.5" y="1.5" width="21" height="21" rx="5.5" fill="#FFB078"/><circle cx="12" cy="12" r="4.6" stroke="#fff" stroke-width="1.4"/><circle cx="12" cy="12" r="1.7" fill="#fff"/><path d="M12 5.8v1.4M12 16.8v1.4M5.8 12h1.4M16.8 12h1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>');
 
 const YELLOW_MARK_ICONS = {
   bars: ICON_YELLOW_BARS,
   discharge: ICON_DISCHARGE_DROP,
   flag: ICON_FLAG,
+  plan: ICON_PLAN_CHECK,
 };
 
 // business-record-calendar（kit-519 + 分散记录图标）
@@ -3790,6 +3792,9 @@ function RecordPage({
                   const dayMarks = displayDay?.marks ? [...displayDay.marks] : [];
                   if (displayDay?.n && goalByDay[displayDay.n] && !dayMarks.includes('flag')) {
                     dayMarks.push('flag');
+                  }
+                  if (displayDay?.n && planByDay[displayDay.n] && !dayMarks.includes('plan')) {
+                    dayMarks.push('plan');
                   }
                   return (
                     <CalendarDayButton
