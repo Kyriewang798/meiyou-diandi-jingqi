@@ -259,30 +259,62 @@ function QuickWeightPicker({ onSubmit, onCancel, title = '体重' }){
 }
 
 /* ============ 运动 picker（今日计划打卡 / 快捷记录） ============ */
+/* activity_type + duration(min) + distance(km)；不记录热量 */
 const QUICK_EXERCISE_TYPES = [
-  { id:'walk', label:'快走', emoji:'🚶‍♀️', kcalPerMin:4 },
-  { id:'run', label:'跑步', emoji:'🏃‍♀️', kcalPerMin:9 },
-  { id:'hiit', label:'燃脂操', emoji:'🔥', kcalPerMin:7.5 },
-  { id:'yoga', label:'瑜伽', emoji:'🧘‍♀️', kcalPerMin:3 },
-  { id:'cycle', label:'骑行', emoji:'🚴‍♀️', kcalPerMin:6 },
-  { id:'rope', label:'跳绳', emoji:'🪢', kcalPerMin:10 },
-  { id:'swim', label:'游泳', emoji:'🏊‍♀️', kcalPerMin:8 },
-  { id:'strength', label:'力量训练', emoji:'🏋️‍♀️', kcalPerMin:5 },
+  { id:'walk', label:'走路', hasDistance:true },
+  { id:'jog', label:'慢跑', hasDistance:true },
+  { id:'run', label:'跑步', hasDistance:true },
+  { id:'swim', label:'游泳', hasDistance:true },
+  { id:'cycle', label:'骑行', hasDistance:true },
+  { id:'badminton', label:'羽毛球' },
+  { id:'rope', label:'跳绳' },
+  { id:'yoga', label:'瑜伽' },
+  { id:'pilates', label:'普拉提' },
+  { id:'fitness', label:'健身' },
+  { id:'strength', label:'力量训练' },
+  { id:'stretch', label:'拉伸' },
+  { id:'hike', label:'爬山', hasDistance:true },
+  { id:'dance', label:'舞蹈' },
+  { id:'baduanjin', label:'八段锦' },
 ];
 const QUICK_EXERCISE_MINUTES = [10, 20, 30, 45, 60, 90];
+const QUICK_EXERCISE_DISTANCES = [1, 2, 3, 5, 8, 10];
 
-function estimateExerciseKcal(typeId, minutes){
-  const type = QUICK_EXERCISE_TYPES.find(t=>t.id === typeId) || QUICK_EXERCISE_TYPES[0];
-  return Math.round(type.kcalPerMin * minutes / 5) * 5;
+function formatExerciseSummary({ label, minutes, distance }){
+  const parts = [label];
+  if(minutes != null && minutes > 0) parts.push(`${minutes} 分钟`);
+  if(distance != null && distance > 0) parts.push(`${distance} 公里`);
+  return parts.join(' · ');
 }
 
 function QuickExercisePicker({ onSubmit, onCancel, preset = null }){
   const [typeId, setTypeId] = React.useState(preset?.type || 'walk');
   const [minutes, setMinutes] = React.useState(preset?.minutes || 30);
+  const [distance, setDistance] = React.useState(
+    preset?.distance != null ? preset.distance : 2
+  );
   const type = QUICK_EXERCISE_TYPES.find(t=>t.id === typeId) || QUICK_EXERCISE_TYPES[0];
-  const kcal = estimateExerciseKcal(typeId, minutes);
-  const step = (delta)=>setMinutes(m=>Math.max(5, Math.min(180, m + delta)));
-  const submit = ()=>onSubmit?.({ type:type.id, label:type.label, emoji:type.emoji, minutes, kcal });
+  const stepMin = (delta)=>setMinutes(m=>Math.max(5, Math.min(180, m + delta)));
+  const stepKm = (delta)=>setDistance(d=>{
+    const next = Math.round((d + delta) * 10) / 10;
+    return Math.max(0.5, Math.min(50, next));
+  });
+  const selectType = (id)=>{
+    setTypeId(id);
+    const next = QUICK_EXERCISE_TYPES.find(t=>t.id === id);
+    if(next?.hasDistance && !(distance > 0)) setDistance(2);
+  };
+  const submit = ()=>{
+    const dist = type.hasDistance ? distance : null;
+    onSubmit?.({
+      activity_type:type.label,
+      type:type.id,
+      label:type.label,
+      duration:minutes,
+      minutes,
+      distance:dist,
+    });
+  };
   return (
     <div className="weight-keypad-sheet exercise-picker-sheet" role="dialog" aria-modal="true" aria-label="运动">
       <button type="button" className="weight-keypad-sheet-mask" aria-label="关闭" onClick={onCancel}/>
@@ -302,9 +334,8 @@ function QuickExercisePicker({ onSubmit, onCancel, preset = null }){
                 role="radio"
                 aria-checked={item.id === typeId}
                 className={'exercise-picker-type' + (item.id === typeId ? ' is-on' : '')}
-                onClick={()=>setTypeId(item.id)}
+                onClick={()=>selectType(item.id)}
               >
-                <span className="exercise-picker-type-emoji" aria-hidden="true">{item.emoji}</span>
                 <span>{item.label}</span>
               </button>
             ))}
@@ -313,9 +344,9 @@ function QuickExercisePicker({ onSubmit, onCancel, preset = null }){
         <div className="exercise-picker-block">
           <div className="exercise-picker-label">时长</div>
           <div className="exercise-picker-stepper">
-            <button type="button" aria-label="减少 5 分钟" onClick={()=>step(-5)} disabled={minutes <= 5}>−</button>
+            <button type="button" aria-label="减少 5 分钟" onClick={()=>stepMin(-5)} disabled={minutes <= 5}>−</button>
             <div className="exercise-picker-minutes"><b>{minutes}</b><span>分钟</span></div>
-            <button type="button" aria-label="增加 5 分钟" onClick={()=>step(5)} disabled={minutes >= 180}>+</button>
+            <button type="button" aria-label="增加 5 分钟" onClick={()=>stepMin(5)} disabled={minutes >= 180}>+</button>
           </div>
           <div className="exercise-picker-chips">
             {QUICK_EXERCISE_MINUTES.map(m=>(
@@ -329,17 +360,41 @@ function QuickExercisePicker({ onSubmit, onCancel, preset = null }){
               </button>
             ))}
           </div>
-          <div className="exercise-picker-estimate">预计消耗约 <b>{kcal}</b> 千卡</div>
         </div>
+        {type.hasDistance ? (
+          <div className="exercise-picker-block">
+            <div className="exercise-picker-label">距离</div>
+            <div className="exercise-picker-stepper">
+              <button type="button" aria-label="减少 0.5 公里" onClick={()=>stepKm(-0.5)} disabled={distance <= 0.5}>−</button>
+              <div className="exercise-picker-minutes"><b>{distance}</b><span>公里</span></div>
+              <button type="button" aria-label="增加 0.5 公里" onClick={()=>stepKm(0.5)} disabled={distance >= 50}>+</button>
+            </div>
+            <div className="exercise-picker-chips">
+              {QUICK_EXERCISE_DISTANCES.map(km=>(
+                <button
+                  key={km}
+                  type="button"
+                  className={'exercise-picker-chip' + (km === distance ? ' is-on' : '')}
+                  onClick={()=>setDistance(km)}
+                >
+                  {km} 公里
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function createExerciseRecordEntry({ label, minutes, kcal }){
+function createExerciseRecordEntry({ label, activity_type, minutes, duration, distance }){
   const gid = 'e-ex-' + Date.now();
   const time = window.formatNowTime();
-  const riceBowls = Math.max(0.5, Math.round(kcal / 116 * 2) / 2);
+  const name = activity_type || label;
+  const mins = duration != null ? duration : minutes;
+  const summary = formatExerciseSummary({ label:name, minutes:mins, distance });
+  const distHint = distance != null && distance > 0 ? `，距离约 ${distance} 公里` : '';
   return {
     kind:'record-group',
     id:gid + '-g',
@@ -348,12 +403,15 @@ function createExerciseRecordEntry({ label, minutes, kcal }){
       id:gid,
       time,
       kind:'text',
-      text:`${label} ${minutes} 分钟，消耗约 ${kcal} 千卡`,
+      text:summary,
       tags:[{ cat:'运动', icon:'run' }],
+      activity_type:name,
+      duration:mins,
+      distance:distance != null && distance > 0 ? distance : null,
     },
     ai:{
       title:'AI 分析',
-      note:`这次${label}约消耗 ${kcal} 千卡，差不多抵掉 ${riceBowls} 碗米饭。饭后 1 小时内动一动，对平稳餐后血糖也有帮助。`,
+      note:`这次${name}持续了 ${mins} 分钟${distHint}。饭后 1 小时内动一动，对平稳餐后血糖也有帮助。`,
     },
     aiDefaultOpen:true,
   };
@@ -1098,7 +1156,7 @@ Object.assign(window, {
   QuickWeightPicker,
   QuickExercisePicker,
   createExerciseRecordEntry,
-  estimateExerciseKcal,
+  formatExerciseSummary,
   QuickFoodPicker,
   QUICK_FOOD_OPTIONS,
   createFoodRecordEntry,

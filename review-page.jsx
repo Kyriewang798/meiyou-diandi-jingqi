@@ -925,8 +925,6 @@ function WeightKeepHitRing({ progress }){
 function WeightManageProgressBody(){
   const totLost = weightGoalTotLost();
   const progress = weightGoalTotPct();
-  const dayNo = WEIGHT_GOAL_PLAN_WEEKS * 7;
-  const totalDays = WEIGHT_GOAL_EST_WEEKS * 7;
   const markerLeft = Math.max(4, Math.min(96, progress));
   const remainDots = [25, 50, 75].filter(pos=>Math.abs(pos - progress) >= 8);
   return (
@@ -940,8 +938,8 @@ function WeightManageProgressBody(){
       </div>
       <div className="review-overview-trend is-weight-manage">
         <div className="review-overview-trend-label">
-          <span>第{dayNo}天</span>
-          <b>/ {totalDays}天</b>
+          <span>减重进度</span>
+          <b className="review-overview-trend-pct">{progress}%</b>
         </div>
         <div className="review-weight-manage-track" aria-hidden="true">
           <div className="review-weight-manage-track-rail">
@@ -2050,7 +2048,14 @@ function weightGoalTotPct(){
 const WEIGHT_GOAL_BREAKFAST = ['oat','egg','corn','noodle'];
 const WEIGHT_GOAL_LUNCH = ['rice','shrimp','beef','fish','noodle','hotpot'];
 const WEIGHT_GOAL_DINNER = ['salad','tofu','fish','rice','shrimp'];
-const WEIGHT_GOAL_EXERCISES = [['快走',30,130],['瑜伽',40,120],['力量',30,180],['跑步',30,260],['骑行',40,200]];
+/* [activity_type, duration(min), distance(km)|null] — 不存热量 */
+const WEIGHT_GOAL_EXERCISES = [
+  ['走路',30,2.5],
+  ['瑜伽',40,null],
+  ['力量训练',30,null],
+  ['跑步',30,5],
+  ['骑行',40,12],
+];
 const WEIGHT_GOAL_WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
 
 function weightGoalPad(n){ return String(n).padStart(2, '0'); }
@@ -2108,13 +2113,13 @@ const WEIGHT_GOAL_ALL_DAYS = (()=>{
     });
   }
   const fix = [
-    {wt:49.6, meals:[['oat',380],['shrimp',620],['salad',520]], sn:['fruit',230], ex:['快走',30,130]},
+    {wt:49.6, meals:[['oat',380],['shrimp',620],['salad',520]], sn:['fruit',230], ex:['走路',30,2.5]},
     {wt:49.4, meals:[['egg',320], null, null], sn:null, ex:null},
-    {wt:49.1, meals:[['corn',350],['rice',640],['fish',560]], sn:['fruit',140], ex:['快走',30,130]},
-    {wt:49.3, meals:[['noodle',420],['beef',780],['salad',480]], sn:['fruit',140], ex:['力量',30,180]},
-    {wt:49.1, meals:[['oat',360],['hotpot',1020], null], sn:null, ex:['快走',20,90]},
-    {wt:48.8, meals:[['egg',410],['shrimp',760],['tofu',690]], sn:['fruit',190], ex:['瑜伽',40,120]},
-    {wt:48.6, meals:[['corn',340],['rice',600],['salad',520]], sn:['fruit',250], ex:['快走',30,130]},
+    {wt:49.1, meals:[['corn',350],['rice',640],['fish',560]], sn:['fruit',140], ex:['走路',30,2.5]},
+    {wt:49.3, meals:[['noodle',420],['beef',780],['salad',480]], sn:['fruit',140], ex:['力量训练',30,null]},
+    {wt:49.1, meals:[['oat',360],['hotpot',1020], null], sn:null, ex:['走路',20,1.5]},
+    {wt:48.8, meals:[['egg',410],['shrimp',760],['tofu',690]], sn:['fruit',190], ex:['瑜伽',40,null]},
+    {wt:48.6, meals:[['corn',340],['rice',600],['salad',520]], sn:['fruit',250], ex:['走路',30,2.5]},
   ];
   fix.forEach((item, index)=>Object.assign(days[count - 7 + index], item));
   const periodStart = (Date.UTC(2026, 4, 19) - START) / 864e5;
@@ -2123,7 +2128,7 @@ const WEIGHT_GOAL_ALL_DAYS = (()=>{
     day.idx = index;
     day.n = day.meals.filter(Boolean).length;
     day.in = day.meals.reduce((sum, meal)=>sum + (meal ? meal[1] : 0), 0) + (day.sn ? day.sn[1] : 0);
-    day.burn = day.ex ? day.ex[2] : 0;
+    day.burn = 0;
     day.st = day.n === 0
       ? 'none'
       : (day.in > WEIGHT_GOAL_KCAL_HIGH ? 'over' : 'ok');
@@ -3254,7 +3259,7 @@ function weightGoalTrendInsights(summary, range){
   }
   if(change < 0){
     return {
-      combined: <>{label}体重下降 {Math.abs(change).toFixed(1)}kg，日均摄入约 {summary.intake} kcal，运动消耗约 {summary.burn} kcal，整体处于<b>可控减重节奏</b>。保持当前饮食结构，晚饭后维持<b>快走</b>；周末少一份<b>高热量加餐</b>，并继续完整记录三餐。</>,
+      combined: <>{label}体重下降 {Math.abs(change).toFixed(1)}kg，日均摄入约 {summary.intake} kcal，整体处于<b>可控减重节奏</b>。保持当前饮食结构，晚饭后维持<b>走路</b>；周末少一份<b>高热量加餐</b>，并继续完整记录三餐。</>,
     };
   }
   if(change > 0){
@@ -3263,7 +3268,7 @@ function weightGoalTrendInsights(summary, range){
     };
   }
   return {
-    combined: <>{label}体重基本持平，日均摄入约 {summary.intake} kcal，运动消耗约 {summary.burn} kcal，波动仍在正常范围。可小幅增加日常<b>步数</b>，或把一餐主食换成更多<b>蔬菜与优质蛋白</b>，推动缓慢下降。</>,
+    combined: <>{label}体重基本持平，日均摄入约 {summary.intake} kcal，波动仍在正常范围。可小幅增加日常<b>步数</b>，或把一餐主食换成更多<b>蔬菜与优质蛋白</b>，推动缓慢下降。</>,
   };
 }
 
@@ -3469,10 +3474,10 @@ function weightFluctCauses(day, prev, prev2){
   }else if(cd >= 22){
     causes.push({key:'period', ev:<>处在<b>黄体期</b>，离下次月经约 {29 - cd} 天</>});
   }
-  if(prev?.ex && (prev.ex[0] === '力量' || prev.ex[2] >= 180)){
+  if(prev?.ex && (prev.ex[0] === '力量训练' || prev.ex[0] === '力量')){
     causes.push({key:'exercise', ev:<>前一天做了<b>{prev.ex[0]} {prev.ex[1]} 分钟</b></>});
-  }else if(day.ex && day.ex[0] === '力量'){
-    causes.push({key:'exercise', ev:<>当天做了<b>{day.ex[0]}训练</b>，肌肉在修复</>});
+  }else if(day.ex && (day.ex[0] === '力量训练' || day.ex[0] === '力量')){
+    causes.push({key:'exercise', ev:<>当天做了<b>{day.ex[0]}</b>，肌肉在修复</>});
   }
   if(prev && prev.st === 'low' && prevFoods.includes('salad')){
     causes.push({key:'volume', ev:<>前一天热量不高，但<b>蔬菜沙拉</b>分量足</>});
@@ -3858,7 +3863,15 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, compact = false
                   ))}
                 </div>
                 <div className={'wg-sheet-cell wg-sheet-col-ex' + (day.ex ? '' : ' is-empty')}>
-                  {day.ex ? <><b>{day.burn}</b><small>{day.ex[0]} {day.ex[1]}′</small></> : <small>—</small>}
+                  {day.ex ? (
+                    <>
+                      <b>{day.ex[0]}</b>
+                      <small>
+                        {day.ex[1]}′
+                        {day.ex[2] != null ? ` · ${day.ex[2]}km` : ''}
+                      </small>
+                    </>
+                  ) : <small>—</small>}
                 </div>
               </div>
             </React.Fragment>

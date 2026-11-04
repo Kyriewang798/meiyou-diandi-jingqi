@@ -3314,8 +3314,11 @@
   line-height:26px;
   white-space:nowrap;
 }
-.review-overview-trend-label b{
+.review-overview-trend-label b,
+.review-overview-trend-pct{
   font-weight:500;
+  color:rgba(0,0,0,0.8);
+  font-variant-numeric:tabular-nums;
 }
 .review-overview-chart{
   width:100%;

@@ -49,11 +49,10 @@
 .exercise-picker-label{ font-size:13px; color:rgba(0,0,0,.45); margin-bottom:10px; }
 .exercise-picker-types{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
 .exercise-picker-type{
-  appearance:none; border:1px solid transparent; background:#f7f7f9; border-radius:10px;
-  padding:8px 0 7px; display:flex; flex-direction:column; align-items:center; gap:3px;
-  font:inherit; font-size:12px; color:rgba(0,0,0,.7); cursor:pointer;
+  appearance:none; border:1px solid transparent; background:#f7f7f9; border-radius:8px;
+  padding:10px 4px; display:flex; align-items:center; justify-content:center;
+  font:inherit; font-size:12px; line-height:1.29; color:rgba(0,0,0,.7); cursor:pointer;
 }
-.exercise-picker-type-emoji{ font-size:22px; line-height:26px; }
 .exercise-picker-type.is-on{ background:#fff0f5; border-color:#ff4d88; color:#ff4d88; font-weight:500; }
 .exercise-picker-stepper{ display:flex; align-items:center; justify-content:center; gap:24px; margin:2px 0 12px; }
 .exercise-picker-stepper button{
