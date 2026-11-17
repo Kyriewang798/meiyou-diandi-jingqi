@@ -778,11 +778,12 @@ function ChartDailyGoal({data}){
 
 function WeightAnalysisNote({ noteParts, note }){
   if(noteParts){
+    const emClass = noteParts.emClass || 'is-down';
     return (
       <div className="v3-weight-curve-note">
         {noteParts.prefix}
         {noteParts.delta ? (
-          <span className={noteParts.emphasize ? 'is-down' : undefined}>{noteParts.delta}</span>
+          <span className={noteParts.emphasize ? emClass : undefined}>{noteParts.delta}</span>
         ) : null}
         {noteParts.tail}
       </div>
@@ -944,6 +945,10 @@ function DietCalorieReviewEntry(){
 
 function MoodTrendReviewEntry(){
   return <TimelineReviewEntry label="查看近30天心情变化趋势" eventName="openReviewMoodDetail"/>;
+}
+
+function SymptomTrendReviewEntry(){
+  return <TimelineReviewEntry label="查看症状趋势，发现身体规律" eventName="openReviewSymptomDetail"/>;
 }
 
 function ChartSymptomDots({data}){
@@ -1894,6 +1899,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
     a?.chartType === 'weightGoalProgress' ? <WeightGoalProgressReviewEntry/> :
     a?.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> :
     a?.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> :
+    a?.chartType === 'symptomDots' ? <SymptomTrendReviewEntry/> :
     (planCtx && window.PlanCheckInFeedback ? <window.PlanCheckInFeedback/> : null);
 
   return (
@@ -1929,7 +1935,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
       {a && showAi && (() => {
         const DietAiCollapsibleSection = window.DietAiCollapsibleSection;
         const TypewriterText = window.TypewriterText;
-        const streamNote = isNew && a.chartType === 'symptomDots' && a.note && TypewriterText;
+        const streamNote = isNew && a.chartType === 'symptomDots' && a.note && !a.noteParts && TypewriterText;
         const noteBlock = renderAiNote(streamNote, TypewriterText);
         const chartBlock = renderAiChart();
         const body = a.noteFirst
@@ -1976,6 +1982,7 @@ function V3v2Card({primary, ai, aiDefaultOpen = false, isNew, staggerReveal = fa
                 {a.chartType === 'weightGoalProgress' ? <WeightGoalProgressReviewEntry/> : null}
                 {a.chartType === 'weightTrend' ? <WeightTrendReviewEntry/> : null}
                 {a.chartType === 'caloriePanel' ? <DietCalorieReviewEntry/> : null}
+                {a.chartType === 'symptomDots' ? <SymptomTrendReviewEntry/> : null}
               </div>
             )}
           </div>
@@ -2004,4 +2011,5 @@ function V3RecordGroupCard({group, isNew}){
 Object.assign(window, {
   V3RecordGroupCard, V3v2Card, V3v2PrimaryBody, V3v2Header, TLChart, TLTag, ChartCaloriePanel,
   TimelineReviewEntry, WeightTrendReviewEntry, DietCalorieReviewEntry, MoodTrendReviewEntry,
+  SymptomTrendReviewEntry,
 });

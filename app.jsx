@@ -391,6 +391,8 @@ function App(){
   const [reviewDietReturnTab, setReviewDietReturnTab] = useState(null);
   const [reviewMoodOpenRequest, setReviewMoodOpenRequest] = useState(0);
   const [reviewMoodReturnTab, setReviewMoodReturnTab] = useState(null);
+  const [reviewSymptomOpenRequest, setReviewSymptomOpenRequest] = useState(0);
+  const [reviewSymptomReturnTab, setReviewSymptomReturnTab] = useState(null);
   const [isMember, setIsMember] = useState(false);
   const [weightManagePhase, setWeightManagePhase] = useState('none');
   const [weightAssessValues, setWeightAssessValues] = useState(null);
@@ -488,17 +490,24 @@ function App(){
       setReviewMoodReturnTab('note');
       setActiveTab('cash');
     };
+    const handleOpenReviewSymptom = ()=>{
+      setReviewSymptomOpenRequest(request=>request + 1);
+      setReviewSymptomReturnTab('note');
+      setActiveTab('cash');
+    };
     window.addEventListener('openReviewCycleDetail', handleOpenReviewCycle);
     window.addEventListener('openReviewWeightDetail', handleOpenReviewWeight);
     window.addEventListener('openReviewWeightGoalDetail', handleOpenReviewWeightGoal);
     window.addEventListener('openReviewDietDetail', handleOpenReviewDiet);
     window.addEventListener('openReviewMoodDetail', handleOpenReviewMood);
+    window.addEventListener('openReviewSymptomDetail', handleOpenReviewSymptom);
     return ()=>{
       window.removeEventListener('openReviewCycleDetail', handleOpenReviewCycle);
       window.removeEventListener('openReviewWeightDetail', handleOpenReviewWeight);
       window.removeEventListener('openReviewWeightGoalDetail', handleOpenReviewWeightGoal);
       window.removeEventListener('openReviewDietDetail', handleOpenReviewDiet);
       window.removeEventListener('openReviewMoodDetail', handleOpenReviewMood);
+      window.removeEventListener('openReviewSymptomDetail', handleOpenReviewSymptom);
     };
   }, []);
 
@@ -3067,6 +3076,14 @@ function App(){
             if(!reviewMoodReturnTab) return;
             const returnTab = reviewMoodReturnTab;
             setReviewMoodReturnTab(null);
+            setActiveTab(returnTab);
+          }}
+          openSymptomDetailRequest={reviewSymptomOpenRequest}
+          onSymptomDetailRequestHandled={()=>setReviewSymptomOpenRequest(0)}
+          onSymptomDetailReturn={()=>{
+            if(!reviewSymptomReturnTab) return;
+            const returnTab = reviewSymptomReturnTab;
+            setReviewSymptomReturnTab(null);
             setActiveTab(returnTab);
           }}
           shareState={reviewShareState}

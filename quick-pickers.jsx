@@ -422,29 +422,84 @@ function DockWeightPicker({onConfirm, onCancel}){
   return <QuickWeightPicker onSubmit={onConfirm} onCancel={onCancel}/>;
 }
 
-const SYMPTOM_NOTES = {
-  '腰酸':'首次在黄体期记录腰酸。黄体期孕激素升高会让盆腔充血、韧带松弛，腰部容易感到酸胀，这在经前比较常见。热敷腰部 15 分钟或做几个轻柔的腰部拉伸，会舒服不少。',
-  '腹痛':'黄体期前列腺素开始积累，子宫可能会有轻微收缩感，这是身体在为下次经期做准备。热敷小腹或喝杯温热的饮品，可以帮助放松。',
-  '小腹坠胀':'黄体期盆腔充血容易引起小腹坠胀感，尤其是久坐后会更明显。起来走动几分钟、避免长时间保持同一姿势，会舒服一些。',
-  '乳房胀痛':'黄体期已经记录了 4 天乳房胀痛，孕激素持续刺激乳腺组织是主要原因，经期来后通常会明显缓解。这几天可以换穿宽松内衣、减少咖啡因摄入。',
-  '身体酸痛':'黄体期孕激素会让肌肉和关节的敏感度升高，身体更容易感到酸痛。轻度拉伸比完全不动更有帮助，但不用勉强做高强度运动。',
-  '褐色分泌物':'黄体期末段少量褐色分泌物通常是经期临近的信号，属于正常现象。如果量多或持续时间长，可以留意观察。',
-  '粉刺':'黄体期孕激素升高会刺激皮脂分泌增加，冒痘在这个阶段很常见。做好清洁保湿就好，经期过后皮肤状态通常会自己恢复。',
-  '失眠':'近 7 天已经有 3 天没睡好了，黄体期后半段孕激素下降确实会影响睡眠质量。睡前 1 小时放下手机、保持卧室凉爽，试试腹式呼吸帮助入睡。',
-  '腹泻':'腹泻已经持续 4 天了，黄体期末段前列腺素升高会加速肠道蠕动，这是比较常见的经前反应。注意补充水分，如果持续加重建议就医。',
-  '疲惫':'黄体期身体的能量消耗本来就比其他阶段大，感到疲惫是正常的。今天允许自己放慢节奏，早点休息就好。',
+/** 症状反馈：与体重卡同结构（短文案 + 高亮词 + 底部趋势入口） */
+const SYMPTOM_EM = 'is-em';
+const SYMPTOM_NOTE_PARTS = {
+  '没症状': { prefix:'今天 ', delta:'没有不适', emphasize:true, emClass:SYMPTOM_EM, tail:'，状态不错，继续保持就好。' },
+  '腰酸': { prefix:'今天记下 ', delta:'腰酸', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期韧带偏松较常见，热敷 15 分钟会舒服些。' },
+  '腹痛': { prefix:'今天记下 ', delta:'腹痛', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期子宫轻微收缩属正常，热敷小腹有助放松。' },
+  '痛经': { prefix:'今天记下 ', delta:'痛经', emphasize:true, emClass:SYMPTOM_EM, tail:'，前列腺素升高会加重不适，热敷或温热饮品可以缓解。' },
+  '小腹坠胀': { prefix:'今天记下 ', delta:'小腹坠胀', emphasize:true, emClass:SYMPTOM_EM, tail:'，久坐后更明显，起来走动几分钟会好一些。' },
+  '腹胀': { prefix:'今天记下 ', delta:'腹胀', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期肠道更敏感，少吃胀气食物、多走动会舒服些。' },
+  '乳房胀痛': { prefix:'今天记下 ', delta:'乳房胀痛', emphasize:true, emClass:SYMPTOM_EM, tail:'，孕激素刺激乳腺较常见，宽松内衣、少咖啡因会舒服些。' },
+  '乳胀': { prefix:'今天记下 ', delta:'乳胀', emphasize:true, emClass:SYMPTOM_EM, tail:'，孕激素刺激乳腺较常见，宽松内衣、少咖啡因会舒服些。' },
+  '乳房胀': { prefix:'今天记下 ', delta:'乳房胀', emphasize:true, emClass:SYMPTOM_EM, tail:'，孕激素刺激乳腺较常见，宽松内衣、少咖啡因会舒服些。' },
+  '身体酸痛': { prefix:'今天记下 ', delta:'身体酸痛', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期关节更敏感，轻拉伸比完全不动更有帮助。' },
+  '褐色分泌物': { prefix:'今天记下 ', delta:'褐色分泌物', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期末段常见，多半是经期临近信号。' },
+  '白带': { prefix:'今天记下 ', delta:'白带变化', emphasize:true, emClass:SYMPTOM_EM, tail:'，随周期波动很常见，留意颜色与气味即可。' },
+  '粉刺': { prefix:'今天记下 ', delta:'粉刺', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期皮脂偏多较常见，做好清洁保湿就好。' },
+  '失眠': { prefix:'今天记下 ', delta:'失眠', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期末段睡眠易受影响，睡前少刷手机会好一些。' },
+  '腹泻': { prefix:'今天记下 ', delta:'腹泻', emphasize:true, emClass:SYMPTOM_EM, tail:'，经前肠道蠕动加快较常见，注意补水。' },
+  '便秘': { prefix:'今天记下 ', delta:'便秘', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期肠蠕动偏慢常见，多喝水、适量膳食纤维。' },
+  '疲惫': { prefix:'今天记下 ', delta:'疲惫', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期耗能更高，今天允许自己放慢节奏。' },
+  '浑身无力': { prefix:'今天记下 ', delta:'浑身无力', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期能量偏低常见，早点休息会好一些。' },
+  '头痛': { prefix:'今天记下 ', delta:'头痛', emphasize:true, emClass:SYMPTOM_EM, tail:'，经前激素波动常牵动头痛，少挨饿、少亮屏会舒服些。' },
+  '恶心': { prefix:'今天记下 ', delta:'恶心', emphasize:true, emClass:SYMPTOM_EM, tail:'，经前胃肠敏感较常见，清淡饮食、少量多餐更稳妥。' },
+  '眩晕': { prefix:'今天记下 ', delta:'眩晕', emphasize:true, emClass:SYMPTOM_EM, tail:'，注意补水、起身慢一点，持续加重再留意观察。' },
+  '身体发热': { prefix:'今天记下 ', delta:'身体发热', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期基础体温会略高，多休息、清淡饮食。' },
+  '身体冷': { prefix:'今天记下 ', delta:'身体冷', emphasize:true, emClass:SYMPTOM_EM, tail:'，注意保暖、喝温水，经前体感波动较常见。' },
+  '尿频': { prefix:'今天记下 ', delta:'尿频', emphasize:true, emClass:SYMPTOM_EM, tail:'，盆腔充血时更明显，白天补水、睡前少喝。' },
+  '干燥': { prefix:'今天记下 ', delta:'分泌物偏干', emphasize:true, emClass:SYMPTOM_EM, tail:'，周期前半段较常见，注意清洁与舒适即可。' },
+  '粘稠': { prefix:'今天记下 ', delta:'分泌物粘稠', emphasize:true, emClass:SYMPTOM_EM, tail:'，随周期变化很正常，持续异常再留意观察。' },
+  '乳液状': { prefix:'今天记下 ', delta:'乳液状分泌物', emphasize:true, emClass:SYMPTOM_EM, tail:'，黄体期较常见，留意颜色气味就好。' },
+  '蛋清状': { prefix:'今天记下 ', delta:'蛋清状分泌物', emphasize:true, emClass:SYMPTOM_EM, tail:'，多出现在排卵前后，属于正常周期信号。' },
 };
 
+const SYMPTOM_NOTES = Object.fromEntries(
+  Object.entries(SYMPTOM_NOTE_PARTS).map(([k, p]) => [k, `${p.prefix}${p.delta}${p.tail}`])
+);
+
+function buildSymptomNoteParts(labels){
+  const list = (labels || []).filter(Boolean);
+  if(!list.length){
+    return {
+      prefix: '已记录今天的症状，',
+      delta: '',
+      emphasize: false,
+      tail: '连续记下更容易发现规律。',
+    };
+  }
+  if(list.length === 1){
+    return SYMPTOM_NOTE_PARTS[list[0]] || {
+      prefix: '今天记下 ',
+      delta: list[0],
+      emphasize: true,
+      emClass: SYMPTOM_EM,
+      tail: '，黄体期这类不适较常见，连续记录有助于发现规律。',
+    };
+  }
+  const highlight = list.slice(0, 2).join('、') + (list.length > 2 ? '等' : '');
+  return {
+    prefix: '今天记下 ',
+    delta: highlight,
+    emphasize: true,
+    emClass: SYMPTOM_EM,
+    tail: `共 ${list.length} 项，黄体期叠加出现较常见，对照趋势会更清楚。`,
+  };
+}
+
 function buildSymptomNote(labels){
-  return labels.map(l=>SYMPTOM_NOTES[l]).filter(Boolean).join('\n\n');
+  const parts = buildSymptomNoteParts(labels);
+  return `${parts.prefix || ''}${parts.delta || ''}${parts.tail || ''}`;
 }
 
 function createSymptomRecordEntry(symptoms){
   const list = Array.isArray(symptoms) ? symptoms : [symptoms];
   const time = window.formatNowTime();
   const gid = 'e-'+Date.now();
-  const todayLabels = list.map(s=>s.label);
-  const note = buildSymptomNote(todayLabels);
+  const todayLabels = list.map(s=>s.label).filter(Boolean);
+  const noteParts = buildSymptomNoteParts(todayLabels);
+  const note = `${noteParts.prefix || ''}${noteParts.delta || ''}${noteParts.tail || ''}`;
 
   return {
     kind:'record-group',
@@ -467,6 +522,8 @@ function createSymptomRecordEntry(symptoms){
       title:'近7天症状情况',
       chartData:{ todayLabels },
       note,
+      noteParts,
+      noteFirst: true,
     },
     aiDefaultOpen:true,
   };

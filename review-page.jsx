@@ -18057,7 +18057,7 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, weightAssessValues=null, onWeightAssessValuesChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, weightAssessValues=null, onWeightAssessValuesChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, openSymptomDetailRequest=0, onSymptomDetailRequestHandled, onSymptomDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
@@ -18112,6 +18112,12 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
     setMoodDetailOpen(true);
     onMoodDetailRequestHandled?.();
   }, [openMoodDetailRequest]);
+
+  React.useEffect(()=>{
+    if(openSymptomDetailRequest <= 0) return;
+    setSymptomDetailOpen(true);
+    onSymptomDetailRequestHandled?.();
+  }, [openSymptomDetailRequest]);
 
   return (
     <main className={'review-page' + (isPeriodMode ? ' is-compact-overview' : '') + (reviewSearchOpen ? ' is-review-search-open' : '')} aria-label="回顾">
@@ -18299,7 +18305,13 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <LoveDetailPage open={loveDetailOpen} onClose={()=>setLoveDetailOpen(false)}/>
       <BeverageDetailPage open={beverageDetailOpen} onClose={()=>setBeverageDetailOpen(false)}/>
       <SkinDetailPage open={skinDetailOpen} onClose={()=>setSkinDetailOpen(false)}/>
-      <SymptomDetailPage open={symptomDetailOpen} onClose={()=>setSymptomDetailOpen(false)}/>
+      <SymptomDetailPage
+        open={symptomDetailOpen}
+        onClose={()=>{
+          setSymptomDetailOpen(false);
+          onSymptomDetailReturn?.();
+        }}
+      />
     </main>
   );
 }
