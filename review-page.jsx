@@ -5437,8 +5437,13 @@ function WeightChart({
   const hasGoalRange = goalLo != null && goalHi != null
     && Number.isFinite(Number(goalLo)) && Number.isFinite(Number(goalHi))
     && Number(goalHi) > Number(goalLo);
-  const goalLoVal = hasGoalRange ? Number(goalLo) : null;
-  const goalHiVal = hasGoalRange ? Number(goalHi) : null;
+  // 图表上的保持区间收窄展示，避免色带过宽抢戏
+  const goalMid = hasGoalRange ? (Number(goalLo) + Number(goalHi)) / 2 : null;
+  const goalHalf = hasGoalRange
+    ? Math.min((Number(goalHi) - Number(goalLo)) / 2, 0.45)
+    : null;
+  const goalLoVal = hasGoalRange ? Number((goalMid - goalHalf).toFixed(2)) : null;
+  const goalHiVal = hasGoalRange ? Number((goalMid + goalHalf).toFixed(2)) : null;
   const hasGoal = !hasGoalRange && goalKg != null && Number.isFinite(Number(goalKg));
   const goalVal = hasGoal ? Number(goalKg) : null;
   const hasGoalGuide = hasGoal || hasGoalRange;
@@ -5510,26 +5515,10 @@ function WeightChart({
             y={goalBandTop}
             width={Math.max(0, x1 - x0)}
             height={Math.max(2, goalBandBot - goalBandTop)}
-            fill="rgba(255,77,136,0.10)"
+            fill="rgba(255,77,136,0.12)"
           />
-          <line x1={x0} y1={goalBandTop} x2={x1} y2={goalBandTop} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="3 3" opacity="0.9"/>
-          <line x1={x0} y1={goalBandBot} x2={x1} y2={goalBandBot} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="3 3" opacity="0.9"/>
-          <text
-            x={x0 + 4}
-            y={Math.min(goalBandBot - 4, goalBandTop + 11)}
-            textAnchor="start"
-            fontSize="9"
-            fill="#e87fa8"
-            fontFamily="PingFang SC, -apple-system, sans-serif"
-          >{goalHiVal.toFixed(1)}{unitLabel}</text>
-          <text
-            x={x0 + 4}
-            y={Math.max(goalBandTop + 12, goalBandBot - 3)}
-            textAnchor="start"
-            fontSize="9"
-            fill="#e87fa8"
-            fontFamily="PingFang SC, -apple-system, sans-serif"
-          >{goalLoVal.toFixed(1)}{unitLabel}</text>
+          <line x1={x0} y1={goalBandTop} x2={x1} y2={goalBandTop} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="4 3" opacity="0.85"/>
+          <line x1={x0} y1={goalBandBot} x2={x1} y2={goalBandBot} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="4 3" opacity="0.85"/>
         </g>
       ) : null}
       {showTrendLine && n >= 2 ? (
