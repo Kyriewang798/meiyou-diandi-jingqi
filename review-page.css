@@ -3919,6 +3919,21 @@
   line-height:16px;
 }
 .review-legend-item.is-trend i{border-top:1.5px dashed #c2c2c8}
+.review-legend-item.is-goal i{
+  border-top:1.5px dashed #f08ab0;
+  background:transparent;
+  border-radius:0;
+  height:0;
+  width:12px;
+}
+.review-legend-item.is-goal.is-band i{
+  width:12px;
+  height:8px;
+  border-radius:2px;
+  border:0;
+  background:rgba(255,77,136,0.16);
+  box-shadow:inset 0 0 0 0.5px #f0a0bc;
+}
 .review-legend-item.is-warning i{
   width:7px;
   height:7px;
@@ -14233,8 +14248,162 @@
   margin-top:4px;
 }
 .review-symptom-trend-block.is-flat-scatter .review-symptom-scatter-chart.is-flat-scatter,
-.review-symptom-trend-section-card.is-flat-scatter .review-symptom-scatter-chart.is-flat-scatter{
-  margin-top:4px;
+.review-symptom-trend-section-card.is-flat-scatter .review-symptom-scatter-chart.is-flat-scatter,
+.review-symptom-trend-block.is-month-bubble .review-symptom-scatter-chart.is-month-bubble,
+.review-symptom-trend-section-card.is-month-bubble .review-symptom-scatter-chart.is-month-bubble{
+  margin-top:12px;
+}
+.sy-month{
+  position:relative;
+  margin-top:0;
+}
+.sy-month-body{
+  display:flex;
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+}
+.sy-month-scroll{
+  flex:1 1 auto;
+  min-width:0;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.sy-month-canvas{
+  position:relative;
+  box-sizing:border-box;
+}
+.sy-month-yaxis{
+  position:relative;
+  flex:0 0 var(--sy-month-label, 58px);
+  width:var(--sy-month-label, 58px);
+  z-index:3;
+  pointer-events:none;
+  background:#fff;
+  border-right:0.5px solid rgba(0,0,0,0.06);
+  box-sizing:border-box;
+}
+.sy-month-yaxis span{
+  position:absolute;
+  left:0;
+  right:6px;
+  transform:translateY(-50%);
+  font-size:12px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.75);
+  text-align:right;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-month-plot{
+  display:block;
+  position:relative;
+  z-index:1;
+}
+.sy-month-hit{
+  position:absolute;
+  display:flex;
+  z-index:2;
+}
+.sy-month-hit-col{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  margin:0;
+  padding:0;
+  height:100%;
+  background:transparent;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.sy-month-hit-col.is-focus{
+  box-shadow:inset 0 0 0 999px rgba(255,77,136,0.06);
+}
+.sy-month-axis{
+  position:absolute;
+  display:flex;
+  height:24px;
+  align-items:center;
+  z-index:2;
+}
+.sy-month-label{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  margin:0;
+  padding:0;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  font-size:11px;
+  line-height:1;
+  color:#8A8A93;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.sy-month-label.is-focus{
+  color:#fff;
+  font-weight:500;
+}
+.sy-month-label.is-focus span{
+  display:inline-block;
+  min-width:22px;
+  height:18px;
+  line-height:18px;
+  padding:0 5px;
+  border-radius:9px;
+  text-align:center;
+  background:#F2558B;
+  color:#fff;
+  font-weight:500;
+  box-sizing:border-box;
+}
+.sy-month-tip{
+  top:0;
+}
+.sy-month-focus-line{
+  position:absolute;
+  top:var(--vlt, 52px);
+  bottom:24px;
+  width:2px;
+  margin-left:-1px;
+  background:#F2558B;
+  pointer-events:none;
+  z-index:0;
+}
+.sy-month-focus-line::before{
+  content:"";
+  position:absolute;
+  left:-3px;
+  top:-4px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#F2558B;
+}
+.review-symptom-bubble-legend{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:10px;
+  font-size:11px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.45);
+}
+.review-symptom-bubble-legend-dots{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.review-symptom-bubble-legend-dots i{
+  display:inline-block;
+  border-radius:50%;
+  flex-shrink:0;
 }
 .review-symptom-traj.is-flat-scatter .review-mood-traj-plot{
   min-height:0;
@@ -14248,6 +14417,171 @@
 }
 .review-symptom-traj.is-flat-scatter .review-mood-traj-yaxis{
   align-self:stretch;
+}
+.sy-flat{
+  position:relative;
+  margin-top:0;
+}
+.sy-flat-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin:0 -4px;
+  padding:0 4px;
+}
+.sy-flat-canvas{
+  position:relative;
+  box-sizing:border-box;
+}
+.sy-flat-yaxis{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:var(--sy-flat-label, 58px);
+  z-index:3;
+  pointer-events:none;
+  background:linear-gradient(90deg, #fff 72%, rgba(255,255,255,0));
+}
+.sy-flat-yaxis span{
+  position:absolute;
+  left:0;
+  right:8px;
+  transform:translateY(-50%);
+  font-size:12px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.55);
+  text-align:right;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.sy-flat-plot{
+  display:block;
+  position:relative;
+  z-index:1;
+}
+.sy-flat-hit{
+  position:absolute;
+  display:flex;
+  z-index:2;
+}
+.sy-flat-hit-col{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  margin:0;
+  padding:0;
+  background:transparent;
+  cursor:pointer;
+  height:100%;
+  flex:0 0 auto;
+}
+.sy-flat-hit-col.is-focus{
+  box-shadow:inset 0 0 0 999px rgba(255,77,136,0.06);
+}
+.sy-flat-hit-col.is-empty-day,
+.sy-flat-date.is-empty-day{
+  cursor:default;
+}
+.sy-flat-hit-col.is-empty-day:disabled,
+.sy-flat-date.is-empty-day:disabled{
+  opacity:1;
+}
+.sy-flat-axis{
+  position:absolute;
+  z-index:2;
+}
+.sy-flat-dates{
+  display:flex;
+  height:22px;
+  align-items:center;
+  border-top:0.5px solid rgba(0,0,0,0.08);
+}
+.sy-flat-date{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  margin:0;
+  padding:0;
+  height:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  font-size:11px;
+  line-height:1;
+  color:#8A8A93;
+  font-variant-numeric:tabular-nums;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.sy-flat-date.is-today,
+.sy-flat-date.is-focus{
+  color:rgba(0,0,0,0.75);
+  font-weight:500;
+}
+.sy-flat-date.is-focus{
+  color:#fff;
+}
+.sy-flat-date.is-today span,
+.sy-flat-date.is-focus span{
+  display:inline-block;
+  min-width:18px;
+  height:18px;
+  line-height:18px;
+  padding:0 4px;
+  border-radius:9px;
+  text-align:center;
+  font-weight:500;
+  box-sizing:border-box;
+}
+.sy-flat-date.is-today span{
+  background:#2A2A2E;
+  color:#fff;
+  min-width:28px;
+}
+.sy-flat-date.is-focus span,
+.sy-flat-date.is-focus.is-today span{
+  background:#F2558B;
+  color:#fff;
+}
+.sy-flat-phases{
+  position:relative;
+  height:18px;
+}
+.sy-flat-phase{
+  position:absolute;
+  top:2px;
+  font-size:11px;
+  line-height:1.2;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+}
+.sy-flat-tip{
+  top:4px;
+}
+.sy-flat-focus-line{
+  position:absolute;
+  top:var(--vlt, 52px);
+  bottom:44px;
+  width:2px;
+  margin-left:-1px;
+  background:#F2558B;
+  pointer-events:none;
+  z-index:0;
+}
+.sy-flat-focus-line::before{
+  content:"";
+  position:absolute;
+  left:-3px;
+  top:-4px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#F2558B;
 }
 .review-symptom-phase-legend{
   display:flex;
@@ -14275,13 +14609,14 @@
 .review-symptom-cycle-stack{
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:0;
+  margin-top:4px;
 }
 .review-symptom-cycle-stack.is-phase-style{
-  gap:8px;
+  gap:0;
 }
 .review-symptom-cycle-card{
-  padding:12px 0;
+  padding:16px 0 18px;
   border-radius:0;
   background:transparent;
   border-bottom:0.5px solid rgba(0,0,0,0.06);
@@ -14290,47 +14625,101 @@
   border-bottom:0;
 }
 .review-symptom-cycle-card.is-empty{
-  padding:14px 0;
+  padding:16px 0;
 }
 .review-symptom-cycle-card.is-phase-style{
-  padding:14px 0 16px;
+  padding:16px 0 18px;
 }
 .review-symptom-cycle-card-head{
   display:flex;
-  align-items:baseline;
+  align-items:center;
   justify-content:space-between;
   gap:12px;
-  margin-bottom:8px;
+  margin-bottom:10px;
+}
+.review-symptom-cycle-card.is-empty .review-symptom-cycle-card-head{
+  margin-bottom:6px;
 }
 .review-symptom-cycle-card-head.is-inline{
   margin-bottom:0;
 }
 .review-symptom-cycle-card-head strong{
-  font-size:14px;
+  font-size:15px;
   font-weight:500;
   color:rgba(0,0,0,0.8);
+  line-height:1.3;
+}
+.review-symptom-cycle-ongoing{
+  flex:0 0 auto;
+  font-size:12px;
   line-height:1.2;
+  font-weight:500;
+  color:#00cc99;
 }
 .review-symptom-cycle-empty{
+  margin:0;
   font-size:13px;
   line-height:1.29;
   color:rgba(0,0,0,0.35);
 }
-.review-symptom-cycle-card .review-symptom-traj.is-cycle-card{
-  margin-top:0;
+.review-symptom-cycle-plot{
+  width:100%;
+  margin-left:-2px;
 }
-.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-plot{
-  min-height:0;
+.review-symptom-cycle-plot svg{
+  display:block;
+  width:100%;
+  height:auto;
 }
-.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-scroll{
+.sy-cycle{
+  width:100%;
+}
+.sy-cycle-body{
+  display:flex;
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+}
+.sy-cycle-scroll{
+  flex:1 1 auto;
+  min-width:0;
   overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
 }
-.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-canvas{
-  min-width:320px;
-  width:320px;
+.sy-cycle-scroll::-webkit-scrollbar{display:none}
+.sy-cycle-canvas{
+  position:relative;
+  box-sizing:border-box;
 }
-.review-symptom-cycle-card .review-symptom-traj.is-cycle-card .review-mood-traj-yaxis{
-  align-self:stretch;
+.sy-cycle-yaxis{
+  position:relative;
+  flex:0 0 var(--sy-cycle-label, 58px);
+  width:var(--sy-cycle-label, 58px);
+  z-index:3;
+  pointer-events:none;
+  background:#fff;
+  border-right:0.5px solid rgba(0,0,0,0.06);
+  box-sizing:border-box;
+}
+.sy-cycle-yaxis span{
+  position:absolute;
+  left:0;
+  right:6px;
+  transform:translateY(-50%);
+  font-size:12px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.75);
+  text-align:right;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-cycle-canvas > svg{
+  display:block;
+  position:relative;
+  z-index:1;
 }
 .review-symptom-phase-most{
   display:flex;
@@ -14584,6 +14973,42 @@
   color:rgba(0,0,0,0.45);
   font-weight:500;
 }
+.sy-sheet-corner.is-axis{
+  border-top:0.5px solid rgba(0,0,0,0.08);
+  color:rgba(0,0,0,0.4);
+  font-weight:400;
+}
+.sy-sheet-corner.is-phase{
+  height:18px;
+  border-top:0;
+  background:#fff;
+}
+.sy-sheet-day.is-bottom{
+  border-bottom:0;
+  border-top:0.5px solid rgba(0,0,0,0.08);
+  height:22px;
+}
+.sy-sheet-day.is-bottom.is-today span{
+  min-width:28px;
+  padding:0 4px;
+  box-sizing:border-box;
+}
+.sy-sheet-phase-row{
+  position:relative;
+  height:18px;
+  min-width:0;
+}
+.sy-sheet-phase{
+  position:absolute;
+  top:2px;
+  font-size:11px;
+  line-height:1.2;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+}
 .sy-sheet-month-track{
   height:18px;
   width:100%;
@@ -14788,8 +15213,8 @@
   width:18px;
   height:18px;
 }
-.sy-sheet .review-symptom-phase-legend{
-  margin-top:10px;
+.sy-sheet-canvas:has(.sy-sheet-grid.is-axis-bottom) .sy-sheet-focus-line{
+  bottom:40px;
 }
 .sy-sheet.is-landscape .sy-sheet-scroll{
   max-height:none;
@@ -14985,7 +15410,7 @@
   --wg-c-in:60px;
   --wg-c-meal:58px;
   --wg-c-ex:64px;
-  --wg-c-cum:62px;
+  --wg-c-cum:72px;
   --wg-photo:44px;
 }
 .wg-sheet.is-landscape{
@@ -15194,8 +15619,6 @@
 .wg-sheet-row .wg-sheet-col-ex b{ font-size:14px; line-height:18px; font-weight:600; color:#e2702c; font-variant-numeric:tabular-nums; }
 .wg-sheet-row .wg-sheet-col-ex small{ margin-top:2px; font-size:10px; line-height:14px; color:rgba(0,0,0,.42); white-space:nowrap; }
 .wg-sheet-row .wg-sheet-col-ex.is-empty small{ color:#c4c4c4; }
-.wg-sheet-row .wg-sheet-col-cum b{ font-size:14px; font-weight:600; color:#2e8ba3; font-variant-numeric:tabular-nums; }
-.wg-sheet-row .wg-sheet-col-cum.is-neg b{ color:#d2465e; }
 
 /* 右侧渐隐提示还有内容 */
 .wg-sheet::after{

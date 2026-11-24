@@ -328,7 +328,18 @@ function App(){
   const [t, setTweak] = window.useTweaks({...window.__TWEAK_DEFAULTS});
   const [emptyPreviewMode, setEmptyPreviewMode] = useState(null);
   const [emptyPreviewGuideStep, setEmptyPreviewGuideStep] = useState(0);
+  const TweaksPanel = window.TweaksPanel;
+  const TweakSection = window.TweakSection;
+  const TweakRadio = window.TweakRadio;
   const scene = window.getDemoScene(t.demoScene);
+  React.useEffect(()=>{
+    if(window.__STANDALONE_LOCKED_SCENE) return undefined;
+    // 本地预览无编辑宿主时，自动打开 Tweaks，方便切换症状长周期图表
+    const timer = window.setTimeout(()=>{
+      window.postMessage({type:'__activate_edit_mode'}, '*');
+    }, 0);
+    return ()=>window.clearTimeout(timer);
+  }, []);
   const noteScene = React.useMemo(() => {
     if (!emptyPreviewMode) return scene;
     return {
@@ -3086,6 +3097,7 @@ function App(){
             setReviewSymptomReturnTab(null);
             setActiveTab(returnTab);
           }}
+          symptomLongChart={t.symptomLongChart === 'cycle' ? 'cycle' : 'month'}
           shareState={reviewShareState}
           onShareStateChange={setReviewShareState}
           onOpenPartnerPreview={()=>{
@@ -3382,6 +3394,20 @@ function App(){
           />
         </div>
       )}
+      {!window.__STANDALONE_LOCKED_SCENE && TweaksPanel ? (
+        <TweaksPanel title="Tweaks">
+          <TweakSection label="症状回顾" />
+          <TweakRadio
+            label="长周期图表"
+            value={t.symptomLongChart === 'cycle' ? 'cycle' : 'month'}
+            options={[
+              {value:'month', label:'按月'},
+              {value:'cycle', label:'按周期'},
+            ]}
+            onChange={(v)=>setTweak('symptomLongChart', v)}
+          />
+        </TweaksPanel>
+      ) : null}
     </>
   );
 }

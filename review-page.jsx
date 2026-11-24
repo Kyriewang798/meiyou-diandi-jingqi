@@ -3606,15 +3606,12 @@ function WeightGoalFluctuationCard({units, range}){
   );
 }
 
-const WEIGHT_GOAL_BASE_WT = (WEIGHT_GOAL_ALL_DAYS.find(day=>day.wt != null) || {wt:WEIGHT_GOAL_START}).wt;
-
 function weightGoalRecordsRows(){
   let prevWt = null;
   const days = WEIGHT_GOAL_ALL_DAYS.map(day=>{
     const delta = day.wt != null && prevWt != null ? Number((day.wt - prevWt).toFixed(1)) : null;
-    const cum = day.wt != null ? Number((WEIGHT_GOAL_BASE_WT - day.wt).toFixed(1)) : null;
     if(day.wt != null) prevWt = day.wt;
-    return {...day, delta, cum};
+    return {...day, delta};
   });
   return [...days].reverse();
 }
@@ -3781,7 +3778,7 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, compact = false
             <span className="wg-sheet-col-date">日期</span>
             <span className="wg-sheet-col-wt">体重 kg</span>
           </div>
-          <div className="wg-sheet-cell wg-sheet-col-cum">累计减重</div>
+          <div className="wg-sheet-cell wg-sheet-col-cum">较昨日变化</div>
           <div className="wg-sheet-cell wg-sheet-col-in">摄入</div>
           <div className="wg-sheet-head-group">
             <span className="wg-sheet-head-group-label">饮食</span>
@@ -3829,11 +3826,10 @@ function WeightGoalSheetTable({rows, byMonth, landscape = false, compact = false
                   </div>
                   <div className={'wg-sheet-col-wt' + (day.wt == null ? ' is-empty' : '')}>
                     <b>{day.wt != null ? day.wt.toFixed(1) : '未称'}</b>
-                    {day.wt != null ? <WeightGoalSheetDelta delta={day.delta}/> : null}
                   </div>
                 </div>
-                <div className={'wg-sheet-cell wg-sheet-col-cum' + (day.cum != null && day.cum < 0 ? ' is-neg' : '')}>
-                  {day.cum == null ? <small>—</small> : <b>{day.cum >= 0 ? '−' + day.cum.toFixed(1) : '+' + (-day.cum).toFixed(1)}</b>}
+                <div className="wg-sheet-cell wg-sheet-col-cum">
+                  {day.wt != null ? <WeightGoalSheetDelta delta={day.delta}/> : <small>—</small>}
                 </div>
                 <div className={'wg-sheet-cell wg-sheet-col-in' + (recorded ? '' : ' is-empty')}>
                   {recorded ? (
@@ -5288,6 +5284,7 @@ function CycleLandscapePage({open, onClose}){
 
 const WEIGHT_LINE = '#43D1AC';
 const WEIGHT_TREND_LINE = '#c2c2c8';
+const WEIGHT_GOAL_LINE = '#f08ab0';
 
 /** 近 30 天体重（斤）：波动更大、整体明显下降，末值 101.1 */
 const WEIGHT_CARD_VALUES = [
@@ -5424,6 +5421,10 @@ function WeightChart({
   labelToday = false,
   showExtremes = false,
   showArea = true,
+  showTrendLine = true,
+  goalKg = null,
+  goalLo = null,
+  goalHi = null,
   gradientId = 'weightCardArea',
   ariaLabel = '近30天体重变化趋势曲线',
   unit = 'jin',
@@ -5433,10 +5434,22 @@ function WeightChart({
   const data = values;
   const n = data.length;
   const W = 340, H = height;
-  const padL = 28, padR = labelToday ? 22 : 14, padT = 12, padB = 24;
+  const hasGoalRange = goalLo != null && goalHi != null
+    && Number.isFinite(Number(goalLo)) && Number.isFinite(Number(goalHi))
+    && Number(goalHi) > Number(goalLo);
+  const goalLoVal = hasGoalRange ? Number(goalLo) : null;
+  const goalHiVal = hasGoalRange ? Number(goalHi) : null;
+  const hasGoal = !hasGoalRange && goalKg != null && Number.isFinite(Number(goalKg));
+  const goalVal = hasGoal ? Number(goalKg) : null;
+  const hasGoalGuide = hasGoal || hasGoalRange;
+  const padL = 28, padR = (labelToday || hasGoal) ? 40 : 14, padT = 12, padB = 24;
   const x0 = padL, x1 = W - padR, y0 = padT, y1 = H - padB;
-  const dataMin = Math.min(...data);
-  const dataMax = Math.max(...data);
+  const scaleExtras = [
+    ...(hasGoal ? [goalVal] : []),
+    ...(hasGoalRange ? [goalLoVal, goalHiVal] : []),
+  ];
+  const dataMin = Math.min(...data, ...scaleExtras);
+  const dataMax = Math.max(...data, ...scaleExtras);
   const pad = Math.max(0.6, (dataMax - dataMin) * 0.18);
   const yMin = Math.floor(dataMin - pad);
   const yMax = Math.ceil(dataMax + pad);
@@ -5464,6 +5477,9 @@ function WeightChart({
     if(maxI !== lastI || !labelToday) extremeMarks.push({i:maxI, key:'max'});
     if(minI !== maxI && (minI !== lastI || !labelToday)) extremeMarks.push({i:minI, key:'min'});
   }
+  const goalY = hasGoal ? clampY(goalVal) : null;
+  const goalBandTop = hasGoalRange ? clampY(goalHiVal) : null;
+  const goalBandBot = hasGoalRange ? clampY(goalLoVal) : null;
   return (
     <svg viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label={ariaLabel}>
       <defs>
@@ -5487,7 +5503,36 @@ function WeightChart({
           <text x={x0 - 5} y={Y(g) + 3} textAnchor="end" fontSize="9" fill="#bbbbbf" fontFamily="PingFang SC">{g}</text>
         </React.Fragment>
       ))}
-      {n >= 2 ? (
+      {hasGoalRange ? (
+        <g aria-hidden="true">
+          <rect
+            x={x0}
+            y={goalBandTop}
+            width={Math.max(0, x1 - x0)}
+            height={Math.max(2, goalBandBot - goalBandTop)}
+            fill="rgba(255,77,136,0.10)"
+          />
+          <line x1={x0} y1={goalBandTop} x2={x1} y2={goalBandTop} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="3 3" opacity="0.9"/>
+          <line x1={x0} y1={goalBandBot} x2={x1} y2={goalBandBot} stroke={WEIGHT_GOAL_LINE} strokeWidth="1" strokeDasharray="3 3" opacity="0.9"/>
+          <text
+            x={x0 + 4}
+            y={Math.min(goalBandBot - 4, goalBandTop + 11)}
+            textAnchor="start"
+            fontSize="9"
+            fill="#e87fa8"
+            fontFamily="PingFang SC, -apple-system, sans-serif"
+          >{goalHiVal.toFixed(1)}{unitLabel}</text>
+          <text
+            x={x0 + 4}
+            y={Math.max(goalBandTop + 12, goalBandBot - 3)}
+            textAnchor="start"
+            fontSize="9"
+            fill="#e87fa8"
+            fontFamily="PingFang SC, -apple-system, sans-serif"
+          >{goalLoVal.toFixed(1)}{unitLabel}</text>
+        </g>
+      ) : null}
+      {showTrendLine && n >= 2 ? (
         <line
           x1={X(0)}
           y1={clampY(trend.a)}
@@ -5498,6 +5543,29 @@ function WeightChart({
           strokeDasharray="4 3"
           strokeLinecap="round"
         />
+      ) : null}
+      {hasGoal ? (
+        <g aria-hidden="true">
+          <line
+            x1={x0}
+            y1={goalY}
+            x2={x1}
+            y2={goalY}
+            stroke={WEIGHT_GOAL_LINE}
+            strokeWidth="1.6"
+            strokeDasharray="4 3"
+            strokeLinecap="round"
+            opacity="1"
+          />
+          <text
+            x={x1 + 2}
+            y={goalY + 3}
+            textAnchor="start"
+            fontSize="10"
+            fill="#e87fa8"
+            fontFamily="PingFang SC, -apple-system, sans-serif"
+          >{goalVal.toFixed(1)}{unitLabel}</text>
+        </g>
       ) : null}
       {showArea && areaPath ? <path d={areaPath} fill={'url(#' + gradientId + ')'} stroke="none"/> : null}
       <path d={linePath} fill="none" stroke={WEIGHT_LINE} strokeWidth={strokeW} strokeLinejoin="round" strokeLinecap="round"/>
@@ -5545,17 +5613,28 @@ function WeightChart({
             stroke={WEIGHT_LINE}
             strokeWidth={labelToday ? 2.2 : 0}
           />
-          {labelToday ? (
-            <text
-              x={X(lastI)}
-              y={Math.max(13, Y(data[lastI]) - 12)}
-              textAnchor="middle"
-              fontSize="11"
-              fontWeight="500"
-              fill={WEIGHT_LINE}
-              fontFamily="PingFang SC"
-            >{isKg ? data[lastI].toFixed(1) : reviewFmt1(data[lastI])}{unitLabel}</text>
-          ) : null}
+          {labelToday ? (()=>{
+            const lastY = Y(data[lastI]);
+            let labelY = Math.max(13, lastY - 12);
+            // 保持区间时，最新点标签避开上下界附近，优先放在点上方外侧
+            if(hasGoalRange){
+              const nearHi = Math.abs(lastY - goalBandTop) < 14;
+              const nearLo = Math.abs(lastY - goalBandBot) < 14;
+              if(nearHi) labelY = Math.max(13, goalBandTop - 8);
+              else if(nearLo) labelY = Math.min(H - 14, goalBandBot + 12);
+            }
+            return (
+              <text
+                x={X(lastI)}
+                y={labelY}
+                textAnchor="end"
+                fontSize="11"
+                fontWeight="500"
+                fill={WEIGHT_LINE}
+                fontFamily="PingFang SC"
+              >{isKg ? data[lastI].toFixed(1) : reviewFmt1(data[lastI])}{unitLabel}</text>
+            );
+          })() : null}
         </React.Fragment>
       ) : null}
       {Object.keys(labels).map(k=>(
@@ -5772,7 +5851,7 @@ function WeightPlanGuideBanner({phase='none', onCreatePlan}){
   );
 }
 
-function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan, showPlanGuide=true, showBmi=false, showDateText=false, onOpen}){
+function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan, showPlanGuide=true, showBmi=false, showDateText=false, onOpen, showGoalCompare=false, goalValues=null}){
   const meta = WEIGHT_RANGE_META[range] || WEIGHT_RANGE_META.d30;
   const series = weightTrendSeries(range);
   // 体重页统一 kg；演示数据对齐到目标进度卡的当前体重，避免两处数值对不上
@@ -5788,6 +5867,12 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
     ? '0.0'
     : ((deltaKg > 0 ? '+' : '-') + Math.abs(deltaKg).toFixed(1));
   const compareDays = meta.compareDays || Math.max(1, (series.values?.length || 2) - 1);
+  const isKeepGoal = goalValues?.mode === 'keep' && goalValues?.keepLo != null && goalValues?.keepHi != null;
+  const goalLo = isKeepGoal ? Number(goalValues.keepLo) : null;
+  const goalHi = isKeepGoal ? Number(goalValues.keepHi) : null;
+  const goalKg = isKeepGoal
+    ? null
+    : Number(goalValues?.targetKg ?? WEIGHT_GOAL_WEIGHT_TARGET);
   return (
     <ReviewDetailSectionCard
       iconClass="is-weight"
@@ -5802,19 +5887,26 @@ function WeightTrendSummary({range = 'd30', planGuidePhase='none', onCreatePlan,
           values={kgValues}
           labels={series.labels}
           height={152}
-          showExtremes
+          showExtremes={!showGoalCompare}
           labelToday
           markLast
           showDots
           showArea
+          showTrendLine={!showGoalCompare}
+          goalKg={goalKg}
+          goalLo={goalLo}
+          goalHi={goalHi}
           gradientId={'weightDetailArea-' + range}
           unit="kg"
-          ariaLabel={meta.label + '体重趋势'}
+          ariaLabel={meta.label + (showGoalCompare ? '体重与目标对比' : '体重趋势')}
         />
       </div>
       <div className="review-legend">
         <span className="review-legend-item is-weight"><i></i>体重（kg）</span>
-        <span className="review-legend-item is-trend"><i></i>趋势</span>
+        {showGoalCompare ? null : <span className="review-legend-item is-trend"><i></i>趋势</span>}
+        <span className={'review-legend-item is-goal' + (isKeepGoal ? ' is-band' : '')}>
+          <i></i>{isKeepGoal ? '目标区间' : '目标体重'}
+        </span>
       </div>
       <div className="review-mood-trend-foot">
         {showBmi ? <WeightBmiIndexCard bmi={bmi}/> : null}
@@ -6358,6 +6450,8 @@ function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreate
         onCreatePlan={onCreatePlan}
         showPlanGuide={!showGoalSample}
         onOpen={onOpenTrend}
+        showGoalCompare
+        goalValues={goalValues}
       />
       {showCycle && range === 'd30' ? (
         <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
@@ -6367,7 +6461,7 @@ function WeightDetailBody({range, onExpandPhase, planGuidePhase='none', onCreate
   );
 }
 
-function WeightTrendDetailPage({open, onClose, onExpandPhase}){
+function WeightTrendDetailPage({open, onClose, onExpandPhase, goalValues=null}){
   const [range, setRange] = React.useState('d30');
   const ranges = [
     {key:'d30', label:'近30天'},
@@ -6413,6 +6507,7 @@ function WeightTrendDetailPage({open, onClose, onExpandPhase}){
             showPlanGuide={false}
             showBmi
             showDateText
+            goalValues={goalValues}
           />
           {range === 'd30' ? (
             <WeightCycleCombinedCard onExpand={onExpandPhase} showCompare={false} showPhase/>
@@ -6467,6 +6562,7 @@ function WeightDetailPage({open, onClose, planGuidePhase='none', onCreatePlan, o
       open={open && trendDetailOpen}
       onClose={()=>setTrendDetailOpen(false)}
       onExpandPhase={()=>setPhaseLandscapeOpen(true)}
+      goalValues={goalValues}
     />
     <WeightAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
     <WeightGoalRecordsPage
@@ -12812,57 +12908,57 @@ function symptomRowsForCycle(cycle){
 const SYMPTOM_CYCLE_STACK = {
   half:[
     {
-      id:'h0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
+      id:'h0', current:true, rangeText:'6月14日 – 今天', days:30, period:[1,5], ovulation:14,
       rows:{cramp:[1,2,3,4], back:[1,2,3,22,30], diarrhea:[1,2,3], breast:[20,22,23,24,26,30], tired:[20,21,22,23,24], acne:[23,24,25]},
     },
     {
-      id:'h1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
+      id:'h1', rangeText:'5月15日 – 6月13日', days:30, period:[1,5], ovulation:14,
       rows:{cramp:[1,2,3], diarrhea:[1,2,4], constip:[22,23,24], breast:[21,23,25], sleep:[22,24,25,26], acne:[2,3]},
     },
     {
-      id:'h2', rangeText:'4月16日–5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
+      id:'h2', rangeText:'4月16日 – 5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
     },
     {
-      id:'h3', rangeText:'3月18日–4月15日', days:29, period:[1,5], ovulation:14,
+      id:'h3', rangeText:'3月18日 – 4月15日', days:29, period:[1,5], ovulation:14,
       rows:{back:[1,2], breast:[19,21,22,24,25], tired:[18,20,22,23,25], sleep:[21,22,23], acne:[20,21,24], head:[23]},
     },
     {
-      id:'h4', rangeText:'2月17日–3月17日', days:29, period:[1,5], ovulation:14,
+      id:'h4', rangeText:'2月17日 – 3月17日', days:29, period:[1,5], ovulation:14,
       rows:{head:[13,14,15], dizzy:[14], cramp:[1,2], back:[1,3], sore:[2,3], breast:[24,26]},
     },
     {
-      id:'h5', rangeText:'1月18日–2月16日', days:30, period:[1,5], ovulation:15, empty:true, rows:{},
+      id:'h5', rangeText:'1月18日 – 2月16日', days:30, period:[1,5], ovulation:15, empty:true, rows:{},
     },
   ],
   year:[
     {
-      id:'y0', current:true, rangeText:'6月14日–7月13日', days:30, period:[1,5], ovulation:14,
+      id:'y0', current:true, rangeText:'6月14日 – 今天', days:30, period:[1,5], ovulation:14,
       rows:{cramp:[1,2,3,4], back:[1,2,3,22,30], diarrhea:[1,2,3], breast:[20,22,23,24,26,30], tired:[20,21,22,23,24], acne:[23,24,25]},
     },
     {
-      id:'y1', rangeText:'5月15日–6月13日', days:30, period:[1,5], ovulation:14,
+      id:'y1', rangeText:'5月15日 – 6月13日', days:30, period:[1,5], ovulation:14,
       rows:{cramp:[1,2,3], diarrhea:[1,2,4], constip:[22,23,24], breast:[21,23,25], sleep:[22,24,25,26], acne:[2,3]},
     },
     {
-      id:'y2', rangeText:'4月16日–5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
+      id:'y2', rangeText:'4月16日 – 5月14日', days:29, period:[1,4], ovulation:13, empty:true, rows:{},
     },
     {
-      id:'y3', rangeText:'3月18日–4月15日', days:29, period:[1,5], ovulation:14,
+      id:'y3', rangeText:'3月18日 – 4月15日', days:29, period:[1,5], ovulation:14,
       rows:{back:[1,2,3,4], cramp:[1,2,3], bloat:[1,2], tired:[19,21,23], breast:[20,22,24], head:[23]},
     },
     {
-      id:'y4', rangeText:'2月17日–3月17日', days:29, period:[1,5], ovulation:14,
+      id:'y4', rangeText:'2月17日 – 3月17日', days:29, period:[1,5], ovulation:14,
       rows:{head:[13,14,15], dizzy:[14], cramp:[1,2], back:[1,3], sore:[2,3], breast:[24,26]},
     },
     {
-      id:'y5', rangeText:'1月18日–2月16日', days:30, period:[1,5], ovulation:15,
+      id:'y5', rangeText:'1月18日 – 2月16日', days:30, period:[1,5], ovulation:15,
       rows:{sleep:[21,22,23], acne:[20,21,22,24], breast:[22,24,25], tired:[24,25,27], diarrhea:[2], cramp:[1,2]},
     },
     {
-      id:'y6', rangeText:'12月19日–1月17日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
+      id:'y6', rangeText:'12月19日 – 1月17日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
     },
     {
-      id:'y7', rangeText:'11月20日–12月18日', days:29, period:[1,4], ovulation:13,
+      id:'y7', rangeText:'11月20日 – 12月18日', days:29, period:[1,4], ovulation:13,
       rows:{back:[1,2,3,4], cramp:[1,2], constip:[3,4,5], tired:[17,19,22], breast:[19,21,23], sleep:[20]},
     },
   ],
@@ -12870,13 +12966,15 @@ const SYMPTOM_CYCLE_STACK = {
 SYMPTOM_CYCLE_STACK.all = [
   ...SYMPTOM_CYCLE_STACK.year,
   {
-    id:'a8', rangeText:'10月21日–11月19日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
+    id:'a8', rangeText:'10月21日 – 11月19日', days:30, period:[1,5], ovulation:14, empty:true, rows:{},
   },
   {
-    id:'a9', rangeText:'9月22日–10月20日', days:29, period:[1,5], ovulation:14,
+    id:'a9', rangeText:'9月22日 – 10月20日', days:29, period:[1,5], ovulation:14,
     rows:{sleep:[22,23,24], acne:[21,22,23,25], dizzy:[14,15], bloat:[1,2], cramp:[1], head:[14]},
   },
 ];
+const SYMPTOM_CYCLE_DOT = '#ff4d88';
+const SYMPTOM_CYCLE_DOT_SOFT = 'rgba(0,0,0,0.08)';
 
 function symptomCyclePhases(length, period, ovulation){
   const [p0, p1] = period || [1, 5];
@@ -12892,58 +12990,71 @@ function symptomCyclePhases(length, period, ovulation){
   ].filter(ph => ph.end >= ph.start);
 }
 
-function SymptomCycleScatterCard({cycle, range}){
-  const empty = !!cycle.empty;
+function symptomCycleDayTicks(length){
+  const base = [1, 5, 10, 15, 20, 25];
+  const ticks = base.filter(d => d < length);
+  if(ticks[ticks.length - 1] !== length) ticks.push(length);
+  return ticks;
+}
+
+function SymptomCycleScatterCard({cycle, landscape = false}){
+  const empty = !!cycle.empty || Object.keys(cycle.rows || {}).length === 0;
   const rows = empty ? [] : symptomRowsForCycle(cycle);
-  const title = cycle.current
-    ? ('当前周期：' + cycle.rangeText)
-    : cycle.rangeText;
+  const title = cycle.rangeText;
   if(empty || rows.length === 0){
     return (
-      <article className="review-symptom-cycle-card is-empty" aria-label={title}>
-        <header className="review-symptom-cycle-card-head is-inline">
+      <article className={'review-symptom-cycle-card is-empty' + (cycle.current ? ' is-current' : '')} aria-label={title}>
+        <header className="review-symptom-cycle-card-head">
           <strong>{title}</strong>
-          <span className="review-symptom-cycle-empty">本周期未记录症状</span>
         </header>
+        <p className="review-symptom-cycle-empty">本周期未记录症状</p>
       </article>
     );
   }
   const length = cycle.days;
-  const W = 320;
-  const softR = 1.15;
-  const activeR = 4;
-  const padL = Math.ceil(activeR) + 4;
-  const padR = Math.ceil(activeR) + 6;
-  const padT = 10;
-  const padB = 24;
-  const rowH = 24;
-  const H = padT + rows.length * rowH + padB;
-  const x0 = padL;
+  const labelW = landscape ? 64 : 58;
+  const dayPitch = landscape ? 18 : 14;
+  const activeR = landscape ? 5 : 4.2;
+  const padR = 10;
+  const padT = 8;
+  const axisGap = 14;
+  const phaseGap = 16;
+  const padB = axisGap + phaseGap + 4;
+  const rowH = 34;
+  const plotH = rows.length * rowH;
+  const H = padT + plotH + padB;
+  const plotInnerW = Math.max(length * dayPitch, landscape ? 560 : 260);
+  const W = plotInnerW + padR;
+  const x0 = 4;
   const x1 = W - padR;
-  const plotW = x1 - x0;
-  const dayW = plotW / Math.max(1, length - 1);
-  const X = day => length <= 1 ? (x0 + plotW / 2) : (x0 + ((day - 1) / (length - 1)) * plotW);
-  const phaseLeft = (ph) => X(ph.start) - (ph.start === 1 ? 0 : dayW / 2);
-  const phaseRight = (ph) => X(ph.end) + (ph.end === length ? 0 : dayW / 2);
+  const dayW = plotInnerW / Math.max(1, length);
+  const X = day => x0 + (day - 0.5) * dayW;
+  const phaseLeft = (ph) => x0 + (ph.start - 1) * dayW;
+  const phaseRight = (ph) => x0 + ph.end * dayW;
   const phases = symptomCyclePhases(length, cycle.period, cycle.ovulation);
   const days = [];
   for(let d = 1; d <= length; d++) days.push(d);
+  const ticks = symptomCycleDayTicks(length);
+  const axisY = padT + plotH;
   const yAxisTops = rows.map((_, index) => padT + rowH * (index + 0.5));
   return (
-    <article className="review-symptom-cycle-card is-phase-style" aria-label={title + '症状分布'}>
+    <article
+      className={'review-symptom-cycle-card is-phase-style' + (cycle.current ? ' is-current' : '') + (landscape ? ' is-landscape' : '')}
+      aria-label={title + '症状分布'}
+    >
       <header className="review-symptom-cycle-card-head">
         <strong>{title}</strong>
       </header>
-      <div className="review-mood-traj review-symptom-traj is-scatter-only is-cycle-card">
-        <div className="review-mood-traj-plot">
-          <div className="review-mood-traj-yaxis review-symptom-traj-yaxis" aria-hidden="true">
+      <div className="sy-cycle" style={{'--sy-cycle-label':labelW + 'px'}}>
+        <div className="sy-cycle-body">
+          <div className="sy-cycle-yaxis" aria-hidden="true" style={{height:H + 'px'}}>
             {rows.map((row, index)=>(
               <span key={row.key} style={{top:yAxisTops[index] + 'px'}}>{row.label}</span>
             ))}
           </div>
-          <div className="review-mood-traj-scroll" aria-label={title + '症状散点'}>
-            <div className="review-mood-traj-canvas">
-              <svg viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="xMidYMid meet" role="img" aria-label={title + '症状散点'}>
+          <div className="sy-cycle-scroll" aria-label={title + '症状散点，可左右滑动'}>
+            <div className="sy-cycle-canvas" style={{width:W + 'px', minWidth:W + 'px', height:H + 'px'}}>
+              <svg viewBox={'0 0 ' + W + ' ' + H} width={W} height={H} preserveAspectRatio="none" role="img" aria-label={title + '症状散点'}>
                 {phases.map(ph=>{
                   const left = phaseLeft(ph);
                   const right = phaseRight(ph);
@@ -12953,41 +13064,67 @@ function SymptomCycleScatterCard({cycle, range}){
                       x={left}
                       y={padT}
                       width={Math.max(2, right - left)}
-                      height={rows.length * rowH}
+                      height={plotH}
                       fill={ph.bg}
                     />
                   );
                 })}
+                {days.map(day=>(
+                  <line
+                    key={'v-' + day}
+                    x1={X(day)}
+                    y1={padT}
+                    x2={X(day)}
+                    y2={axisY}
+                    stroke="rgba(0,0,0,0.03)"
+                    strokeWidth="1"
+                    strokeDasharray="1.5 4"
+                  />
+                ))}
                 {rows.map((row, rowIndex)=>{
                   const y = padT + rowH * (rowIndex + 0.5);
-                  const active = new Set(row.days || []);
                   return (
                     <g key={row.key}>
-                      {days.map(day=>{
-                        const on = active.has(day);
-                        return (
-                          <circle
-                            key={row.key + '-' + day}
-                            cx={X(day)}
-                            cy={y}
-                            r={on ? activeR : softR}
-                            fill={on ? row.color : SYMPTOM_TRAJ_DOT_SOFT}
-                            stroke={on ? '#fff' : 'none'}
-                            strokeWidth={on ? 1.1 : 0}
-                          />
-                        );
-                      })}
+                      <line
+                        x1={x0}
+                        y1={y}
+                        x2={x1}
+                        y2={y}
+                        stroke="rgba(0,0,0,0.05)"
+                        strokeWidth="1"
+                        strokeDasharray="2 4"
+                      />
+                      {(row.days || []).map(day=>(
+                        <circle
+                          key={row.key + '-' + day}
+                          cx={X(day)}
+                          cy={y}
+                          r={activeR}
+                          fill={SYMPTOM_CYCLE_DOT}
+                        />
+                      ))}
                     </g>
                   );
                 })}
-                <line x1={x0} y1={padT + rows.length * rowH} x2={x1} y2={padT + rows.length * rowH} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+                <line x1={x0} y1={axisY} x2={x1} y2={axisY} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+                {ticks.map(day=>(
+                  <text
+                    key={'tick-' + day}
+                    x={X(day)}
+                    y={axisY + 12}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="rgba(0,0,0,0.4)"
+                    fontFamily="PingFang SC, -apple-system, sans-serif"
+                  >{day}</text>
+                ))}
                 {phases.map(ph=>{
                   const cx = (phaseLeft(ph) + phaseRight(ph)) / 2;
                   return (
                     <text
-                      key={'x-' + ph.key}
+                      key={'phase-' + ph.key}
                       x={cx}
-                      y={H - 6}
+                      y={H - 4}
                       textAnchor="middle"
                       fontSize="11"
                       fill={ph.color}
@@ -13004,12 +13141,15 @@ function SymptomCycleScatterCard({cycle, range}){
   );
 }
 
-function SymptomMultiCycleScatter({range = 'half'}){
+function SymptomMultiCycleScatter({range = 'half', landscape = false}){
   const cycles = SYMPTOM_CYCLE_STACK[range] || SYMPTOM_CYCLE_STACK.half;
   return (
-    <div className="review-symptom-cycle-stack is-phase-style" aria-label="按月经周期分组的症状分布">
+    <div
+      className={'review-symptom-cycle-stack is-phase-style' + (landscape ? ' is-landscape' : '')}
+      aria-label="按月经周期分组的症状分布"
+    >
       {cycles.map(cycle=>(
-        <SymptomCycleScatterCard key={cycle.id} cycle={cycle} range={range}/>
+        <SymptomCycleScatterCard key={cycle.id} cycle={cycle} landscape={landscape}/>
       ))}
     </div>
   );
@@ -13060,96 +13200,287 @@ function buildFlatSymptomScatter(range = 'd30'){
   };
 }
 
-function SymptomFlatScatterChart({range = 'd30'}){
-  const {length, rows, tickStep} = buildFlatSymptomScatter(range);
-  const softR = length > 90 ? 0.9 : 1.15;
-  const activeR = length > 90 ? 3.2 : 4;
-  const dayPitch = length > 180 ? 3.2 : (length > 90 ? 3.8 : 8);
-  const padL = Math.ceil(activeR) + 4;
-  const padR = Math.ceil(activeR) + 6;
-  const padT = 10;
-  const padB = 24;
-  const rowH = 24;
-  const W = Math.max(320, padL + padR + Math.max(1, length - 1) * dayPitch);
-  const H = padT + rows.length * rowH + padB;
-  const x0 = padL;
-  const x1 = W - padR;
-  const plotW = x1 - x0;
-  const X = day => length <= 1 ? (x0 + plotW / 2) : (x0 + ((day - 1) / (length - 1)) * plotW);
-  const days = [];
-  for(let d = 1; d <= length; d++) days.push(d);
-  const ticks = [];
-  for(let d = 1; d <= length; d += tickStep) ticks.push(d);
-  if(ticks[ticks.length - 1] !== length) ticks.push(length);
+const SYMPTOM_BUBBLE_LEVELS = [
+  {r:3.2, fill:'rgba(255,77,136,0.18)'},
+  {r:4.6, fill:'rgba(255,77,136,0.32)'},
+  {r:6.2, fill:'rgba(255,77,136,0.48)'},
+  {r:7.8, fill:'rgba(255,77,136,0.68)'},
+  {r:9.6, fill:'#ff4d88'},
+];
+
+function symptomBubbleLevel(count, maxCount){
+  if(!count || count <= 0) return 0;
+  const t = count / Math.max(1, maxCount);
+  if(t <= 0.2) return 1;
+  if(t <= 0.4) return 2;
+  if(t <= 0.6) return 3;
+  if(t <= 0.8) return 4;
+  return 5;
+}
+
+function buildMonthlySymptomBubbles(range = 'half'){
+  const flat = buildFlatSymptomScatter(range);
+  const today = SYMPTOM_SHEET_TODAY;
+  const monthOrder = [];
+  const monthIndex = {};
+  const dayMonth = [];
+  for(let d = 1; d <= flat.length; d++){
+    const date = symptomSheetDateForDay(d, flat.length, today);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    if(monthIndex[key] == null){
+      monthIndex[key] = monthOrder.length;
+      monthOrder.push({
+        key,
+        label:(date.getMonth() + 1) + '月',
+        year:date.getFullYear(),
+        month:date.getMonth() + 1,
+      });
+    }
+    dayMonth[d] = monthIndex[key];
+  }
+  const counts = {};
+  SYMPTOM_ROW_ORDER.forEach(key=>{ counts[key] = monthOrder.map(()=>0); });
+  flat.rows.forEach(row=>{
+    (row.days || []).forEach(day=>{
+      const mi = dayMonth[day];
+      if(mi == null) return;
+      if(!counts[row.key]) counts[row.key] = monthOrder.map(()=>0);
+      counts[row.key][mi] += 1;
+    });
+  });
+  let maxCount = 1;
+  const rows = SYMPTOM_ROW_ORDER
+    .map(key=>{
+      const cells = counts[key] || monthOrder.map(()=>0);
+      const total = cells.reduce((sum, n)=>sum + n, 0);
+      cells.forEach(n=>{ if(n > maxCount) maxCount = n; });
+      return total > 0 ? {...SYMPTOM_SCATTER_DEFS[key], cells, total} : null;
+    })
+    .filter(Boolean);
+  const months = monthOrder.map((month, mi)=>{
+    let top = null;
+    rows.forEach(row=>{
+      const count = row.cells[mi] || 0;
+      if(count > 0 && (!top || count > top.count)){
+        top = {key:row.key, label:row.label, count};
+      }
+    });
+    const isCurrent = month.key === (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0'));
+    return {
+      ...month,
+      top,
+      isCurrent,
+      titleText:isCurrent ? '本月' : (month.year + '年' + month.month + '月'),
+    };
+  });
+  const start = months[0];
+  const end = months[months.length - 1];
+  const subtitle = start && end
+    ? (start.year === end.year
+      ? (start.month + '月—' + (end.isCurrent ? '今天' : (end.month + '月')))
+      : (start.year + '年' + start.month + '月—' + (end.isCurrent ? '今天' : (end.year + '年' + end.month + '月'))))
+    : '';
+  return {months, rows, maxCount, subtitle};
+}
+
+function SymptomMonthlyBubbleChart({range = 'half', landscape = false}){
+  const model = React.useMemo(()=>buildMonthlySymptomBubbles(range), [range]);
+  const {months, rows, maxCount} = model;
+  const labelW = landscape ? 64 : 58;
+  const colW = landscape ? 56 : 48;
+  const tipReserve = 68;
+  const padR = 10;
+  const padT = tipReserve;
+  const rowH = landscape ? 28 : 26;
+  const plotH = Math.max(rowH, rows.length * rowH);
+  const axisH = 24;
+  const canvasH = padT + plotH + axisH;
+  const plotCanvasW = Math.max(landscape ? 560 : 280, padR + Math.max(1, months.length) * colW);
+  const x0 = 4;
+  const x1 = plotCanvasW - padR;
+  const plotW = Math.max(1, x1 - x0);
+  const monthPitch = months.length > 0 ? plotW / months.length : colW;
+  const X = index => x0 + (index + 0.5) * monthPitch;
   const yAxisTops = rows.map((_, index) => padT + rowH * (index + 0.5));
-  const drawSoft = length <= 120;
+  const defaultFocus = Math.max(0, months.length - 1);
+  const [picked, setPicked] = React.useState(null);
+  const focusIndex = (picked && picked.range === range) ? picked.index : defaultFocus;
+  const focusMonth = months[focusIndex] || months[defaultFocus];
+  const scrollRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const tipRef = React.useRef(null);
+  const focusColRef = React.useRef(null);
+  React.useEffect(()=>{ setPicked(null); }, [range]);
+  React.useLayoutEffect(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const jumpLatest = ()=>{
+      scroller.scrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    };
+    jumpLatest();
+    requestAnimationFrame(jumpLatest);
+  }, [range, months.length, landscape]);
+  React.useLayoutEffect(()=>{
+    if(!picked || picked.range !== range) return;
+    const scroller = scrollRef.current;
+    const col = focusColRef.current;
+    if(!scroller || !col) return;
+    const left = Math.max(0, col.offsetLeft - scroller.clientWidth * 0.55 + col.offsetWidth);
+    scroller.scrollLeft = left;
+  }, [picked, range]);
+  const selectMonth = index=>{
+    if(!months[index]) return;
+    setPicked({range, index});
+  };
+  const focusTop = focusMonth?.top || null;
+  const focusEmpty = !focusTop;
+  const focusTitle = focusEmpty
+    ? '未记录'
+    : (focusTop.label + ' ' + focusTop.count + '次');
+  const focusSub = focusMonth
+    ? (focusEmpty ? focusMonth.titleText : ('最高频 · ' + focusMonth.titleText))
+    : '';
+  const focusX = X(focusIndex);
+  const [tipLayout, setTipLayout] = React.useState({lineLeft:x0 + monthPitch / 2, tipLeft:4});
+  React.useLayoutEffect(()=>{
+    const tip = tipRef.current;
+    const canvas = canvasRef.current;
+    const scroller = scrollRef.current;
+    if(!tip || !canvas || !scroller || !focusMonth) return;
+    const canvasWNow = canvas.offsetWidth || plotCanvasW;
+    const tipH = tip.offsetHeight || 44;
+    canvas.style.setProperty('--vlt', (tipH + 8) + 'px');
+    const right = focusX > scroller.scrollLeft + scroller.clientWidth / 2;
+    const w = tip.offsetWidth || 72;
+    const tipLeft = Math.max(4, Math.min(Math.max(4, canvasWNow - w - 2), right ? focusX - w + 10 : focusX - 10));
+    setTipLayout({lineLeft:focusX, tipLeft});
+  }, [focusIndex, focusTitle, focusSub, focusX, plotCanvasW, focusMonth]);
   return (
-    <div className="review-mood-traj review-symptom-traj is-scatter-only is-flat-scatter">
-      <div className="review-mood-traj-plot">
-        <div className="review-mood-traj-yaxis review-symptom-traj-yaxis" aria-hidden="true">
+    <div className={'sy-month review-symptom-traj is-scatter-only is-month-bubble' + (landscape ? ' is-landscape' : '')} style={{'--sy-month-label':labelW + 'px'}}>
+      <div className="sy-month-body">
+        <div className="sy-month-yaxis" aria-hidden="true" style={{height:canvasH + 'px'}}>
           {rows.map((row, index)=>(
             <span key={row.key} style={{top:yAxisTops[index] + 'px'}}>{row.label}</span>
           ))}
         </div>
-        <div className="review-mood-traj-scroll" aria-label="左右滑动查看全部症状散点">
-          <div className="review-mood-traj-canvas" style={{minWidth:W + 'px', width:W + 'px'}}>
-            <svg viewBox={'0 0 ' + W + ' ' + H} width={W} height={H} preserveAspectRatio="xMidYMid meet" role="img" aria-label="全部症状散点">
+        <div className="sy-month-scroll" ref={scrollRef} aria-label="左右滑动查看按月聚合症状，点击查看当月最高频">
+          <div className="sy-month-canvas" ref={canvasRef} style={{width:plotCanvasW + 'px', minWidth:plotCanvasW + 'px', height:canvasH + 'px'}}>
+            <div className="sy-month-focus-line" style={{left:tipLayout.lineLeft + 'px'}} aria-hidden="true"/>
+            <div
+              ref={tipRef}
+              className={'sy-sheet-tip sy-month-tip' + (focusEmpty ? ' is-empty' : '')}
+              style={{left:tipLayout.tipLeft + 'px'}}
+              role="status"
+            >
+              <b>{focusTitle}</b>
+              <span>{focusSub}</span>
+            </div>
+            <svg
+              className="sy-month-plot"
+              viewBox={'0 0 ' + plotCanvasW + ' ' + (padT + plotH)}
+              width={plotCanvasW}
+              height={padT + plotH}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {rows.map((_, rowIndex)=>{
+                const y = padT + rowH * (rowIndex + 0.5);
+                return (
+                  <line
+                    key={'h-' + rowIndex}
+                    x1={x0}
+                    y1={y}
+                    x2={x1}
+                    y2={y}
+                    stroke="rgba(0,0,0,0.05)"
+                    strokeWidth="1"
+                    strokeDasharray="3 4"
+                  />
+                );
+              })}
+              {months.map((month, index)=>{
+                const x = X(index);
+                return (
+                  <line
+                    key={'v-' + month.key}
+                    x1={x}
+                    y1={padT}
+                    x2={x}
+                    y2={padT + plotH}
+                    stroke="rgba(0,0,0,0.04)"
+                    strokeWidth="1"
+                    strokeDasharray="3 4"
+                  />
+                );
+              })}
               {rows.map((row, rowIndex)=>{
                 const y = padT + rowH * (rowIndex + 0.5);
-                const active = new Set(row.days || []);
                 return (
                   <g key={row.key}>
-                    <line
-                      x1={x0}
-                      y1={y}
-                      x2={x1}
-                      y2={y}
-                      stroke="rgba(0,0,0,0.04)"
-                      strokeWidth="1"
-                    />
-                    {drawSoft
-                      ? days.map(day=>{
-                          if(active.has(day)) return null;
-                          return (
-                            <circle
-                              key={row.key + '-soft-' + day}
-                              cx={X(day)}
-                              cy={y}
-                              r={softR}
-                              fill={SYMPTOM_TRAJ_DOT_SOFT}
-                            />
-                          );
-                        })
-                      : null}
-                    {(row.days || []).map(day=>(
-                      <circle
-                        key={row.key + '-on-' + day}
-                        cx={X(day)}
-                        cy={y}
-                        r={activeR}
-                        fill={row.color}
-                        stroke="#fff"
-                        strokeWidth="1.1"
-                      />
-                    ))}
+                    {(row.cells || []).map((count, index)=>{
+                      if(!count) return null;
+                      const level = symptomBubbleLevel(count, maxCount);
+                      const style = SYMPTOM_BUBBLE_LEVELS[level - 1] || SYMPTOM_BUBBLE_LEVELS[0];
+                      return (
+                        <circle
+                          key={row.key + '-' + months[index].key}
+                          cx={X(index)}
+                          cy={y}
+                          r={style.r}
+                          fill={style.fill}
+                        />
+                      );
+                    })}
                   </g>
                 );
               })}
-              <line x1={x0} y1={padT + rows.length * rowH} x2={x1} y2={padT + rows.length * rowH} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
-              {ticks.map(day=>(
-                <text
-                  key={'tick-' + day}
-                  x={X(day)}
-                  y={H - 6}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="rgba(0,0,0,0.45)"
-                  fontFamily="PingFang SC, -apple-system, sans-serif"
-                >{day}</text>
-              ))}
+              <line x1={x0} y1={padT + plotH} x2={x1} y2={padT + plotH} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
             </svg>
+            <div className="sy-month-hit" style={{top:padT + 'px', height:plotH + 'px', left:x0 + 'px', width:plotW + 'px'}}>
+              {months.map((month, index)=>{
+                const isFocus = index === focusIndex;
+                return (
+                  <button
+                    key={'hit-' + month.key}
+                    type="button"
+                    ref={isFocus ? focusColRef : null}
+                    className={'sy-month-hit-col' + (isFocus ? ' is-focus' : '')}
+                    style={{width:monthPitch + 'px'}}
+                    onClick={()=>selectMonth(index)}
+                    aria-pressed={isFocus}
+                    aria-label={month.titleText}
+                  />
+                );
+              })}
+            </div>
+            <div className="sy-month-axis" style={{top:(padT + plotH) + 'px', left:x0 + 'px', width:plotW + 'px'}}>
+              {months.map((month, index)=>{
+                const isFocus = index === focusIndex;
+                return (
+                  <button
+                    key={'label-' + month.key}
+                    type="button"
+                    className={'sy-month-label' + (isFocus ? ' is-focus' : '') + (month.isCurrent ? ' is-current' : '')}
+                    style={{width:monthPitch + 'px'}}
+                    onClick={()=>selectMonth(index)}
+                    aria-pressed={isFocus}
+                  >
+                    {isFocus ? <span>{month.label}</span> : month.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </div>
+      <div className="review-symptom-bubble-legend" aria-hidden="true">
+        <span>记录较少</span>
+        <div className="review-symptom-bubble-legend-dots">
+          {SYMPTOM_BUBBLE_LEVELS.map((item, index)=>(
+            <i key={index} style={{width:(item.r * 2) + 'px', height:(item.r * 2) + 'px', background:item.fill}}/>
+          ))}
+        </div>
+        <span>记录较多</span>
       </div>
     </div>
   );
@@ -13243,6 +13574,28 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
     ()=>days.map(day=>symptomSheetPhaseForDay(range, day)),
     [days, range]
   );
+  const phaseBands = React.useMemo(()=>{
+    const bands = [];
+    let current = null;
+    dayPhases.forEach((phase, index)=>{
+      const phaseKey = phase?.key || phase?.label || ('p-' + index);
+      if(!current || current.phaseKey !== phaseKey){
+        if(current) bands.push(current);
+        current = {
+          key:phaseKey + '-' + index,
+          phaseKey,
+          label:phase?.label || '',
+          color:phase?.color || 'rgba(0,0,0,0.45)',
+          start:index,
+          end:index,
+        };
+      }else{
+        current.end = index;
+      }
+    });
+    if(current) bands.push(current);
+    return bands;
+  }, [dayPhases]);
   const daySets = React.useMemo(()=>{
     const map = {};
     model.rows.forEach(row=>{
@@ -13381,38 +13734,9 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
             <div className="sy-sheet-month-pin">{stickyMonth}</div>
           </div>
           <div
-            className="sy-sheet-grid"
+            className="sy-sheet-grid is-axis-bottom"
             style={{gridTemplateColumns:gridCols, width:fitAll ? '100%' : undefined}}
           >
-            <div className="sy-sheet-corner">症状</div>
-            {days.map((day, index)=>{
-              const isFocus = day === focusDay;
-              const isToday = day === model.length;
-              const recorded = hasRecord(day);
-              const date = symptomSheetDateForDay(day, model.length);
-              return (
-                <button
-                  key={'h-' + day}
-                  type="button"
-                  ref={isFocus ? focusColRef : null}
-                  className={
-                    'sy-sheet-day is-label'
-                    + (isFocus ? ' is-focus' : '')
-                    + (isToday ? ' is-today' : '')
-                    + (recorded ? '' : ' is-empty-day')
-                  }
-                  style={{background:dayPhases[index]?.bg}}
-                  onClick={()=>selectDay(day)}
-                  disabled={!recorded}
-                  aria-pressed={isFocus}
-                  aria-label={symptomSheetDayTitle(range, day, model.length)}
-                >
-                  {isToday || isFocus
-                    ? <span>{isToday ? '今' : date.getDate()}</span>
-                    : date.getDate()}
-                </button>
-              );
-            })}
             {model.rows.map(row=>(
               <React.Fragment key={row.key}>
                 <div className="sy-sheet-name">
@@ -13446,27 +13770,83 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
                 })}
               </React.Fragment>
             ))}
+            <div className="sy-sheet-corner is-axis">日期</div>
+            {days.map((day, index)=>{
+              const isFocus = day === focusDay;
+              const isToday = day === model.length;
+              const recorded = hasRecord(day);
+              const date = symptomSheetDateForDay(day, model.length);
+              return (
+                <button
+                  key={'h-' + day}
+                  type="button"
+                  ref={isFocus ? focusColRef : null}
+                  className={
+                    'sy-sheet-day is-label is-bottom'
+                    + (isFocus ? ' is-focus' : '')
+                    + (isToday ? ' is-today' : '')
+                    + (recorded ? '' : ' is-empty-day')
+                  }
+                  onClick={()=>selectDay(day)}
+                  disabled={!recorded}
+                  aria-pressed={isFocus}
+                  aria-label={symptomSheetDayTitle(range, day, model.length)}
+                >
+                  {isToday || isFocus
+                    ? <span>{isToday ? '今天' : date.getDate()}</span>
+                    : date.getDate()}
+                </button>
+              );
+            })}
+            <div className="sy-sheet-corner is-phase" aria-hidden="true"/>
+            <div className="sy-sheet-phase-row" style={{gridColumn:'2 / -1'}} aria-hidden="true">
+              {phaseBands.map(band=>{
+                const span = band.end - band.start + 1;
+                const leftPx = colW ? band.start * colW : null;
+                const widthPx = colW ? span * colW : null;
+                if((widthPx != null && widthPx < 34) || !band.label) return null;
+                return (
+                  <span
+                    key={band.key}
+                    className="sy-sheet-phase"
+                    style={{
+                      left:fitAll || leftPx == null
+                        ? ((band.start / Math.max(1, days.length)) * 100) + '%'
+                        : leftPx + 'px',
+                      width:fitAll || widthPx == null
+                        ? ((span / Math.max(1, days.length)) * 100) + '%'
+                        : widthPx + 'px',
+                      color:band.color,
+                    }}
+                  >{band.label}</span>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="review-mood-traj-legend review-symptom-phase-legend" aria-hidden="true">
-        <span><i className="is-period"/>月经期</span>
-        <span><i className="is-phase" style={{background:'#22B487'}}/>卵泡期</span>
-        <span><i className="is-phase" style={{background:'#9A6FD4'}}/>排卵期</span>
-        <span><i className="is-phase" style={{background:'#D4A017'}}/>黄体期</span>
       </div>
     </div>
   );
 }
 
-function SymptomTrendSummary({range = 'd30'}){
+function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
   const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
   const sheetModel = React.useMemo(()=>buildFlatSymptomScatter(range), [range]);
-  const rangeTitle = symptomSheetRangeTitle(sheetModel.length);
+  const monthModel = React.useMemo(
+    ()=>(meta.mode === 'cycles' && longChart === 'month' ? buildMonthlySymptomBubbles(range) : null),
+    [range, longChart, meta.mode]
+  );
+  const isCycleTabs = meta.mode === 'cycles';
+  const useMonthBubble = isCycleTabs && longChart !== 'cycle';
+  const useCycleStack = isCycleTabs && longChart === 'cycle';
+  const useSheet = !isCycleTabs;
+  const rangeTitle = useMonthBubble
+    ? (monthModel?.subtitle || meta.dateText)
+    : (range === 'd30' ? symptomSheetRangeTitle(sheetModel.length) : (meta.dateText || symptomSheetRangeTitle(sheetModel.length)));
   const [landscape, setLandscape] = React.useState(false);
   const [phoneSize, setPhoneSize] = React.useState(null);
   const cardRef = React.useRef(null);
-  React.useEffect(()=>{ setLandscape(false); }, [range]);
+  React.useEffect(()=>{ setLandscape(false); }, [range, longChart]);
   const openLandscape = event=>{
     event?.stopPropagation?.();
     const phone = cardRef.current?.closest('.phone');
@@ -13475,11 +13855,25 @@ function SymptomTrendSummary({range = 'd30'}){
     setPhoneSize({w:rect?.width || 390, h:height});
     setLandscape(true);
   };
-  const expandBtn = (
-    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏横屏查看症状表格" onClick={openLandscape}>
+  const canLandscape = useSheet || useMonthBubble || useCycleStack;
+  const expandBtn = canLandscape ? (
+    <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏横屏查看症状分布" onClick={openLandscape}>
       <ReviewExpandIcon/>
     </button>
-  );
+  ) : null;
+  const cardClass = [
+    'review-symptom-trend-section-card',
+    useSheet ? 'is-sheet' : 'is-scatter-only',
+    useCycleStack ? 'is-cycle-stack' : '',
+    useMonthBubble ? 'is-month-bubble' : '',
+  ].filter(Boolean).join(' ');
+  const chartClass = [
+    'review-chart',
+    'review-detail-chart',
+    useSheet ? 'review-symptom-sheet-chart' : 'review-symptom-scatter-chart',
+    useCycleStack ? 'is-cycle-stack' : '',
+    useMonthBubble ? 'is-month-bubble' : '',
+  ].filter(Boolean).join(' ');
   return (
     <>
       <div ref={cardRef}>
@@ -13489,10 +13883,16 @@ function SymptomTrendSummary({range = 'd30'}){
           title="症状分布"
           subtitle={rangeTitle}
           extra={expandBtn}
-          className="review-symptom-trend-section-card is-sheet"
+          className={cardClass}
         >
-          <div className="review-chart review-detail-chart review-symptom-sheet-chart">
-            <SymptomSheetTable range={range}/>
+          <div className={chartClass}>
+            {useMonthBubble ? (
+              <SymptomMonthlyBubbleChart range={range}/>
+            ) : useCycleStack ? (
+              <SymptomMultiCycleScatter range={range}/>
+            ) : (
+              <SymptomSheetTable range={range}/>
+            )}
           </div>
           <div className="review-mood-trend-foot">
             <div className="review-mood-trend-insight-row review-weight-stat-row">
@@ -13520,7 +13920,7 @@ function SymptomTrendSummary({range = 'd30'}){
           </div>
         </ReviewDetailSectionCard>
       </div>
-      {landscape && phoneSize ? ReactDOM.createPortal(
+      {landscape && phoneSize && canLandscape ? ReactDOM.createPortal(
         <div className="wg-sheet-landscape-mask" role="dialog" aria-modal="true" aria-label="症状分布 · 横屏">
           <div
             className="wg-sheet-landscape"
@@ -13528,7 +13928,11 @@ function SymptomTrendSummary({range = 'd30'}){
           >
             <div className="wg-sheet-landscape-bar">
               <span className="wg-sheet-landscape-title">症状分布</span>
-              <span className="wg-sheet-landscape-legend">圆点表示当天有该症状</span>
+              <span className="wg-sheet-landscape-legend">
+                {useMonthBubble
+                  ? '圆点越大颜色越深，表示当月记录越多'
+                  : (useCycleStack ? '按周期对照症状分布，圆点表示当天有记录' : '圆点表示当天有该症状')}
+              </span>
               <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <rect x="7" y="3" width="11" height="18" rx="2.2"/>
@@ -13539,7 +13943,13 @@ function SymptomTrendSummary({range = 'd30'}){
             </div>
             <div className="wg-sheet-landscape-scroll">
               <div className="review-detail-card review-symptom-sheet-landscape-card">
-                <SymptomSheetTable range={range} landscape/>
+                {useMonthBubble ? (
+                  <SymptomMonthlyBubbleChart range={range} landscape/>
+                ) : useCycleStack ? (
+                  <SymptomMultiCycleScatter range={range} landscape/>
+                ) : (
+                  <SymptomSheetTable range={range} landscape/>
+                )}
               </div>
             </div>
           </div>
@@ -13741,10 +14151,10 @@ function SymptomCycleCombinedCard({onExpand}){
   );
 }
 
-function SymptomDetailBody({range}){
+function SymptomDetailBody({range, longChart = 'month'}){
   return (
     <div className="review-detail-section-stack">
-      <SymptomTrendSummary range={range}/>
+      <SymptomTrendSummary range={range} longChart={longChart}/>
       {range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
     </div>
   );
@@ -13840,9 +14250,10 @@ function SymptomAllRecordsPage({open, onClose}){
   );
 }
 
-function SymptomDetailPage({open, onClose}){
+function SymptomDetailPage({open, onClose, longChart = 'month'}){
   const [range, setRange] = React.useState('d30');
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
+  const contentRef = React.useRef(null);
   const ranges = [
     {key:'d30', label:'近30天'},
     {key:'half', label:'近半年'},
@@ -13855,6 +14266,11 @@ function SymptomDetailPage({open, onClose}){
       setAllRecordsOpen(false);
     }
   }, [open]);
+  React.useLayoutEffect(()=>{
+    const scroller = contentRef.current;
+    if(!scroller) return;
+    scroller.scrollTop = 0;
+  }, [range, longChart]);
   return (
     <>
     <section
@@ -13869,7 +14285,7 @@ function SymptomDetailPage({open, onClose}){
         <span className="review-detail-title">症状</span>
         <button type="button" className="review-detail-all-records" onClick={()=>setAllRecordsOpen(true)}>所有记录</button>
       </div>
-      <div className="review-detail-content review-love-detail-content">
+      <div className="review-detail-content review-love-detail-content" ref={contentRef}>
         <div className="review-love-detail-top">
           <div className="review-segment" role="tablist" aria-label="时间范围">
             {ranges.map(item=>(
@@ -13885,7 +14301,7 @@ function SymptomDetailPage({open, onClose}){
             ))}
           </div>
         </div>
-        <SymptomDetailBody range={range}/>
+        <SymptomDetailBody range={range} longChart={longChart}/>
       </div>
     </section>
     <SymptomAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
@@ -18057,7 +18473,7 @@ function LoveDetailPage({open, onClose}){
   );
 }
 
-function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, weightAssessValues=null, onWeightAssessValuesChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, openSymptomDetailRequest=0, onSymptomDetailRequestHandled, onSymptomDetailReturn, shareState, onShareStateChange, onOpenPartnerPreview}){
+function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManagePhase='none', onWeightManageChange, weightAssessValues=null, onWeightAssessValuesChange, openCycleDetailRequest=0, onCycleDetailRequestHandled, onCycleDetailReturn, openWeightDetailRequest=0, onWeightDetailRequestHandled, onWeightDetailReturn, openWeightGoalDetailRequest=0, onWeightGoalDetailRequestHandled, onWeightGoalDetailReturn, onWeightGoalGoCheckIn, openDietDetailRequest=0, onDietDetailRequestHandled, onDietDetailReturn, openMoodDetailRequest=0, onMoodDetailRequestHandled, onMoodDetailReturn, openSymptomDetailRequest=0, onSymptomDetailRequestHandled, onSymptomDetailReturn, symptomLongChart='month', shareState, onShareStateChange, onOpenPartnerPreview}){
   const [reviewSearchOpen, setReviewSearchOpen] = useState(false);
   const [cycleUpdated, setCycleUpdated] = useState(true);
   const [cycleDetailOpen, setCycleDetailOpen] = useState(false);
@@ -18307,6 +18723,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <SkinDetailPage open={skinDetailOpen} onClose={()=>setSkinDetailOpen(false)}/>
       <SymptomDetailPage
         open={symptomDetailOpen}
+        longChart={symptomLongChart === 'cycle' ? 'cycle' : 'month'}
         onClose={()=>{
           setSymptomDetailOpen(false);
           onSymptomDetailReturn?.();
