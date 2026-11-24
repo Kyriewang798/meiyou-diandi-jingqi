@@ -1355,7 +1355,7 @@ function TempRecordSheet({ open, onCancel, onConfirm }) {
   return picker;
 }
 
-const ADD_PLAN_QUICK_TAGS = ['生日', '纪念日', '打疫苗', '体检', '体重管理'];
+const ADD_PLAN_QUICK_TAGS = ['生日', '纪念日', '打疫苗', '体检', '体重目标日'];
 const ADD_PLAN_WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
 function formatAddPlanDate(date){
@@ -1426,7 +1426,7 @@ function AddPlanSheet({ open, onCancel, onConfirm, initialDate, initialText = ''
             />
             <div className="add-plan-tags" role="list">
               {ADD_PLAN_QUICK_TAGS.map((tag) => {
-                const weightActive = tag === '体重管理' && /减重|增重|体重/.test(text);
+                const weightActive = tag === '体重目标日' && /减重|增重|体重|目标日/.test(text);
                 return (
                   <button
                     key={tag}
