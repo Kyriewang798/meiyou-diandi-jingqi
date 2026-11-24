@@ -3097,7 +3097,7 @@ function App(){
             setReviewSymptomReturnTab(null);
             setActiveTab(returnTab);
           }}
-          symptomLongChart={t.symptomLongChart === 'cycle' ? 'cycle' : 'month'}
+          symptomLongChart={['month','cycle','phase'].includes(t.symptomLongChart) ? t.symptomLongChart : 'month'}
           shareState={reviewShareState}
           onShareStateChange={setReviewShareState}
           onOpenPartnerPreview={()=>{
@@ -3399,10 +3399,11 @@ function App(){
           <TweakSection label="症状回顾" />
           <TweakRadio
             label="长周期图表"
-            value={t.symptomLongChart === 'cycle' ? 'cycle' : 'month'}
+            value={['month','cycle','phase'].includes(t.symptomLongChart) ? t.symptomLongChart : 'month'}
             options={[
               {value:'month', label:'按月'},
-              {value:'cycle', label:'按周期'},
+              {value:'cycle', label:'按周期（明细）'},
+              {value:'phase', label:'按周期（分布）'},
             ]}
             onChange={(v)=>setTweak('symptomLongChart', v)}
           />

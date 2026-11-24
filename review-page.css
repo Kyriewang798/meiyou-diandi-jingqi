@@ -14253,6 +14253,178 @@
 .review-symptom-trend-section-card.is-month-bubble .review-symptom-scatter-chart.is-month-bubble{
   margin-top:12px;
 }
+.review-symptom-trend-section-card.is-phase-bubble .review-symptom-scatter-chart.is-phase-bubble{
+  margin-top:4px;
+}
+.sy-phase{
+  width:100%;
+}
+.sy-phase-tip{
+  margin:0 0 10px;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.45);
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-phase-body{
+  display:flex;
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+}
+.sy-phase-yaxis{
+  flex:0 0 var(--sy-phase-label, 40px);
+  width:var(--sy-phase-label, 40px);
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  box-sizing:border-box;
+  padding-right:4px;
+  pointer-events:none;
+}
+.sy-phase-yaxis span{
+  height:var(--sy-phase-row, 34px);
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  font-size:12px;
+  line-height:1.2;
+  color:rgba(0,0,0,0.75);
+  white-space:nowrap;
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  font-weight:400;
+}
+.sy-phase-plot-wrap{
+  flex:1 1 auto;
+  min-width:0;
+}
+.sy-phase-plot-frame{
+  position:relative;
+  width:100%;
+  padding-top:8px;
+}
+.sy-phase-plot-frame:has(.sy-phase-focus-tip){
+  padding-top:64px;
+}
+.sy-phase-focus-tip{
+  position:absolute;
+  top:4px;
+  z-index:5;
+  transform:translateX(-50%);
+  min-width:148px;
+  max-width:210px;
+  padding:8px 10px;
+  border-radius:8px;
+  background:rgba(255,255,255,0.98);
+  box-shadow:0 0 0 0.5px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.08);
+  pointer-events:none;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.sy-phase-focus-tip b{
+  font-size:14px;
+  font-weight:500;
+  color:rgba(0,0,0,0.8);
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-phase-focus-tip span{
+  font-size:12px;
+  color:rgba(0,0,0,0.55);
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-phase-focus-tip em{
+  font-style:normal;
+  font-size:11px;
+  line-height:1.35;
+  color:rgba(0,0,0,0.45);
+  font-family:"PingFang SC",-apple-system,sans-serif;
+}
+.sy-phase-plot{
+  position:relative;
+  display:grid;
+  width:100%;
+  border-radius:4px;
+  overflow:visible;
+  isolation:isolate;
+}
+.sy-phase-col-bg{
+  z-index:0;
+  pointer-events:none;
+}
+.sy-phase-guide{
+  z-index:0;
+  align-self:center;
+  height:0;
+  width:100%;
+  border-top:1px dashed rgba(0,0,0,0.08);
+  pointer-events:none;
+}
+.sy-phase-cell{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  min-height:var(--sy-phase-row, 34px);
+  padding:0;
+  margin:0;
+  border:0;
+  background:transparent;
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+}
+.sy-phase-cell.is-active .sy-phase-dot{
+  box-shadow:0 0 0 2px rgba(255,77,136,0.18);
+}
+.sy-phase-base{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:3px;
+  height:3px;
+  margin:-1.5px 0 0 -1.5px;
+  border-radius:50%;
+  background:rgba(0,0,0,0.1);
+  z-index:0;
+  pointer-events:none;
+}
+.sy-phase-dot{
+  position:relative;
+  z-index:1;
+  display:block;
+  border-radius:50%;
+  flex-shrink:0;
+  pointer-events:none;
+}
+.sy-phase-xlabels{
+  display:flex;
+  align-items:center;
+  margin-top:6px;
+}
+.sy-phase-xlabels span{
+  text-align:center;
+  font-size:11px;
+  line-height:1.29;
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  font-weight:400;
+}
+.sy-phase-legend{
+  margin-top:12px;
+}
+.sy-cycle-stack-page-sub{
+  margin:0 12px 10px;
+  font-size:12px;
+  line-height:1.29;
+  color:rgba(0,0,0,0.45);
+}
+.review-symptom-cycle-stack-page .review-detail-card{
+  margin:0 12px 16px;
+  padding:12px;
+}
+
 .sy-month{
   position:relative;
   margin-top:0;

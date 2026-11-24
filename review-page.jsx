@@ -13475,6 +13475,285 @@ function SymptomMonthlyBubbleChart({range = 'half', landscape = false}){
   );
 }
 
+
+const SYMPTOM_OVERLAY_DAYS = 28;
+const SYMPTOM_PHASE_KEYS = [
+  {key:'menstrual', label:'月经期', start:1, end:5, bg:'#FDF1F5', color:'#FF4D88'},
+  {key:'follicular', label:'卵泡期', start:6, end:12, bg:'#EEFAF8', color:'#22B487'},
+  {key:'ovulation', label:'排卵期', start:13, end:15, bg:'#F9F3FD', color:'#9A6FD4'},
+  {key:'luteal', label:'黄体期', start:16, end:28, bg:'#FCF8EF', color:'#D4A017'},
+];
+
+/** 分布气泡五档（左开右闭）；0% 仅灰色底点 */
+const SYMPTOM_OVERLAY_BUBBLE_LEVELS = [
+  {max:0.2, d:5, alpha:0.35},
+  {max:0.4, d:8, alpha:0.5},
+  {max:0.6, d:11, alpha:0.65},
+  {max:0.8, d:15, alpha:0.8},
+  {max:1.0001, d:18, alpha:0.9},
+];
+const SYMPTOM_OVERLAY_BASE_DOT = 3;
+
+function symptomOverlayPhaseForPos(pos){
+  return SYMPTOM_PHASE_KEYS.find(ph => pos >= ph.start && pos <= ph.end) || SYMPTOM_PHASE_KEYS[0];
+}
+
+function symptomOverlayBubbleStyle(ratio){
+  if(!ratio || ratio <= 0) return null;
+  const level = SYMPTOM_OVERLAY_BUBBLE_LEVELS.find(item => ratio <= item.max) || SYMPTOM_OVERLAY_BUBBLE_LEVELS[SYMPTOM_OVERLAY_BUBBLE_LEVELS.length - 1];
+  return {
+    d: level.d,
+    fill: 'rgba(255,77,136,' + level.alpha + ')',
+  };
+}
+
+/** Demo：标准化位置命中占比（0–1），再乘周期数得到命中周期数 */
+function demoOverlayRatioPattern(key){
+  const a = Array(SYMPTOM_OVERLAY_DAYS).fill(0);
+  const put = (day1, ratio)=>{
+    const i = day1 - 1;
+    if(i < 0 || i >= SYMPTOM_OVERLAY_DAYS) return;
+    a[i] = Math.max(a[i], Math.min(1, ratio));
+  };
+  if(key === 'cramp'){
+    // 腹痛：月经期前几天
+    [[1,0.9],[2,1],[3,0.85],[4,0.65],[5,0.2]].forEach(([d,r])=>put(d,r));
+  }else if(key === 'back'){
+    // 腰酸：月经期 + 黄体期末
+    [[1,0.75],[2,0.7],[3,0.55],[4,0.4],[5,0.3]].forEach(([d,r])=>put(d,r));
+    [[24,0.35],[25,0.5],[26,0.7],[27,0.8],[28,0.75]].forEach(([d,r])=>put(d,r));
+  }else if(key === 'breast'){
+    // 乳胀：黄体期末尾
+    [[21,0.2],[22,0.4],[23,0.55],[24,0.75],[25,0.9],[26,1],[27,0.95],[28,0.8]].forEach(([d,r])=>put(d,r));
+  }else if(key === 'tired'){
+    // 疲倦：黄体期
+    for(let d = 16; d <= 28; d++){
+      put(d, 0.35 + 0.45 * ((d - 16) / 12));
+    }
+  }else if(key === 'acne'){
+    // 粉刺：黄体期为主，其他偶尔
+    for(let d = 18; d <= 27; d++){
+      put(d, 0.3 + 0.4 * ((d - 18) / 9));
+    }
+    put(3, 0.15); put(10, 0.12); put(14, 0.18);
+  }else if(key === 'diarrhea'){
+    // 腹泻：月经期
+    [[1,0.8],[2,0.85],[3,0.7],[4,0.45],[5,0.15]].forEach(([d,r])=>put(d,r));
+  }else if(key === 'head'){
+    // 头痛：零散
+    [[3,0.2],[7,0.25],[11,0.18],[14,0.3],[18,0.22],[23,0.28]].forEach(([d,r])=>put(d,r));
+  }else if(key === 'sleep'){
+    // 失眠：少量
+    [[9,0.15],[19,0.2],[26,0.18]].forEach(([d,r])=>put(d,r));
+  }
+  return a;
+}
+
+const SYMPTOM_OVERLAY_RANGE_CYCLES = {half:6, year:12, all:24};
+const SYMPTOM_OVERLAY_DEMO_KEYS = ['back','cramp','tired','breast','head','sleep','acne','diarrhea'];
+
+function buildPhaseSymptomBubbles(range = 'half'){
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.half;
+  const cycleCount = SYMPTOM_OVERLAY_RANGE_CYCLES[range] || SYMPTOM_OVERLAY_RANGE_CYCLES.half;
+  // 近半年偏弱，近1年加强，全部最强（视觉递进）
+  const density = range === 'all' ? 1 : (range === 'year' ? 0.72 : 0.42);
+  const rows = SYMPTOM_ROW_ORDER
+    .filter(key => SYMPTOM_OVERLAY_DEMO_KEYS.includes(key))
+    .map(key=>{
+      const ratios = demoOverlayRatioPattern(key).map(r => {
+        const scaled = r * density;
+        // 近半年再压掉弱信号，避免满屏粉点
+        if(range === 'half' && scaled < 0.18) return 0;
+        if(range === 'year' && scaled < 0.08) return 0;
+        return Math.min(1, scaled);
+      });
+      const hits = ratios.map(r => Math.round(r * cycleCount));
+      const total = hits.reduce((sum, n)=>sum + n, 0);
+      return {
+        key,
+        label:(SYMPTOM_SCATTER_DEFS[key] || {}).label || key,
+        hits,
+        ratios: hits.map(n => n / Math.max(1, cycleCount)),
+        total,
+      };
+    })
+    .filter(row => row.total > 0);
+  return {
+    phases: SYMPTOM_PHASE_KEYS,
+    rows,
+    days: SYMPTOM_OVERLAY_DAYS,
+    cycleCount,
+    subtitle: meta.dateText,
+    tipText: '汇总' + cycleCount + '个周期的症状记录',
+  };
+}
+
+function SymptomPhaseBubbleChart({range = 'half'}){
+  const model = React.useMemo(()=>buildPhaseSymptomBubbles(range), [range]);
+  const {phases, rows, days, cycleCount, tipText} = model;
+  const labelW = 40;
+  const rowH = 34;
+  const plotH = Math.max(rowH, rows.length * rowH);
+  const [focus, setFocus] = React.useState(null);
+  React.useEffect(()=>{ setFocus(null); }, [range]);
+  const focusRow = focus ? rows.find(r => r.key === focus.key) : null;
+  const focusPos = focus ? focus.pos : 0;
+  const focusHits = focusRow ? (focusRow.hits[focusPos - 1] || 0) : 0;
+  const focusPhase = focusPos ? symptomOverlayPhaseForPos(focusPos) : null;
+  const tipLeftPct = focusPos ? ((focusPos - 0.5) / days) * 100 : 0;
+  return (
+    <div className="sy-phase" style={{'--sy-phase-label':labelW + 'px', '--sy-phase-row':rowH + 'px'}}>
+      {tipText ? <p className="sy-phase-tip">{tipText}</p> : null}
+      <div className="sy-phase-body">
+        <div className="sy-phase-yaxis" aria-hidden="true">
+          {rows.map(row=>(
+            <span key={row.key}>{row.label}</span>
+          ))}
+        </div>
+        <div className="sy-phase-plot-wrap">
+          <div className="sy-phase-plot-frame" style={{height:plotH + 'px'}}>
+            {focus && focusRow && focusHits > 0 ? (
+              <div
+                className="sy-phase-focus-tip"
+                style={{left:Math.min(86, Math.max(14, tipLeftPct)) + '%', top:0}}
+                role="status"
+              >
+                <b>{focusRow.label}</b>
+                <span>{focusPhase.label}</span>
+                <em>{cycleCount}个周期中有{focusHits}个周期在该位置记录过{focusRow.label}</em>
+              </div>
+            ) : null}
+            <div
+              className="sy-phase-plot"
+              role="img"
+              aria-label="多周期症状叠加气泡图"
+              style={{
+                height:plotH + 'px',
+                gridTemplateColumns:'repeat(' + days + ', minmax(0, 1fr))',
+                gridTemplateRows:'repeat(' + rows.length + ', var(--sy-phase-row))',
+              }}
+            >
+              {phases.map(ph=>{
+                const startCol = ph.start;
+                const span = ph.end - ph.start + 1;
+                return (
+                  <div
+                    key={'bg-' + ph.key}
+                    className="sy-phase-col-bg"
+                    style={{
+                      background:ph.bg,
+                      gridColumn: startCol + ' / span ' + span,
+                      gridRow:'1 / -1',
+                    }}
+                    aria-hidden="true"
+                  />
+                );
+              })}
+              {rows.map((row, rowIndex)=>(
+                <React.Fragment key={row.key}>
+                  <i
+                    className="sy-phase-guide"
+                    style={{gridColumn:'1 / -1', gridRow:rowIndex + 1}}
+                    aria-hidden="true"
+                  />
+                  {row.hits.map((hits, index)=>{
+                    const pos = index + 1;
+                    const style = symptomOverlayBubbleStyle(row.ratios[index]);
+                    const active = focus && focus.key === row.key && focus.pos === pos;
+                    return (
+                      <button
+                        key={row.key + '-' + pos}
+                        type="button"
+                        className={'sy-phase-cell' + (active ? ' is-active' : '')}
+                        style={{gridColumn:index + 1, gridRow:rowIndex + 1}}
+                        aria-label={row.label + ' 标准化第' + pos + '位'}
+                        onClick={(event)=>{
+                          event.stopPropagation();
+                          if(!hits){
+                            setFocus(null);
+                            return;
+                          }
+                          setFocus(prev => (prev && prev.key === row.key && prev.pos === pos) ? null : {key:row.key, pos});
+                        }}
+                      >
+                        <i className="sy-phase-base" aria-hidden="true"/>
+                        {style ? (
+                          <span
+                            className="sy-phase-dot"
+                            style={{width:style.d + 'px', height:style.d + 'px', background:style.fill}}
+                          />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="sy-phase-xlabels" aria-hidden="true">
+            {phases.map(ph=>{
+              const span = ph.end - ph.start + 1;
+              return (
+                <span
+                  key={ph.key}
+                  style={{color:ph.color, flex:span}}
+                >{ph.label}</span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="review-symptom-bubble-legend sy-phase-legend" aria-hidden="true">
+        <span>较少周期有记录</span>
+        <div className="review-symptom-bubble-legend-dots">
+          {SYMPTOM_OVERLAY_BUBBLE_LEVELS.map((item, index)=>(
+            <i
+              key={index}
+              style={{
+                width:item.d + 'px',
+                height:item.d + 'px',
+                background:'rgba(255,77,136,' + item.alpha + ')',
+              }}
+            />
+          ))}
+        </div>
+        <span>较多周期有记录</span>
+      </div>
+    </div>
+  );
+}
+
+function SymptomCycleStackPage({open, onClose, range = 'half'}){
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.half;
+  React.useEffect(()=>{
+    if(!open) return undefined;
+    const handleKeyDown = event=>{ if(event.key === 'Escape') onClose?.(); };
+    document.addEventListener('keydown', handleKeyDown);
+    return ()=>document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+  return (
+    <section
+      className={'review-cycle-detail is-fullscreen-detail review-symptom-cycle-stack-page' + (open ? ' is-open' : '')}
+      aria-hidden={!open}
+      aria-label="各周期症状分布"
+    >
+      <div className="review-detail-nav">
+        <button type="button" className="review-detail-back" aria-label="返回" onClick={onClose}>
+          <ReviewBackIcon/>
+        </button>
+        <span className="review-detail-title">各周期症状分布</span>
+      </div>
+      <div className="review-detail-content review-love-detail-content">
+        <p className="sy-cycle-stack-page-sub">{meta.dateText}</p>
+        <div className="review-detail-card review-symptom-trend-section-card is-scatter-only is-cycle-stack">
+          <SymptomMultiCycleScatter range={range}/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 const SYMPTOM_SHEET_TODAY = new Date(2026, 6, 13); // 与回顾页其他卡对齐：2026-07-13
 
 function symptomSheetPhaseForDay(range, dayIndex){
@@ -13818,20 +14097,35 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
   );
 }
 
-function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
+function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleStack}){
   const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.d30;
   const sheetModel = React.useMemo(()=>buildFlatSymptomScatter(range), [range]);
   const monthModel = React.useMemo(
     ()=>(meta.mode === 'cycles' && longChart === 'month' ? buildMonthlySymptomBubbles(range) : null),
     [range, longChart, meta.mode]
   );
+  const phaseModel = React.useMemo(
+    ()=>(meta.mode === 'cycles' && longChart === 'phase' ? buildPhaseSymptomBubbles(range) : null),
+    [range, longChart, meta.mode]
+  );
   const isCycleTabs = meta.mode === 'cycles';
-  const useMonthBubble = isCycleTabs && longChart !== 'cycle';
+  const usePhaseBubble = isCycleTabs && longChart === 'phase';
+  const useMonthBubble = isCycleTabs && longChart === 'month';
   const useCycleStack = isCycleTabs && longChart === 'cycle';
   const useSheet = !isCycleTabs;
-  const rangeTitle = useMonthBubble
-    ? (monthModel?.subtitle || meta.dateText)
-    : (range === 'd30' ? symptomSheetRangeTitle(sheetModel.length) : (meta.dateText || symptomSheetRangeTitle(sheetModel.length)));
+  const footMeta = {
+    kinds: meta.kinds,
+    mostName: meta.mostName,
+    mostCount: meta.mostCount,
+    longestName: meta.longestName,
+    longestDays: meta.longestDays,
+    mostUnit: '次',
+  };
+  const rangeTitle = usePhaseBubble
+    ? (phaseModel?.subtitle || meta.dateText)
+    : (useMonthBubble
+      ? (monthModel?.subtitle || meta.dateText)
+      : (range === 'd30' ? symptomSheetRangeTitle(sheetModel.length) : (meta.dateText || symptomSheetRangeTitle(sheetModel.length))));
   const [landscape, setLandscape] = React.useState(false);
   const [phoneSize, setPhoneSize] = React.useState(null);
   const cardRef = React.useRef(null);
@@ -13855,6 +14149,7 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
     useSheet ? 'is-sheet' : 'is-scatter-only',
     useCycleStack ? 'is-cycle-stack' : '',
     useMonthBubble ? 'is-month-bubble' : '',
+    usePhaseBubble ? 'is-phase-bubble' : '',
   ].filter(Boolean).join(' ');
   const chartClass = [
     'review-chart',
@@ -13862,6 +14157,7 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
     useSheet ? 'review-symptom-sheet-chart' : 'review-symptom-scatter-chart',
     useCycleStack ? 'is-cycle-stack' : '',
     useMonthBubble ? 'is-month-bubble' : '',
+    usePhaseBubble ? 'is-phase-bubble' : '',
   ].filter(Boolean).join(' ');
   return (
     <>
@@ -13873,9 +14169,12 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
           subtitle={rangeTitle}
           extra={expandBtn}
           className={cardClass}
+          onOpen={usePhaseBubble ? onOpenCycleStack : undefined}
         >
           <div className={chartClass}>
-            {useMonthBubble ? (
+            {usePhaseBubble ? (
+              <SymptomPhaseBubbleChart range={range}/>
+            ) : useMonthBubble ? (
               <SymptomMonthlyBubbleChart range={range}/>
             ) : useCycleStack ? (
               <SymptomMultiCycleScatter range={range}/>
@@ -13887,21 +14186,21 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
             <div className="review-mood-trend-insight-row review-weight-stat-row">
               <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
                 <span className="review-mood-trend-record-card-title">记录症状</span>
-                <p><b>{meta.kinds}</b><em>种</em></p>
+                <p><b>{footMeta.kinds}</b><em>种</em></p>
               </div>
               <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest is-most">
                 <span className="review-mood-trend-record-card-title">最常记录</span>
                 <p>
-                  <em className="is-name">{meta.mostName}</em>
-                  <b>{meta.mostCount}</b>
-                  <em>次</em>
+                  <em className="is-name">{footMeta.mostName}</em>
+                  <b>{footMeta.mostCount}</b>
+                  <em>{footMeta.mostUnit}</em>
                 </p>
               </div>
               <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card is-longest">
                 <span className="review-mood-trend-record-card-title">最长持续</span>
                 <p>
-                  <em className="is-name">{meta.longestName}</em>
-                  <b>{meta.longestDays}</b>
+                  <em className="is-name">{footMeta.longestName}</em>
+                  <b>{footMeta.longestDays}</b>
                   <em>天</em>
                 </p>
               </div>
@@ -13918,9 +14217,11 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
             <div className="wg-sheet-landscape-bar">
               <span className="wg-sheet-landscape-title">症状分布</span>
               <span className="wg-sheet-landscape-legend">
-                {useMonthBubble
-                  ? '圆点越大颜色越深，表示当月记录越多'
-                  : (useCycleStack ? '按周期对照症状分布，圆点表示当天有记录' : '圆点表示当天有该症状')}
+                {usePhaseBubble
+                  ? '圆点越大表示越多周期在该阶段有记录'
+                  : (useMonthBubble
+                    ? '圆点越大颜色越深，表示当月记录越多'
+                    : (useCycleStack ? '按周期对照症状分布，圆点表示当天有记录' : '圆点表示当天有该症状'))}
               </span>
               <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -13932,7 +14233,9 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month'}){
             </div>
             <div className="wg-sheet-landscape-scroll">
               <div className="review-detail-card review-symptom-sheet-landscape-card">
-                {useMonthBubble ? (
+                {usePhaseBubble ? (
+                  <SymptomPhaseBubbleChart range={range}/>
+                ) : useMonthBubble ? (
                   <SymptomMonthlyBubbleChart range={range} landscape/>
                 ) : useCycleStack ? (
                   <SymptomMultiCycleScatter range={range} landscape/>
@@ -14140,10 +14443,10 @@ function SymptomCycleCombinedCard({onExpand}){
   );
 }
 
-function SymptomDetailBody({range, longChart = 'month'}){
+function SymptomDetailBody({range, longChart = 'month', onOpenCycleStack}){
   return (
     <div className="review-detail-section-stack">
-      <SymptomTrendSummary range={range} longChart={longChart}/>
+      <SymptomTrendSummary range={range} longChart={longChart} onOpenCycleStack={onOpenCycleStack}/>
       {range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
     </div>
   );
@@ -14242,6 +14545,7 @@ function SymptomAllRecordsPage({open, onClose}){
 function SymptomDetailPage({open, onClose, longChart = 'month'}){
   const [range, setRange] = React.useState('d30');
   const [allRecordsOpen, setAllRecordsOpen] = React.useState(false);
+  const [cycleStackOpen, setCycleStackOpen] = React.useState(false);
   const contentRef = React.useRef(null);
   const ranges = [
     {key:'d30', label:'近30天'},
@@ -14253,17 +14557,22 @@ function SymptomDetailPage({open, onClose, longChart = 'month'}){
     if(open){
       setRange('d30');
       setAllRecordsOpen(false);
+      setCycleStackOpen(false);
     }
   }, [open]);
+  React.useEffect(()=>{
+    setCycleStackOpen(false);
+  }, [range, longChart]);
   React.useLayoutEffect(()=>{
     const scroller = contentRef.current;
     if(!scroller) return;
     scroller.scrollTop = 0;
   }, [range, longChart]);
+  const nestedOpen = allRecordsOpen || cycleStackOpen;
   return (
     <>
     <section
-      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '')}
+      className={'review-cycle-detail is-fullscreen-detail' + (open ? ' is-open' : '') + (nestedOpen ? ' is-timeline-open' : '')}
       aria-hidden={!open}
       aria-label="症状详情"
     >
@@ -14290,9 +14599,18 @@ function SymptomDetailPage({open, onClose, longChart = 'month'}){
             ))}
           </div>
         </div>
-        <SymptomDetailBody range={range} longChart={longChart}/>
+        <SymptomDetailBody
+          range={range}
+          longChart={longChart}
+          onOpenCycleStack={longChart === 'phase' ? (()=>setCycleStackOpen(true)) : undefined}
+        />
       </div>
     </section>
+    <SymptomCycleStackPage
+      open={open && cycleStackOpen}
+      onClose={()=>setCycleStackOpen(false)}
+      range={range}
+    />
     <SymptomAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
     </>
   );
@@ -18712,7 +19030,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <SkinDetailPage open={skinDetailOpen} onClose={()=>setSkinDetailOpen(false)}/>
       <SymptomDetailPage
         open={symptomDetailOpen}
-        longChart={symptomLongChart === 'cycle' ? 'cycle' : 'month'}
+        longChart={['month','cycle','phase'].includes(symptomLongChart) ? symptomLongChart : 'month'}
         onClose={()=>{
           setSymptomDetailOpen(false);
           onSymptomDetailReturn?.();
