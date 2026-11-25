@@ -13602,20 +13602,20 @@ function SymptomPhaseBubbleChart({range = 'half'}){
   const focusPhase = focusPos ? symptomOverlayPhaseForPos(focusPos) : null;
   const tipLeftPct = focusPos ? ((focusPos - 0.5) / days) * 100 : 0;
   return (
-    <div className="sy-phase" style={{'--sy-phase-label':labelW + 'px', '--sy-phase-row':rowH + 'px'}}>
+    <div className="sy-phase" style={{'--sy-phase-label':labelW + 'px', '--sy-phase-row':rowH + 'px', '--sy-phase-tip-space':'64px'}}>
       {tipText ? <p className="sy-phase-tip">{tipText}</p> : null}
-      <div className="sy-phase-body">
+      <div className="sy-phase-body is-tip-ready">
         <div className="sy-phase-yaxis" aria-hidden="true">
           {rows.map(row=>(
             <span key={row.key}>{row.label}</span>
           ))}
         </div>
         <div className="sy-phase-plot-wrap">
-          <div className="sy-phase-plot-frame" style={{height:plotH + 'px'}}>
+          <div className="sy-phase-plot-frame is-tip-ready">
             {focus && focusRow && focusHits > 0 ? (
               <div
                 className="sy-phase-focus-tip"
-                style={{left:Math.min(86, Math.max(14, tipLeftPct)) + '%', top:0}}
+                style={{left:Math.min(86, Math.max(14, tipLeftPct)) + '%'}}
                 role="status"
               >
                 <b>{focusRow.label}</b>
@@ -13723,6 +13723,614 @@ function SymptomPhaseBubbleChart({range = 'half'}){
   );
 }
 
+function SymptomPhaseDailyChart({range = 'd30'}){
+  const model = React.useMemo(()=>buildFlatSymptomScatter(range), [range]);
+  const days = React.useMemo(()=>{
+    const list = [];
+    for(let d = 1; d <= model.length; d++) list.push(d);
+    return list;
+  }, [model.length]);
+  const dayPhases = React.useMemo(
+    ()=>days.map(day=>{
+      const phase = symptomSheetPhaseForDay(range, day);
+      const styled = SYMPTOM_PHASE_KEYS.find(item => item.key === phase?.key);
+      return styled ? {...phase, bg:styled.bg, color:styled.color, label:styled.label} : phase;
+    }),
+    [days, range]
+  );
+  const phaseBands = React.useMemo(()=>{
+    const bands = [];
+    let current = null;
+    dayPhases.forEach((phase, index)=>{
+      const phaseKey = phase?.key || ('p-' + index);
+      if(!current || current.phaseKey !== phaseKey){
+        if(current) bands.push(current);
+        current = {
+          key: phaseKey + '-' + index,
+          phaseKey,
+          label: phase?.label || '',
+          color: phase?.color || 'rgba(0,0,0,0.45)',
+          bg: phase?.bg || 'transparent',
+          start: index,
+          end: index,
+        };
+      }else{
+        current.end = index;
+      }
+    });
+    if(current) bands.push(current);
+    return bands;
+  }, [dayPhases]);
+  const daySets = React.useMemo(()=>{
+    const map = {};
+    model.rows.forEach(row=>{ map[row.key] = new Set(row.days || []); });
+    return map;
+  }, [model.rows]);
+  const symptomsByDay = React.useMemo(()=>{
+    const map = {};
+    model.rows.forEach(row=>{
+      (row.days || []).forEach(day=>{
+        if(!map[day]) map[day] = [];
+        map[day].push(row);
+      });
+    });
+    return map;
+  }, [model.rows]);
+  const today = model.length;
+  const defaultFocus = today;
+  const [picked, setPicked] = React.useState(null);
+  React.useEffect(()=>{ setPicked(null); }, [range]);
+  const focusDay = (picked && picked.range === range) ? picked.day : defaultFocus;
+  const hasRecord = day => (symptomsByDay[day] || []).length > 0;
+  const selectDay = (day, event)=>{
+    event?.stopPropagation?.();
+    if(!hasRecord(day)) return;
+    setPicked({range, day});
+  };
+  const focusRows = symptomsByDay[focusDay] || [];
+  const focusEmpty = focusRows.length === 0;
+  const focusTitle = focusEmpty
+    ? '未记录'
+    : symptomFocusTipTitle(focusRows.map(r=>r.label));
+  const focusSub = symptomSheetTipSub(range, focusDay, model.length);
+  const labelW = 40;
+  const rowH = 34;
+  const plotH = Math.max(rowH, model.rows.length * rowH);
+  const tipLeftPct = ((focusDay - 0.5) / Math.max(1, days.length)) * 100;
+  const DOT = 7;
+  return (
+    <div className="sy-phase is-daily" style={{'--sy-phase-label':labelW + 'px', '--sy-phase-row':rowH + 'px', '--sy-phase-tip-space':'56px'}}>
+      <p className="sy-phase-tip">当前周期 · 每日症状记录</p>
+      <div className="sy-phase-body is-tip-ready">
+        <div className="sy-phase-yaxis" aria-hidden="true">
+          {model.rows.map(row=>(
+            <span key={row.key}>{row.label}</span>
+          ))}
+        </div>
+        <div className="sy-phase-plot-wrap">
+          <div className="sy-phase-plot-frame is-daily is-tip-ready">
+            <div
+              className={'sy-sheet-tip sy-phase-daily-tip' + (focusEmpty ? ' is-empty' : '')}
+              style={{left: Math.min(86, Math.max(14, tipLeftPct)) + '%'}}
+              role="status"
+            >
+              <b>{focusTitle}</b>
+              <span>{focusSub}</span>
+            </div>
+            <div
+              className="sy-phase-focus-line"
+              style={{left: tipLeftPct + '%'}}
+              aria-hidden="true"
+            />
+            <div
+              className="sy-phase-plot"
+              role="img"
+              aria-label="当前周期每日症状分布"
+              style={{
+                height:plotH + 'px',
+                gridTemplateColumns:'repeat(' + days.length + ', minmax(0, 1fr))',
+                gridTemplateRows:'repeat(' + model.rows.length + ', var(--sy-phase-row))',
+              }}
+            >
+              {phaseBands.map(band=>{
+                const span = band.end - band.start + 1;
+                return (
+                  <div
+                    key={'bg-' + band.key}
+                    className="sy-phase-col-bg"
+                    style={{
+                      background: band.bg,
+                      gridColumn: (band.start + 1) + ' / span ' + span,
+                      gridRow: '1 / -1',
+                    }}
+                    aria-hidden="true"
+                  />
+                );
+              })}
+              {model.rows.map((row, rowIndex)=>(
+                <React.Fragment key={row.key}>
+                  <i
+                    className="sy-phase-guide"
+                    style={{gridColumn:'1 / -1', gridRow:rowIndex + 1}}
+                    aria-hidden="true"
+                  />
+                  {days.map((day, index)=>{
+                    const on = daySets[row.key]?.has(day);
+                    const isFocus = day === focusDay;
+                    const recorded = hasRecord(day);
+                    const iconSrc = on && isFocus ? (row.icon || SYMPTOM_DIST_ICON[row.label]) : null;
+                    return (
+                      <button
+                        key={row.key + '-' + day}
+                        type="button"
+                        className={
+                          'sy-phase-cell is-daily'
+                          + (on ? ' is-on' : '')
+                          + (isFocus ? ' is-focus' : '')
+                          + (recorded ? '' : ' is-empty-day')
+                        }
+                        style={{gridColumn:index + 1, gridRow:rowIndex + 1}}
+                        onClick={(event)=>selectDay(day, event)}
+                        disabled={!recorded}
+                        aria-label={row.label + ' · ' + symptomSheetDayTitle(range, day, model.length)}
+                      >
+                        <i className="sy-phase-base" aria-hidden="true"/>
+                        {iconSrc ? (
+                          <img className="sy-sheet-icon" src={iconSrc} alt="" draggable="false"/>
+                        ) : (on ? (
+                          <span
+                            className="sy-phase-dot is-fixed"
+                            style={{width:DOT + 'px', height:DOT + 'px', background:'#FF4D88'}}
+                          />
+                        ) : null)}
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="sy-phase-dates" style={{gridTemplateColumns:'repeat(' + days.length + ', minmax(0, 1fr))'}} aria-hidden="true">
+            {days.map(day=>{
+              const isToday = day === today;
+              const isFocus = day === focusDay;
+              const date = symptomSheetDateForDay(day, model.length);
+              return (
+                <button
+                  key={'d-' + day}
+                  type="button"
+                  className={
+                    'sy-phase-date'
+                    + (isFocus ? ' is-focus' : '')
+                    + (isToday ? ' is-today' : '')
+                    + (hasRecord(day) ? '' : ' is-empty-day')
+                  }
+                  onClick={(event)=>selectDay(day, event)}
+                  disabled={!hasRecord(day)}
+                >
+                  {isToday || isFocus
+                    ? <span>{isToday ? '今' : date.getDate()}</span>
+                    : date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+          <div className="sy-phase-xlabels" aria-hidden="true">
+            {phaseBands.map(band=>{
+              const span = band.end - band.start + 1;
+              if(!band.label || span < 2) return <span key={band.key} style={{flex:span}}/>;
+              return (
+                <span key={band.key} style={{color:band.color, flex:span}}>{band.label}</span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="review-symptom-bubble-legend sy-phase-legend is-daily" aria-hidden="true">
+        <i className="sy-phase-legend-dot"/>
+        <span>当天有症状记录</span>
+      </div>
+    </div>
+  );
+}
+
+
+/** 终极方案：数字方块色阶（未记录仅灰点） */
+function symptomCountSquareStyle(count){
+  if(!count) return null;
+  if(count <= 2) return {bg:'rgba(255,77,136,0.22)', color:'#FF4D88'};
+  if(count <= 5) return {bg:'rgba(255,77,136,0.5)', color:'#fff'};
+  if(count <= 10) return {bg:'rgba(255,77,136,0.78)', color:'#fff'};
+  return {bg:'#FF4D88', color:'#fff'};
+}
+
+const SYMPTOM_ULTIMATE_INSIGHT = {
+  half: <>与前几个月相比，<b>乳胀</b>记录变多；经期仍以腹痛、腰酸为主。</>,
+  year: <>近一年里，经前乳胀与经期腹痛的节律更稳定；粉刺多出现在黄体期后段。</>,
+  all: <>长期来看，腹痛高度集中在月经期，乳胀集中在黄体期末；头痛无明显周期规律。</>,
+};
+
+function buildSymptomCountHeatmap(range = 'half'){
+  const flat = buildFlatSymptomScatter(range);
+  const today = SYMPTOM_SHEET_TODAY;
+  const buckets = [];
+  const bucketIndex = {};
+  const dayBucket = [];
+  for(let d = 1; d <= flat.length; d++){
+    const date = symptomSheetDateForDay(d, flat.length, today);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    if(bucketIndex[key] == null){
+      bucketIndex[key] = buckets.length;
+      buckets.push({
+        key,
+        label: (date.getMonth() + 1) + '月',
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+      });
+    }
+    dayBucket[d] = bucketIndex[key];
+  }
+  const counts = {};
+  SYMPTOM_ROW_ORDER.forEach(key=>{ counts[key] = buckets.map(()=>0); });
+  flat.rows.forEach(row=>{
+    (row.days || []).forEach(day=>{
+      const bi = dayBucket[day];
+      if(bi == null) return;
+      if(!counts[row.key]) counts[row.key] = buckets.map(()=>0);
+      counts[row.key][bi] += 1;
+    });
+  });
+  const rows = SYMPTOM_ROW_ORDER
+    .map(key=>{
+      const cells = counts[key] || buckets.map(()=>0);
+      const total = cells.reduce((sum, n)=>sum + n, 0);
+      return total > 0 ? {...SYMPTOM_SCATTER_DEFS[key], cells, total} : null;
+    })
+    .filter(Boolean);
+  // 全部也按月：近半年 6 列、近1年 12 列、全部最多 24 列
+  let cols = buckets;
+  const maxCols = range === 'half' ? 6 : (range === 'year' ? 12 : 24);
+  if(cols.length > maxCols) cols = cols.slice(-maxCols);
+  if(cols.length !== buckets.length){
+    const start = buckets.length - cols.length;
+    rows.forEach(row=>{ row.cells = row.cells.slice(start); });
+  }
+  const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.half;
+  return {
+    cols,
+    rows,
+    subtitle: meta.dateText,
+    insight: SYMPTOM_ULTIMATE_INSIGHT[range] || SYMPTOM_ULTIMATE_INSIGHT.half,
+    mode: 'month',
+  };
+}
+
+function SymptomCountHeatmapChart({range = 'half'}){
+  const model = React.useMemo(()=>buildSymptomCountHeatmap(range), [range]);
+  const {cols, rows} = model;
+  const defaultFocus = React.useMemo(()=>{
+    for(let i = cols.length - 1; i >= 0; i--){
+      if(rows.some(row => (row.cells[i] || 0) > 0)) return i;
+    }
+    return Math.max(0, cols.length - 1);
+  }, [cols, rows]);
+  const [picked, setPicked] = React.useState(null);
+  React.useEffect(()=>{ setPicked(null); }, [range]);
+  const focus = picked == null ? defaultFocus : picked;
+  const labelW = 40;
+  const rowH = 36;
+  const colMinPx = 32;
+  // 全部列多时固定列宽横滑；近半年/近1年仍一屏铺满
+  const scrollable = range === 'all' && cols.length > 8;
+  const focusCol = cols[focus] || null;
+  const focusLines = focusCol ? rows
+    .map(row=>({label:row.label, count:row.cells[focus] || 0}))
+    .filter(item=>item.count > 0)
+    .sort((a,b)=>b.count - a.count) : [];
+  const tipEmpty = focusLines.length === 0;
+  const tipMain = tipEmpty
+    ? '未记录'
+    : symptomFocusTipTitle(focusLines.map(item=>item.label));
+  const tipSecondary = focusCol ? focusCol.label : '';
+  const tipLeftPct = ((focus + 0.5) / Math.max(1, cols.length)) * 100;
+  const colStyle = scrollable
+    ? 'repeat(' + cols.length + ', ' + colMinPx + 'px)'
+    : 'repeat(' + cols.length + ', minmax(0, 1fr))';
+  const scrollRef = React.useRef(null);
+  React.useEffect(()=>{
+    if(!scrollable) return;
+    const el = scrollRef.current;
+    if(!el) return;
+    const target = focus * colMinPx + colMinPx / 2;
+    const next = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target - el.clientWidth / 2));
+    el.scrollTo({left:next, behavior:'smooth'});
+  }, [scrollable, focus, cols.length]);
+  return (
+    <div
+      className={'sy-heat' + (scrollable ? ' is-scrollable' : '')}
+      style={{'--sy-heat-label':labelW + 'px', '--sy-heat-row':rowH + 'px', '--sy-heat-tip-space':'56px'}}
+    >
+      <div className="sy-heat-body is-tip-ready">
+        <div className="sy-heat-yaxis" aria-hidden="true">
+          {rows.map(row=>(
+            <span key={row.key}>{row.label}</span>
+          ))}
+        </div>
+        <div className="sy-heat-plot-wrap">
+          <div
+            className="sy-heat-scroll"
+            ref={scrollRef}
+            aria-label={scrollable ? '左右滑动查看更多月份' : undefined}
+          >
+            <div
+              className="sy-heat-scroll-inner is-tip-ready"
+              style={scrollable ? {width:cols.length * colMinPx + 'px'} : undefined}
+            >
+              <div
+                className={'sy-sheet-tip sy-heat-tip' + (tipEmpty ? ' is-empty' : '')}
+                style={{left: Math.min(86, Math.max(14, tipLeftPct)) + '%'}}
+                role="status"
+              >
+                <b>{tipMain}</b>
+                <span>{tipSecondary}</span>
+              </div>
+              <div
+                className="sy-heat-plot"
+                style={{
+                  gridTemplateColumns:colStyle,
+                  gridTemplateRows:'repeat(' + rows.length + ', var(--sy-heat-row))',
+                }}
+              >
+                {cols.map((col, ci)=>(
+                  <div
+                    key={'bg-' + col.key}
+                    className={'sy-heat-col-bg' + (ci % 2 ? ' is-alt' : '') + (focus === ci ? ' is-focus' : '')}
+                    style={{gridColumn:ci + 1, gridRow:'1 / -1'}}
+                    aria-hidden="true"
+                  />
+                ))}
+                <i
+                  className="sy-heat-focus-line"
+                  style={{left: tipLeftPct + '%'}}
+                  aria-hidden="true"
+                />
+                {rows.map((row, ri)=>(
+                  <React.Fragment key={row.key}>
+                    {row.cells.map((count, ci)=>{
+                      const style = symptomCountSquareStyle(count);
+                      return (
+                        <button
+                          key={row.key + '-' + cols[ci].key}
+                          type="button"
+                          className={'sy-heat-cell' + (focus === ci ? ' is-focus' : '')}
+                          style={{gridColumn:ci + 1, gridRow:ri + 1}}
+                          onClick={(event)=>{
+                            event.stopPropagation();
+                            setPicked(ci);
+                          }}
+                          aria-label={row.label + ' · ' + cols[ci].label + ' · ' + count + '天'}
+                        >
+                          {style ? (
+                            <span className="sy-heat-square" style={{background:style.bg, color:style.color}}>{count}</span>
+                          ) : (
+                            <i className="sy-heat-dot" aria-hidden="true"/>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="sy-heat-xlabels" style={{gridTemplateColumns:colStyle}} aria-hidden="true">
+                {cols.map((col, ci)=>(
+                  <span key={col.key} className={focus === ci ? 'is-focus' : ''}>{col.label}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="sy-heat-legend" aria-hidden="true">
+        <span>记录天数</span>
+        <i style={{background:'rgba(255,77,136,0.22)'}}/>
+        <i style={{background:'rgba(255,77,136,0.5)'}}/>
+        <i style={{background:'rgba(255,77,136,0.78)'}}/>
+        <i style={{background:'#FF4D88'}}/>
+        <span>较多</span>
+      </div>
+    </div>
+  );
+}
+
+/** 终极方案气泡：大小差拉开 + 半透明叠放，形成毛毛虫/云团感（参考 Flo） */
+function ultimateCycleBubbleStyle(ratio){
+  if(!ratio || ratio <= 0) return null;
+  const t = Math.min(1, ratio);
+  // 弱信号保持小点，高峰明显放大，叠出连续团块
+  const sizeT = Math.pow(t, 0.65);
+  const d = Math.round(5 + sizeT * 23); // 5–28
+  // 整体半透明；越大略透一点，叠层能看出层次
+  const alpha = Number((0.36 + t * 0.22).toFixed(2)); // 0.36–0.58
+  return {d, fill: 'rgba(255,77,136,' + alpha + ')', z: Math.round(8 + t * 18)};
+}
+
+function SymptomUltimateCycleCard(){
+  // 近1年密度更饱满；洞察文案仍按半年周期数
+  const model = React.useMemo(()=>buildPhaseSymptomBubbles('year'), []);
+  const halfMeta = React.useMemo(()=>buildPhaseSymptomBubbles('half'), []);
+  const {phases, rows, days} = model;
+  const cycleCount = halfMeta.cycleCount || 6;
+  const labelW = 44;
+  const rowH = 52;
+  const showRows = React.useMemo(()=>rows.slice(0, 6), [rows]);
+  const plotH = Math.max(rowH, showRows.length * rowH);
+  // Demo：今天落在周期中段（排卵附近），不一定在最右侧
+  const todayDay = 14;
+  const todayLeftPct = ((todayDay - 0.5) / days) * 100;
+  // 与「今天」过近的刻度去掉，避免挤在一起
+  const tickDays = React.useMemo(
+    ()=>[1, 5, 10, 15, 20, 28].filter(d => Math.abs(d - todayDay) >= 2),
+    [todayDay]
+  );
+  const cycleSubtitle = '近 ' + cycleCount + ' 个周期';
+  // 图例只做示意，不还原真实气泡大小
+  const legendLevels = [
+    {d:5, fill:'rgba(255,77,136,0.35)'},
+    {d:7, fill:'rgba(255,77,136,0.48)'},
+    {d:9, fill:'rgba(255,77,136,0.62)'},
+  ];
+  const insightItems = [
+    {
+      key:'link',
+      label:'周期关联',
+      text:<>腹痛、腰酸多集中在月经期前几天；乳胀、疲惫更常落在黄体期末。近{cycleCount}个周期里，这类节律大约出现了 <b>4–5</b> 次。</>,
+    },
+    {
+      key:'trait',
+      label:'出现特点',
+      text:<>腹痛往往在月经来潮当天最明显，随后几天减弱；乳胀则从黄体中后段逐渐加重，接近下次月经前达到高峰。</>,
+    },
+    {
+      key:'recent',
+      label:'近期变化',
+      text:<>近 2 个周期，黄体期的疲惫天数略有增加；头痛仍较分散，暂看不出稳定的周期规律。</>,
+    },
+    {
+      key:'co',
+      label:'症状共现',
+      text:<>月经期腹痛常与腰酸、腹泻同天出现；黄体期末乳胀更易和疲惫、失眠一起出现，可当作一组经前信号。</>,
+    },
+    {
+      key:'watch',
+      label:'值得留意',
+      tone:'is-watch',
+      text:<>你当前约在排卵附近。按既往规律，未来 1 周乳胀、疲惫可能逐渐增多；若腹痛提前加重，可留意是否接近下次月经。</>,
+    },
+  ];
+  return (
+    <ReviewDetailSectionCard
+      iconClass="is-symptom"
+      icon={<ReviewCyclePhaseIcon/>}
+      title="症状与月经周期"
+      subtitle={cycleSubtitle}
+      className="review-symptom-ultimate-cycle-card"
+    >
+      <div
+        className="sy-phase is-ultimate-cycle"
+        style={{
+          '--sy-phase-label':labelW + 'px',
+          '--sy-phase-row':rowH + 'px',
+        }}
+      >
+        <div className="sy-phase-body">
+          <div className="sy-phase-yaxis" aria-hidden="true">
+            {showRows.map(row=>(
+              <span key={row.key}>{row.label}</span>
+            ))}
+          </div>
+          <div className="sy-phase-plot-wrap">
+            <div
+              className="sy-phase-plot"
+              role="img"
+              aria-label="症状与月经周期分布"
+              style={{
+                height:plotH + 'px',
+                gridTemplateColumns:'repeat(' + days + ', minmax(0, 1fr))',
+                gridTemplateRows:'repeat(' + showRows.length + ', var(--sy-phase-row))',
+              }}
+            >
+              {phases.map(ph=>{
+                const span = ph.end - ph.start + 1;
+                return (
+                  <div
+                    key={'bg-' + ph.key}
+                    className="sy-phase-col-bg"
+                    style={{background:ph.bg, gridColumn:ph.start + ' / span ' + span, gridRow:'1 / -1'}}
+                    aria-hidden="true"
+                  />
+                );
+              })}
+              {showRows.map((row, rowIndex)=>(
+                <React.Fragment key={row.key}>
+                  {row.hits.map((hits, index)=>{
+                    const style = ultimateCycleBubbleStyle(row.ratios[index]);
+                    return (
+                      <div
+                        key={row.key + '-' + (index + 1)}
+                        className={'sy-phase-cell' + (style ? ' is-on' : '')}
+                        style={{gridColumn:index + 1, gridRow:rowIndex + 1}}
+                        aria-hidden="true"
+                      >
+                        <i className="sy-phase-base" aria-hidden="true"/>
+                        {style ? (
+                          <span
+                            className="sy-phase-dot"
+                            style={{
+                              width:style.d + 'px',
+                              height:style.d + 'px',
+                              background:style.fill,
+                              zIndex:style.z,
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+              <i
+                className="sy-ultimate-today-line"
+                style={{left:todayLeftPct + '%'}}
+                aria-hidden="true"
+              />
+            </div>
+            <div className="sy-phase-day-ticks" aria-hidden="true">
+              {tickDays.map(day=>(
+                <span key={day} style={{left:((day - 0.5) / days) * 100 + '%'}}>{'D' + day}</span>
+              ))}
+              <span className="is-today" style={{left:todayLeftPct + '%'}}>今天</span>
+            </div>
+            <div className="sy-phase-xlabels" aria-hidden="true">
+              {phases.map(ph=>{
+                const span = ph.end - ph.start + 1;
+                return <span key={ph.key} style={{color:ph.color, flex:span}}>{ph.label}</span>;
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="sy-heat-legend sy-ultimate-cycle-legend" aria-hidden="true">
+          <span>较少周期</span>
+          {legendLevels.map((item, index)=>(
+            <i
+              key={index}
+              style={{
+                width:item.d + 'px',
+                height:item.d + 'px',
+                borderRadius:'50%',
+                background:item.fill,
+              }}
+            />
+          ))}
+          <span>较多周期</span>
+        </div>
+      </div>
+      <div className="sy-ultimate-cycle-insight">
+        <div className="sy-ultimate-cycle-insight-list">
+          {insightItems.map(item=>(
+            <div
+              key={item.key}
+              className={'sy-ultimate-cycle-insight-item' + (item.tone ? ' ' + item.tone : '')}
+            >
+              <span className="sy-ultimate-cycle-insight-label">{item.label}</span>
+              <p className="sy-ultimate-cycle-insight-copy">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ReviewDetailSectionCard>
+  );
+}
+
 function SymptomCycleStackPage({open, onClose, range = 'half'}){
   const meta = SYMPTOM_RANGE_META[range] || SYMPTOM_RANGE_META.half;
   React.useEffect(()=>{
@@ -13825,6 +14433,14 @@ function symptomSheetStickyMonthLabel(dayIndex, length){
   return yearBit + (d.getMonth() + 1) + '月';
 }
 
+
+function symptomFocusTipTitle(labels){
+  if(!labels || !labels.length) return '未记录';
+  const names = labels.slice(0, 2).join('、');
+  if(labels.length <= 2) return names;
+  return <>{names}<em className="sy-tip-more">等{labels.length}项</em></>;
+}
+
 /** 卡片副标题：2026年1月13日–今天 */
 function symptomSheetRangeTitle(length){
   const d = symptomSheetDateForDay(1, length);
@@ -13892,7 +14508,7 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
   // 与 HTML 一致：列宽足够让每日日期常驻显示（近半年/近1年也不抽稀）
   const colW = landscape
     ? (fitAll ? null : (days.length > 200 ? 18 : 22))
-    : 26;
+    : (range === 'd30' ? 32 : 26);
   const [stickyMonth, setStickyMonth] = React.useState(
     ()=>symptomSheetStickyMonthLabel(model.length, model.length)
   );
@@ -13947,11 +14563,7 @@ function SymptomSheetTable({range = 'd30', landscape = false}){
   };
   const focusSymptoms = symptomsByDay[focusDay] || [];
   const focusEmpty = focusSymptoms.length === 0;
-  const focusTitle = focusEmpty
-    ? '未记录'
-    : (focusSymptoms.length > 2
-      ? focusSymptoms.slice(0, 2).join('、') + ' 等' + focusSymptoms.length + '项'
-      : focusSymptoms.join('、'));
+  const focusTitle = focusEmpty ? '未记录' : symptomFocusTipTitle(focusSymptoms);
   const focusSub = symptomSheetTipSub(range, focusDay, model.length);
   const gridCols = fitAll
     ? (nameW + 'px repeat(' + days.length + ', minmax(0, 1fr))')
@@ -14109,23 +14721,35 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
     [range, longChart, meta.mode]
   );
   const isCycleTabs = meta.mode === 'cycles';
+  const useUltimate = longChart === 'ultimate';
+  const useUltimateDaily = useUltimate && range === 'd30';
+  const useUltimateHeat = useUltimate && isCycleTabs;
+  const usePhaseDaily = longChart === 'phase' && range === 'd30';
   const usePhaseBubble = isCycleTabs && longChart === 'phase';
+  const usePhaseMode = usePhaseDaily || usePhaseBubble;
   const useMonthBubble = isCycleTabs && longChart === 'month';
   const useCycleStack = isCycleTabs && longChart === 'cycle';
-  const useSheet = !isCycleTabs;
+  // 终极方案近30天：回到原 sheet（大图标 + 横滑），不进二级页
+  const useSheet = (!isCycleTabs && !usePhaseDaily) || useUltimateDaily;
   const footMeta = {
     kinds: meta.kinds,
     mostName: meta.mostName,
     mostCount: meta.mostCount,
     longestName: meta.longestName,
     longestDays: meta.longestDays,
-    mostUnit: '次',
+    mostUnit: range === 'd30' ? '天' : '次',
   };
-  const rangeTitle = usePhaseBubble
-    ? (phaseModel?.subtitle || meta.dateText)
-    : (useMonthBubble
-      ? (monthModel?.subtitle || meta.dateText)
-      : (range === 'd30' ? symptomSheetRangeTitle(sheetModel.length) : (meta.dateText || symptomSheetRangeTitle(sheetModel.length))));
+  const ultimateHeatModel = React.useMemo(
+    ()=>(useUltimateHeat ? buildSymptomCountHeatmap(range) : null),
+    [useUltimateHeat, range]
+  );
+  const rangeTitle = useUltimateHeat
+    ? (ultimateHeatModel?.subtitle || meta.dateText)
+    : (usePhaseBubble
+      ? (phaseModel?.subtitle || meta.dateText)
+      : (useMonthBubble
+        ? (monthModel?.subtitle || meta.dateText)
+        : (range === 'd30' ? symptomSheetRangeTitle(sheetModel.length) : (meta.dateText || symptomSheetRangeTitle(sheetModel.length)))));
   const [landscape, setLandscape] = React.useState(false);
   const [phoneSize, setPhoneSize] = React.useState(null);
   const cardRef = React.useRef(null);
@@ -14138,7 +14762,7 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
     setPhoneSize({w:rect?.width || 390, h:height});
     setLandscape(true);
   };
-  const canLandscape = useSheet || useMonthBubble || useCycleStack;
+  const canLandscape = (useSheet && !useUltimateDaily) || useMonthBubble || useCycleStack;
   const expandBtn = canLandscape ? (
     <button type="button" className="review-cycle-card-expand-btn" aria-label="全屏横屏查看症状分布" onClick={openLandscape}>
       <ReviewExpandIcon/>
@@ -14149,7 +14773,8 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
     useSheet ? 'is-sheet' : 'is-scatter-only',
     useCycleStack ? 'is-cycle-stack' : '',
     useMonthBubble ? 'is-month-bubble' : '',
-    usePhaseBubble ? 'is-phase-bubble' : '',
+    usePhaseMode ? 'is-phase-bubble' : '',
+    useUltimateHeat ? 'is-heat-grid' : '',
   ].filter(Boolean).join(' ');
   const chartClass = [
     'review-chart',
@@ -14157,7 +14782,8 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
     useSheet ? 'review-symptom-sheet-chart' : 'review-symptom-scatter-chart',
     useCycleStack ? 'is-cycle-stack' : '',
     useMonthBubble ? 'is-month-bubble' : '',
-    usePhaseBubble ? 'is-phase-bubble' : '',
+    usePhaseMode ? 'is-phase-bubble' : '',
+    useUltimateHeat ? 'is-heat-grid' : '',
   ].filter(Boolean).join(' ');
   return (
     <>
@@ -14169,10 +14795,14 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
           subtitle={rangeTitle}
           extra={expandBtn}
           className={cardClass}
-          onOpen={usePhaseBubble ? onOpenCycleStack : undefined}
+          onOpen={usePhaseMode ? onOpenCycleStack : undefined}
         >
           <div className={chartClass}>
-            {usePhaseBubble ? (
+            {useUltimateHeat ? (
+              <SymptomCountHeatmapChart range={range}/>
+            ) : usePhaseDaily ? (
+              <SymptomPhaseDailyChart range={range}/>
+            ) : usePhaseBubble ? (
               <SymptomPhaseBubbleChart range={range}/>
             ) : useMonthBubble ? (
               <SymptomMonthlyBubbleChart range={range}/>
@@ -14217,11 +14847,13 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
             <div className="wg-sheet-landscape-bar">
               <span className="wg-sheet-landscape-title">症状分布</span>
               <span className="wg-sheet-landscape-legend">
-                {usePhaseBubble
-                  ? '圆点越大表示越多周期在该阶段有记录'
-                  : (useMonthBubble
-                    ? '圆点越大颜色越深，表示当月记录越多'
-                    : (useCycleStack ? '按周期对照症状分布，圆点表示当天有记录' : '圆点表示当天有该症状'))}
+                {usePhaseDaily
+                  ? '圆点表示当天有该症状'
+                  : (usePhaseBubble
+                    ? '圆点越大表示越多周期在该位置有记录'
+                    : (useMonthBubble
+                      ? '圆点越大颜色越深，表示当月记录越多'
+                      : (useCycleStack ? '按周期对照症状分布，圆点表示当天有记录' : '圆点表示当天有该症状')))}
               </span>
               <button type="button" className="wg-sheet-rotate-btn is-exit" onClick={()=>setLandscape(false)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -14233,7 +14865,9 @@ function SymptomTrendSummary({range = 'd30', longChart = 'month', onOpenCycleSta
             </div>
             <div className="wg-sheet-landscape-scroll">
               <div className="review-detail-card review-symptom-sheet-landscape-card">
-                {usePhaseBubble ? (
+                {usePhaseDaily ? (
+                  <SymptomPhaseDailyChart range={range}/>
+                ) : usePhaseBubble ? (
                   <SymptomPhaseBubbleChart range={range}/>
                 ) : useMonthBubble ? (
                   <SymptomMonthlyBubbleChart range={range} landscape/>
@@ -14444,10 +15078,12 @@ function SymptomCycleCombinedCard({onExpand}){
 }
 
 function SymptomDetailBody({range, longChart = 'month', onOpenCycleStack}){
+  const isUltimate = longChart === 'ultimate';
   return (
     <div className="review-detail-section-stack">
       <SymptomTrendSummary range={range} longChart={longChart} onOpenCycleStack={onOpenCycleStack}/>
-      {range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
+      {isUltimate && range === 'd30' ? <SymptomUltimateCycleCard/> : null}
+      {!isUltimate && range === 'd30' ? <SymptomTrendDiscovery range={range}/> : null}
     </div>
   );
 }
@@ -14603,13 +15239,14 @@ function SymptomDetailPage({open, onClose, longChart = 'month'}){
           range={range}
           longChart={longChart}
           onOpenCycleStack={longChart === 'phase' ? (()=>setCycleStackOpen(true)) : undefined}
+
         />
       </div>
     </section>
     <SymptomCycleStackPage
       open={open && cycleStackOpen}
       onClose={()=>setCycleStackOpen(false)}
-      range={range}
+      range={range === 'd30' ? 'half' : range}
     />
     <SymptomAllRecordsPage open={open && allRecordsOpen} onClose={()=>setAllRecordsOpen(false)}/>
     </>
@@ -19030,7 +19667,7 @@ function ReviewPage({mode='经期', isMember=false, onMemberChange, weightManage
       <SkinDetailPage open={skinDetailOpen} onClose={()=>setSkinDetailOpen(false)}/>
       <SymptomDetailPage
         open={symptomDetailOpen}
-        longChart={['month','cycle','phase'].includes(symptomLongChart) ? symptomLongChart : 'month'}
+        longChart={['month','cycle','phase','ultimate'].includes(symptomLongChart) ? symptomLongChart : 'month'}
         onClose={()=>{
           setSymptomDetailOpen(false);
           onSymptomDetailReturn?.();
