@@ -10809,6 +10809,244 @@
 .review-mood-trend-section-card{
   background:#fff;
 }
+.review-mood-trend-section-card .review-mood-trend-chart.is-scatter{
+  aspect-ratio:auto;
+  width:100%;
+  margin-top:0;
+}
+.review-mood-trend-section-card .review-mood-scatter-legend{
+  margin-top:10px;
+  margin-bottom:0;
+  justify-content:center;
+}
+.sy-sheet.is-mood-scatter .sy-sheet-scroll{
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.sy-sheet.is-mood-scatter .sy-sheet-corner,
+.sy-sheet.is-mood-scatter .sy-sheet-name{
+  width:var(--sy-name-w, 48px);
+  padding:0 6px;
+}
+.sy-sheet.is-mood-scatter .sy-sheet-name{
+  height:34px;
+  font-size:12px;
+  color:rgba(0,0,0,0.75);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell{
+  height:34px;
+}
+/* 底色只铺在散点区，不盖左侧纵轴标签 */
+.sy-sheet.is-mood-scatter .sy-sheet-name.is-tri-pos,
+.sy-sheet.is-mood-scatter .sy-sheet-name.is-tri-neu,
+.sy-sheet.is-mood-scatter .sy-sheet-name.is-tri-neg{
+  background:#fff;
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-tri-pos{
+  background:rgba(255, 241, 199, 0.42);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-tri-neu{
+  background:rgba(226, 236, 251, 0.48);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-tri-neg{
+  background:rgba(255, 217, 225, 0.42);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-focus.is-tri-pos{
+  background:rgba(255, 233, 168, 0.55);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-focus.is-tri-neu{
+  background:rgba(208, 224, 248, 0.58);
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-focus.is-tri-neg{
+  background:rgba(255, 200, 212, 0.55);
+}
+.sy-mood-scatter-face{
+  position:relative;
+  z-index:3;
+  display:block;
+  width:24px;
+  height:24px;
+  object-fit:contain;
+  pointer-events:none;
+  user-select:none;
+}
+.sy-sheet.is-mood-scatter .sy-sheet-cell.is-focus .sy-mood-scatter-face{
+  width:26px;
+  height:26px;
+}
+.mood-scatter-tri-legend{
+  margin-top:10px;
+  margin-bottom:0;
+  justify-content:center;
+}
+.review-mood-trend-section-card .review-mood-trend-chart.is-tri-share,
+.review-mood-trend-section-card .review-mood-trend-chart.is-heat{
+  aspect-ratio:auto;
+  width:100%;
+  margin-top:0;
+}
+.review-mood-trend-section-card .review-mood-trend-chart.is-line-tri{
+  aspect-ratio:auto;
+  width:100%;
+  margin-top:0;
+  border-radius:12px;
+  overflow:hidden;
+}
+.review-mood-trend-section-card .review-mood-trend-chart.is-line-tri > svg{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.mood-tri-share{
+  width:100%;
+}
+.mood-tri-share-frame{
+  position:relative;
+  padding-top:0;
+}
+.mood-tri-share-tip.sy-sheet-tip,
+.mood-tri-share-tip.sy-heat-tip.sy-sheet-tip{
+  top:0;
+  max-width:min(280px, calc(100% - 16px));
+  white-space:nowrap;
+  transform:translateX(-50%);
+  z-index:5;
+}
+.mood-tri-share-tip.sy-sheet-tip b{
+  overflow:visible;
+  text-overflow:clip;
+  max-width:none;
+}
+.mood-tri-share-scroll{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.mood-tri-share:not(.is-scrollable) .mood-tri-share-scroll{
+  overflow-x:hidden;
+}
+.mood-tri-share-plot{
+  position:relative;
+  display:flex;
+  align-items:stretch;
+  gap:6px;
+  min-width:100%;
+  height:220px;
+  box-sizing:border-box;
+  /* 气泡高度 + 14px 空隙，对齐近30天散点 */
+  padding:var(--coh, 72px) 2px 0;
+}
+.mood-tri-share-focus-line{
+  position:absolute;
+  top:var(--vlt, 60px);
+  bottom:20px;
+  width:2px;
+  margin-left:-1px;
+  background:#F2558B;
+  pointer-events:none;
+  z-index:1;
+}
+.mood-tri-share-focus-line::before{
+  content:"";
+  position:absolute;
+  left:-3px;
+  top:-4px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#F2558B;
+}
+.mood-tri-share-col{
+  flex:1 1 0;
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:0;
+  margin:0;
+  border:0;
+  background:transparent;
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  position:relative;
+  z-index:2;
+}
+.mood-tri-share.is-scrollable .mood-tri-share-col{
+  flex:0 0 32px;
+}
+.mood-tri-share.is-year.is-scrollable .mood-tri-share-col{
+  flex:0 0 36px;
+}
+.mood-tri-share.is-day.is-scrollable .mood-tri-share-col{
+  flex:0 0 16px;
+}
+.mood-tri-share.is-scrollable .mood-tri-share-col em{
+  font-size:10px;
+}
+.mood-tri-share.is-day .mood-tri-share-bar{
+  max-width:12px;
+  border-radius:4px;
+}
+.mood-tri-share-col em.is-hide{
+  visibility:hidden;
+}
+.mood-tri-share-bar{
+  flex:1 1 auto;
+  width:100%;
+  max-width:22px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  border-radius:6px;
+  overflow:hidden;
+  background:rgba(0,0,0,0.03);
+}
+.mood-tri-share-bar > i{
+  display:block;
+  width:100%;
+  min-height:0;
+  flex-shrink:1;
+}
+.mood-tri-share-bar.is-empty > i.is-miss{
+  flex:1 1 auto;
+  background:rgba(0,0,0,0.06);
+}
+.mood-tri-share-col em{
+  flex:0 0 16px;
+  height:16px;
+  width:100%;
+  box-sizing:border-box;
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-align:center;
+  font-style:normal;
+  font-size:11px;
+  line-height:16px;
+  font-weight:400;
+  color:rgba(0,0,0,0.45);
+}
+.mood-tri-share-col.is-focus em{
+  color:#ff4d88;
+  font-weight:500;
+}
+.mood-tri-share-legend{
+  justify-content:center;
+  margin-top:10px;
+}
+.review-mood-trend-section-card .review-mood-trend-foot{
+  margin-top:12px;
+}
+.review-mood-trend-section-card .review-mood-trend-foot .review-mood-stat-card{
+  background:#FAFAFB;
+  border-radius:12px;
+  padding:12px 10px;
+}
 .review-mood-trend-insight-row{
   display:grid;
   grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
@@ -14566,25 +14804,32 @@
   /* 无硬描边，半透明叠放自然成毛毛虫 */
   box-shadow:none;
 }
+.sy-ultimate-today-head{
+  position:relative;
+  height:18px;
+  margin-bottom:4px;
+  pointer-events:none;
+}
+.sy-ultimate-today-label{
+  position:absolute;
+  top:0;
+  transform:translateX(-50%);
+  font-size:11px;
+  line-height:16px;
+  font-weight:400;
+  color:rgba(0,0,0,0.4);
+  font-family:"PingFang SC",-apple-system,sans-serif;
+  white-space:nowrap;
+}
 .sy-ultimate-today-line{
   position:absolute;
   top:0;
   bottom:0;
   width:0;
-  border-left:1px dashed #ff4d88;
+  border-left:1px dashed rgba(0,0,0,0.28);
   transform:translateX(-50%);
   z-index:4;
   pointer-events:none;
-}
-.sy-ultimate-today-line::before{
-  content:"";
-  position:absolute;
-  left:-3px;
-  top:4px;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#ff4d88;
 }
 .sy-phase.is-ultimate-cycle .sy-phase-day-ticks{
   height:18px;
@@ -14593,10 +14838,6 @@
 .sy-phase.is-ultimate-cycle .sy-phase-day-ticks span{
   font-size:11px;
   color:rgba(0,0,0,0.4);
-}
-.sy-phase.is-ultimate-cycle .sy-phase-day-ticks span.is-today{
-  color:#ff4d88;
-  font-weight:500;
 }
 .sy-phase.is-ultimate-cycle .sy-phase-xlabels{
   margin-top:4px;

@@ -4363,7 +4363,6 @@ function CycleDetailChart({range}){
   const W = 340, H = 180, padL = 26, padR = 14, padT = 16, padB = 28;
   const x0 = padL, x1 = W - padR, y0 = padT, y1 = H - padB;
   const yMin = 20, yMax = 37;
-  const X = i => x0 + (x1 - x0) * (i / (n - 1));
   const Y = v => y1 - (v - yMin) / (yMax - yMin) * (y1 - y0);
   const sx = vals.reduce((s, _v, i)=>s + i, 0);
   const sy = vals.reduce((s, v)=>s + v, 0);
@@ -4377,10 +4376,75 @@ function CycleDetailChart({range}){
   const maxIdx = vals.indexOf(maxVal), minIdx = vals.indexOf(minVal);
   const hasAboveNormal = maxVal > normalMax;
   const hasBelowNormal = minVal < normalMin;
-  const marks = range === '6c'
-    ? vals.map((_value, index)=>index)
-    : [0, Math.round((n - 1) * 0.25), Math.round((n - 1) * 0.5), Math.round((n - 1) * 0.75), n - 1]
-      .filter((v, i, arr)=>arr.indexOf(v) === i);
+  // 近6个周期 / 近1年：柱状图；近3年 / 全部：折线图
+  const useBars = range === '6c' || range === '1y';
+
+  if(useBars){
+    const band = (x1 - x0) / Math.max(n, 1);
+    const barWidth = Math.min(range === '6c' ? 25 : 16, Math.max(6, band * (range === '6c' ? 0.55 : 0.48)));
+    const X = i => x0 + band * i + band / 2;
+    const labelStep = range === '6c' ? 1 : 2;
+    return (
+      <svg viewBox="0 0 340 180" preserveAspectRatio="xMidYMid meet" role="img" aria-label="月经周期长度对比柱状图">
+        {[20,24,28,32,36].map(g=>(
+          <React.Fragment key={g}>
+            <line x1={x0} y1={Y(g)} x2={x1} y2={Y(g)} stroke="rgba(0,0,0,0.05)" strokeWidth="1"/>
+            <text x={x0 - 5} y={Y(g) + 3} textAnchor="end" fontSize="9" fill="#bbbbbf" fontFamily="PingFang SC">{g}</text>
+          </React.Fragment>
+        ))}
+        {hasBelowNormal ? <line x1={x0} y1={Y(normalMin)} x2={x1} y2={Y(normalMin)} stroke="#e6a2b8" strokeWidth="1" strokeDasharray="3 3"/> : null}
+        {hasAboveNormal ? <line x1={x0} y1={Y(normalMax)} x2={x1} y2={Y(normalMax)} stroke="#e6a2b8" strokeWidth="1" strokeDasharray="3 3"/> : null}
+        {hasAboveNormal ? <text x={x1} y={Y(normalMax) - 4} textAnchor="end" fontSize="9" fill="#bd7891" fontFamily="PingFang SC">上限 35天</text> : null}
+        {hasBelowNormal ? <text x={x1} y={Y(normalMin) + 12} textAnchor="end" fontSize="9" fill="#bd7891" fontFamily="PingFang SC">下限 21天</text> : null}
+        <line x1={X(0)} y1={Y(a)} x2={X(n - 1)} y2={Y(a + b * (n - 1))} stroke="#c2c2c8" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round"/>
+        {vals.map((v, i)=>{
+          const isAnomaly = i === anomalyIdx;
+          const isRangeMax = i === maxIdx;
+          const isRangeMin = i === minIdx;
+          const isLast = i === n - 1;
+          const barY = Y(v);
+          const showTop = range === '6c' || isLast || isRangeMax || isRangeMin || isAnomaly;
+          return (
+            <g key={i}>
+              <rect
+                x={X(i) - barWidth / 2}
+                y={barY}
+                width={barWidth}
+                height={Math.max(2, y1 - barY)}
+                rx={range === '6c' ? 7 : 5}
+                fill={isAnomaly ? '#ff9500' : (isLast ? '#ff4d88' : '#f3adc4')}
+              />
+              {showTop ? (
+                <text
+                  x={X(i)}
+                  y={barY - 7}
+                  textAnchor="middle"
+                  fontSize="9.5"
+                  fontWeight="500"
+                  fill={isAnomaly ? '#e8930f' : (isLast ? '#e7447c' : '#a8687e')}
+                  fontFamily="PingFang SC"
+                >{isRangeMax && !isLast ? ('最长 ' + v) : (isRangeMin && !isLast ? ('最短 ' + v) : v)}</text>
+              ) : null}
+              {(i % labelStep === 0 || isLast) ? (
+                <text
+                  x={X(i)}
+                  y={H - 9}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill={isLast ? '#e7447c' : '#bbbbbf'}
+                  fontFamily="PingFang SC"
+                >{displaySlice[i][0]}</text>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  const X = i => x0 + (x1 - x0) * (i / Math.max(n - 1, 1));
+  const marks = [0, Math.round((n - 1) * 0.25), Math.round((n - 1) * 0.5), Math.round((n - 1) * 0.75), n - 1]
+    .filter((v, i, arr)=>arr.indexOf(v) === i);
   const pts = vals.map((v, i)=>[X(i), Y(v)]);
 
   return (
@@ -4405,8 +4469,8 @@ function CycleDetailChart({range}){
         return (
           <React.Fragment key={i}>
             <circle cx={X(i)} cy={Y(v)} r={isLast || isRangeMax || isRangeMin ? 4.5 : (isAnomaly ? 4 : 2.4)} fill={isAnomaly ? '#ff9500' : '#ff4d88'} stroke={isLast || isAnomaly || isRangeMax || isRangeMin ? '#fff' : 'none'} strokeWidth={isLast || isRangeMax || isRangeMin ? 2 : 1.5}/>
-            {isRangeMax ? <text x={X(i)} y={Y(v) - 9} textAnchor="middle" fontSize="9.5" fontWeight="600" fill={isAnomaly ? '#e8930f' : '#ff4d88'} fontFamily="PingFang SC">最长 {v}天</text> : null}
-            {isRangeMin ? <text x={X(i)} y={Y(v) + 16} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#ff4d88" fontFamily="PingFang SC">最短 {v}天</text> : null}
+            {isRangeMax ? <text x={X(i)} y={Y(v) - 9} textAnchor="middle" fontSize="9.5" fontWeight="500" fill={isAnomaly ? '#e8930f' : '#ff4d88'} fontFamily="PingFang SC">最长 {v}天</text> : null}
+            {isRangeMin ? <text x={X(i)} y={Y(v) + 16} textAnchor="middle" fontSize="9.5" fontWeight="500" fill="#ff4d88" fontFamily="PingFang SC">最短 {v}天</text> : null}
           </React.Fragment>
         );
       })}
@@ -8744,26 +8808,27 @@ function dietRangeDays(range){
 
 function dietTrendPoints(range){
   if(range === 'd7' || range === 'd30') return dietRangeDays(range);
-  if(DIET_MONTHLY_BARS[range]) return DIET_MONTHLY_BARS[range];
+  // 近半年 / 近1年：按月柱；全部：用折线波段序列
+  if(range === 'half' || range === 'year') return DIET_MONTHLY_BARS[range] || dietRangeDays(range);
+  if(DIET_WAVE_TREND[range]) return DIET_WAVE_TREND[range];
   if(range === 'half'){
     return dietHalfTrendSeries(dietRangeDays('half'));
   }
-  if(DIET_WAVE_TREND[range]) return DIET_WAVE_TREND[range];
   return dietRangeDays(range);
 }
 
 function DietTrendMainChart({days, range = 'd7'}){
   const isDailyBar = range === 'd7' || range === 'd30';
-  const isMonthlyBar = range === 'half' || range === 'year' || range === 'all';
+  const isMonthlyBar = range === 'half' || range === 'year';
   if(isDailyBar || isMonthlyBar){
-    const useThinBars = range === 'd30' || range === 'all';
+    const useThinBars = range === 'd30';
     return (
       <DietTotalBarChart
         days={days}
         height={176}
         showTotals={range === 'd7'}
         showExtremes={range !== 'd7'}
-        labelStep={range === 'd30' ? 5 : (range === 'all' ? 4 : (range === 'year' ? 2 : 1))}
+        labelStep={range === 'd30' ? 5 : (range === 'year' ? 2 : 1)}
         showTrendLine={isDailyBar}
         barRatio={useThinBars ? 0.38 : null}
         minBarWidth={useThinBars ? 4 : null}
@@ -8775,7 +8840,7 @@ function DietTrendMainChart({days, range = 'd7'}){
       />
     );
   }
-  const isWave = range === 'year' || range === 'all';
+  const isWave = range === 'all';
   const points = days.filter(day=>!day.empty);
   const n = points.length;
   const W = 340, H = 176;
@@ -10031,6 +10096,10 @@ function MoodLineChart({
       }) : null}
       {triScale ? (
         <>
+          {/* 自上而下：积极 / 中性 / 消极 横向底色带 */}
+          <rect x={x0} y={y0} width={x1 - x0} height={plotH * 0.4} fill="#FFF1C7" opacity="0.85"/>
+          <rect x={x0} y={y1 - plotH * 0.6} width={x1 - x0} height={plotH * 0.2} fill="#E2ECFB" opacity="0.9"/>
+          <rect x={x0} y={y1 - plotH * 0.4} width={x1 - x0} height={plotH * 0.4} fill="#FFD9E1" opacity="0.85"/>
           {[0.4, 0.6].map(t=>(
             <line
               key={'band' + t}
@@ -10038,9 +10107,8 @@ function MoodLineChart({
               y1={y1 - t * plotH}
               x2={x1}
               y2={y1 - t * plotH}
-              stroke="rgba(0,0,0,0.05)"
+              stroke="rgba(0,0,0,0.04)"
               strokeWidth="1"
-              strokeDasharray="3 4"
             />
           ))}
           {MOOD_TRI_AXIS.map(item=>(
@@ -11610,10 +11678,589 @@ function MoodTodayEmotionCard({playKey}){
   );
 }
 
+/** 全量 20 种心情排序（积极 → 消极）；图表只取每类代表项 */
+const MOOD_SCATTER_ORDER = [
+  'super-happy', 'excited', 'surprised', 'heart-flutter', 'satisfied', 'confident',
+  'happy', 'relaxed', 'calm', 'normal', 'indifferent',
+  'stressed', 'irritable', 'temper', 'anxious', 'overthink', 'scared', 'unhappy',
+  'angry', 'very-sad',
+];
+/** 近30天/按月热力展示行：每类挑几个，一屏放得下 */
+const MOOD_CHART_DISPLAY_IDS = [
+  'super-happy', 'excited', 'happy',
+  'calm', 'normal',
+  'temper', 'anxious', 'overthink',
+];
+const MOOD_SCATTER_SCORE = {
+  'super-happy':5, 'excited':5, 'surprised':5, 'satisfied':5, 'heart-flutter':5, 'confident':5,
+  'happy':4, 'relaxed':4,
+  'normal':3, 'calm':3, 'indifferent':3,
+  'unhappy':2, 'irritable':2, 'temper':2, 'anxious':2, 'overthink':2, 'stressed':2, 'scared':2,
+  'very-sad':1, 'angry':1,
+};
+const MOOD_SCATTER_FALLBACK = [
+  {id:'super-happy', label:'超开心', face:'super-happy', bg:'#FFE875'},
+  {id:'happy', label:'挺开心', face:'happy', bg:'#FFE875'},
+  {id:'normal', label:'一般', face:'normal', bg:'#B8E8FF'},
+  {id:'unhappy', label:'不开心', face:'unhappy', bg:'#FFC8DC'},
+  {id:'very-sad', label:'好伤心', face:'very-sad', bg:'#FFC8DC'},
+  {id:'excited', label:'兴奋', face:'excited', bg:'#FFE875'},
+  {id:'surprised', label:'惊喜', face:'surprised', bg:'#FFE875'},
+  {id:'satisfied', label:'满足', face:'satisfied', bg:'#FFE875'},
+  {id:'heart-flutter', label:'心动', face:'heart-flutter', bg:'#FFE875'},
+  {id:'confident', label:'自信', face:'confident', bg:'#FFE875'},
+  {id:'relaxed', label:'放松', face:'relaxed', bg:'#FFE875'},
+  {id:'calm', label:'平静', face:'calm', bg:'#B8E8FF'},
+  {id:'irritable', label:'烦躁', face:'irritable', bg:'#FFC8DC'},
+  {id:'temper', label:'易怒', face:'temper', bg:'#FFC8DC'},
+  {id:'angry', label:'生气', face:'angry', bg:'#FF9898'},
+  {id:'anxious', label:'焦虑', face:'anxious', bg:'#C8E8A8'},
+  {id:'overthink', label:'内耗', face:'overthink', bg:'#FFC8DC'},
+  {id:'stressed', label:'压力', face:'stressed', bg:'#FFE875'},
+  {id:'scared', label:'害怕', face:'scared', bg:'#FFC8DC'},
+  {id:'indifferent', label:'冷漠', face:'indifferent', bg:'#B8E8FF'},
+];
+
+function moodScatterOptionById(id){
+  const src = (typeof window !== 'undefined' && window.MOOD_OPTIONS) || MOOD_SCATTER_FALLBACK;
+  const found = src.find(item => item.id === id) || MOOD_SCATTER_FALLBACK.find(item => item.id === id);
+  if(!found) return null;
+  return {
+    ...found,
+    key:found.id,
+    icon:'assets/mood-faces/' + found.id + '.png',
+  };
+}
+
+function moodChartDisplayOptions(){
+  return MOOD_CHART_DISPLAY_IDS.map(moodScatterOptionById).filter(Boolean);
+}
+
+function moodScatterPoolByScore(score, poolIds){
+  const allow = poolIds ? new Set(poolIds) : null;
+  return moodChartDisplayOptions().filter(item=>{
+    if(allow && !allow.has(item.id)) return false;
+    return (MOOD_SCATTER_SCORE[item.id] || 3) === score;
+  });
+}
+
+/** 由数值档位落到展示行里的具体心情 */
+function moodIdFromVal(v, dayIndex, poolIds = MOOD_CHART_DISPLAY_IDS){
+  const score = Math.max(1, Math.min(5, Math.round(Number(v) || 3)));
+  let pool = moodScatterPoolByScore(score, poolIds);
+  if(!pool.length){
+    // 同档没有时，按分数远近在展示行里兜底
+    pool = moodChartDisplayOptions()
+      .filter(item => !poolIds || poolIds.includes(item.id))
+      .sort((a, b)=>Math.abs((MOOD_SCATTER_SCORE[a.id] || 3) - score) - Math.abs((MOOD_SCATTER_SCORE[b.id] || 3) - score));
+  }
+  if(!pool.length) return 'normal';
+  return pool[Math.abs(dayIndex) % pool.length].id;
+}
+
+function MoodScatterFace({mood}){
+  if(!mood) return null;
+  const src = mood.icon || ('assets/mood-faces/' + mood.id + '.png');
+  return (
+    <img
+      className="sy-mood-scatter-face"
+      src={src}
+      alt=""
+      draggable="false"
+    />
+  );
+}
+
+function moodDailyValsForRange(range = 'd30'){
+  if(range === 'half') return MOOD_HALF_SERIES.vals;
+  if(range === 'year') return MOOD_YEAR_VALS;
+  if(range === 'all') return MOOD_ALL_SERIES.vals;
+  return MOOD_MONTH_VALS;
+}
+
+function buildMoodScatterModel(range = 'd30'){
+  const vals = MOOD_MONTH_VALS;
+  const dates = MOOD_MONTH_DATES;
+  const dayMoodIds = vals.map((v, i)=>moodIdFromVal(v, i));
+  const dayMoodLists = dayMoodIds.map((id, i)=>{
+    const list = [id];
+    if(i === 4) list.push('calm');
+    if(i === 11) list.push('anxious');
+    if(i === 18) list.push('happy');
+    if(i === 24) list.push('temper');
+    return Array.from(new Set(list.filter(mid => MOOD_CHART_DISPLAY_IDS.includes(mid))));
+  });
+  const rows = moodChartDisplayOptions().map(opt=>{
+    const days = [];
+    dayMoodLists.forEach((list, i)=>{
+      if(list.includes(opt.id)) days.push(i + 1);
+    });
+    return {...opt, days, tri: moodTriKeyFromMoodId(opt.id)};
+  }).filter(row => row.days.length > 0);
+  return {
+    length: vals.length,
+    vals,
+    dates,
+    rows,
+    dayMoodLists,
+    daily: true,
+  };
+}
+
+function moodTriBucketFromVal(v){
+  if(v > 3.5) return 'pos';
+  if(v < 2.5) return 'neg';
+  return 'neu';
+}
+
+function moodTriKeyFromMoodId(id){
+  const score = MOOD_SCATTER_SCORE[id] || 3;
+  if(score >= 4) return 'pos';
+  if(score <= 2) return 'neg';
+  return 'neu';
+}
+
+function moodTriSegsFromTally(t){
+  const total = Math.max(1, t.total || 0);
+  let pos = Math.round(((t.pos || 0) / total) * 100);
+  let neu = Math.round(((t.neu || 0) / total) * 100);
+  let neg = Math.max(0, 100 - pos - neu);
+  if(!t.total){ pos = 0; neu = 0; neg = 0; }
+  return [pos, neu, neg];
+}
+
+/** 近30天按日、其余按月：积极/中性/消极占比 */
+function buildMoodTriShare(range = 'half'){
+  const meta = MOOD_RANGE_META[range] || MOOD_RANGE_META.half;
+  if(range === 'd30'){
+    const vals = MOOD_MONTH_VALS;
+    const length = vals.length;
+    const items = vals.map((v, i)=>{
+      const day = i + 1;
+      const moodId = moodIdFromVal(v, i);
+      const moodIds = [moodId];
+      if(i === 4) moodIds.push('calm');
+      if(i === 11) moodIds.push('anxious');
+      if(i === 18) moodIds.push('happy');
+      if(i === 24) moodIds.push('temper');
+      const uniq = Array.from(new Set(moodIds.filter(id => MOOD_CHART_DISPLAY_IDS.includes(id))));
+      const tally = {pos:0, neu:0, neg:0, total:0};
+      uniq.forEach(id=>{
+        const key = moodTriKeyFromMoodId(id);
+        tally[key] += 1;
+        tally.total += 1;
+      });
+      if(!tally.total){
+        const key = moodTriBucketFromVal(v);
+        tally[key] = 1;
+        tally.total = 1;
+        uniq.push(moodId);
+      }
+      const date = symptomSheetDateForDay(day, length);
+      const isToday = day === length;
+      const labels = uniq
+        .map(id => moodScatterOptionById(id)?.label)
+        .filter(Boolean);
+      return {
+        key:'d' + day,
+        label: isToday ? '今天' : String(date.getDate()),
+        showLabel: isToday || day === 1 || day % 5 === 0,
+        isToday,
+        moodLabels: labels,
+        counts:{pos:tally.pos, neu:tally.neu, neg:tally.neg, total:tally.total},
+        segs: moodTriSegsFromTally(tally),
+      };
+    });
+    return {items, mode:'day', subtitle: meta.dateText};
+  }
+
+  const vals = moodDailyValsForRange(range);
+  const length = vals.length;
+  const today = SYMPTOM_SHEET_TODAY;
+  const buckets = [];
+  const bucketIndex = {};
+  const dayBucket = [];
+  for(let d = 1; d <= length; d++){
+    const date = symptomSheetDateForDay(d, length, today);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    if(bucketIndex[key] == null){
+      bucketIndex[key] = buckets.length;
+      buckets.push({
+        key,
+        label:(date.getMonth() + 1) + '月',
+        year:date.getFullYear(),
+        month:date.getMonth() + 1,
+      });
+    }
+    dayBucket[d] = bucketIndex[key];
+  }
+  const tallies = buckets.map(()=>({pos:0, neu:0, neg:0, total:0}));
+  vals.forEach((v, i)=>{
+    const bi = dayBucket[i + 1];
+    if(bi == null) return;
+    const key = moodTriBucketFromVal(v);
+    tallies[bi][key] += 1;
+    tallies[bi].total += 1;
+  });
+  let cols = buckets;
+  let stats = tallies;
+  const maxCols = range === 'half' ? 6 : (range === 'year' ? 12 : 24);
+  if(cols.length > maxCols){
+    const start = cols.length - maxCols;
+    cols = cols.slice(start);
+    stats = stats.slice(start);
+  }
+  const labelStep = range === 'year' ? 2 : (range === 'all' ? 3 : 1);
+  const items = cols.map((col, i)=>{
+    const t = stats[i] || {pos:0, neu:0, neg:0, total:0};
+    const isEdge = i === 0 || i === cols.length - 1;
+    // 近1年/全部：横轴不必每月都标，避免挤在一起
+    const showLabel = labelStep <= 1 ? true : (isEdge || i % labelStep === 0);
+    return {
+      ...col,
+      showLabel,
+      counts:{pos:t.pos, neu:t.neu, neg:t.neg, total:t.total},
+      segs: moodTriSegsFromTally(t),
+    };
+  });
+  return {items, mode:'month', subtitle: meta.dateText};
+}
+
+function MoodScatterSheet({range = 'd30'}){
+  const model = React.useMemo(()=>buildMoodScatterModel(range), [range]);
+  const days = React.useMemo(()=>{
+    const list = [];
+    for(let d = 1; d <= model.length; d++) list.push(d);
+    return list;
+  }, [model.length]);
+  const daySets = React.useMemo(()=>{
+    const map = {};
+    model.rows.forEach(row=>{ map[row.key] = new Set(row.days || []); });
+    return map;
+  }, [model.rows]);
+  const defaultFocus = model.length;
+  const [picked, setPicked] = React.useState(null);
+  React.useEffect(()=>{ setPicked(null); }, [range]);
+  const focusDay = (picked && picked.range === range) ? picked.day : defaultFocus;
+  const scrollRef = React.useRef(null);
+  const focusColRef = React.useRef(null);
+  const nameW = 48;
+  const colW = 30;
+  const [stickyMonth, setStickyMonth] = React.useState(
+    ()=> symptomSheetStickyMonthLabel(model.length, model.length)
+  );
+  const syncStickyMonth = React.useCallback(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const dayIndex = Math.min(
+      model.length,
+      Math.max(1, Math.floor(scroller.scrollLeft / colW) + 1)
+    );
+    const next = symptomSheetStickyMonthLabel(dayIndex, model.length);
+    setStickyMonth(prev => prev === next ? prev : next);
+  }, [colW, model.length]);
+  React.useLayoutEffect(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const jumpLatest = ()=>{
+      scroller.scrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+      syncStickyMonth();
+    };
+    jumpLatest();
+    requestAnimationFrame(jumpLatest);
+  }, [range, model.length, syncStickyMonth]);
+  React.useEffect(()=>{
+    const scroller = scrollRef.current;
+    if(!scroller) return;
+    const onScroll = ()=>syncStickyMonth();
+    scroller.addEventListener('scroll', onScroll, {passive:true});
+    syncStickyMonth();
+    return ()=>scroller.removeEventListener('scroll', onScroll);
+  }, [syncStickyMonth, range]);
+  React.useLayoutEffect(()=>{
+    if(!picked || picked.range !== range) return;
+    const scroller = scrollRef.current;
+    const col = focusColRef.current;
+    if(!scroller || !col) return;
+    const left = Math.max(0, col.offsetLeft - scroller.clientWidth * 0.62 + col.offsetWidth);
+    scroller.scrollLeft = left;
+    syncStickyMonth();
+  }, [picked, range, syncStickyMonth]);
+  const selectDay = day=>{
+    setPicked({range, day});
+  };
+  const focusMoodIds = model.dayMoodLists[focusDay - 1] || [];
+  const focusLabels = focusMoodIds
+    .map(id => model.rows.find(row => row.id === id)?.label)
+    .filter(Boolean);
+  const focusTitle = focusLabels.length
+    ? (focusLabels.length <= 2 ? focusLabels.join('、') : (focusLabels.slice(0, 2).join('、') + '等' + focusLabels.length + '项'))
+    : '未记录';
+  const focusSub = symptomSheetTipSub('d30', focusDay, model.length);
+  const gridCols = nameW + 'px repeat(' + days.length + ', ' + colW + 'px)';
+  const focusX = nameW + (focusDay - 0.5) * colW;
+  const tipRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const [tipLayout, setTipLayout] = React.useState({lineLeft: nameW + 14, tipLeft: nameW + 4});
+  React.useLayoutEffect(()=>{
+    const tip = tipRef.current;
+    const canvas = canvasRef.current;
+    const scroller = scrollRef.current;
+    if(!tip || !canvas || !scroller) return;
+    const canvasW = canvas.offsetWidth || 0;
+    const x = focusX;
+    const ch = tip.offsetHeight || 44;
+    canvas.style.setProperty('--coh', (ch + 14) + 'px');
+    canvas.style.setProperty('--vlt', (ch + 4) + 'px');
+    const right = x > scroller.scrollLeft + nameW + (scroller.clientWidth - nameW) / 2;
+    const w = tip.offsetWidth || 64;
+    const tipLeft = Math.max(nameW + 4, Math.min(Math.max(nameW + 4, canvasW - w - 2), right ? x - w + 8 : x - 8));
+    setTipLayout({lineLeft: x, tipLeft});
+  }, [focusDay, focusTitle, focusSub, focusX, days.length, nameW, model.rows.length]);
+  return (
+    <div className="sy-sheet is-mood-scatter" style={{'--sy-name-w': nameW + 'px'}} aria-label="心情散点分布">
+      <div className="sy-sheet-scroll" ref={scrollRef}>
+        <div className="sy-sheet-canvas" ref={canvasRef}>
+          <div className="sy-sheet-focus-line" style={{left: tipLayout.lineLeft + 'px'}} aria-hidden="true"/>
+          <div
+            ref={tipRef}
+            className="sy-sheet-tip"
+            style={{left: tipLayout.tipLeft + 'px'}}
+            role="status"
+          >
+            <b>{focusTitle}</b>
+            <span>{focusSub}</span>
+          </div>
+          <div className="sy-sheet-month-track" aria-hidden="true">
+            <div className="sy-sheet-month-pin">{stickyMonth}</div>
+          </div>
+          <div
+            className="sy-sheet-grid is-axis-bottom"
+            style={{gridTemplateColumns:gridCols}}
+          >
+            {model.rows.map(row=>{
+              const triCls = row.tri === 'pos' ? ' is-tri-pos' : (row.tri === 'neg' ? ' is-tri-neg' : ' is-tri-neu');
+              return (
+                <React.Fragment key={row.key}>
+                  <div className={'sy-sheet-name' + triCls}>
+                    <span>{row.label}</span>
+                  </div>
+                  {days.map(day=>{
+                    const on = daySets[row.key]?.has(day);
+                    const isFocus = day === focusDay;
+                    return (
+                      <button
+                        key={row.key + '-' + day}
+                        type="button"
+                        className={
+                          'sy-sheet-cell'
+                          + triCls
+                          + (on ? ' is-on' : '')
+                          + (isFocus ? ' is-focus' : '')
+                        }
+                        onClick={()=>selectDay(day)}
+                        aria-label={row.label + ' · ' + symptomSheetDayTitle('d30', day, model.length)}
+                      >
+                        {on ? <MoodScatterFace mood={row}/> : null}
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+            <div className="sy-sheet-corner is-axis">日期</div>
+            {days.map(day=>{
+              const isFocus = day === focusDay;
+              const isToday = day === model.length;
+              const date = symptomSheetDateForDay(day, model.length);
+              return (
+                <button
+                  key={'h-' + day}
+                  type="button"
+                  ref={isFocus ? focusColRef : null}
+                  className={
+                    'sy-sheet-day is-label is-bottom'
+                    + (isFocus ? ' is-focus' : '')
+                    + (isToday ? ' is-today' : '')
+                  }
+                  onClick={()=>selectDay(day)}
+                  aria-pressed={isFocus}
+                >
+                  {isToday || isFocus
+                    ? <span>{isToday ? '今天' : date.getDate()}</span>
+                    : date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="review-mood-dist-legend mood-scatter-tri-legend" aria-hidden="true">
+        <span><i className="is-pos" style={{background:MOOD_TRI_POS}}/>积极</span>
+        <span><i className="is-mid" style={{background:MOOD_TRI_NEU}}/>中性</span>
+        <span><i className="is-neg" style={{background:MOOD_TRI_NEG}}/>消极</span>
+      </div>
+    </div>
+  );
+}
+
+function MoodTriShareChart({range = 'half'}){
+  const model = React.useMemo(()=>buildMoodTriShare(range), [range]);
+  const {items, mode} = model;
+  const isDay = mode === 'day';
+  const defaultFocus = Math.max(0, items.length - 1);
+  const [picked, setPicked] = React.useState(null);
+  React.useEffect(()=>{ setPicked(null); }, [range]);
+  const focus = picked == null ? defaultFocus : picked;
+  const focusItem = items[focus] || null;
+  const tipEmpty = !focusItem || focusItem.counts.total === 0;
+  const tipMain = (()=>{
+    if(tipEmpty) return '未记录';
+    if(isDay && focusItem.moodLabels?.length){
+      const names = focusItem.moodLabels.slice(0, 2).join('、');
+      return focusItem.moodLabels.length > 2
+        ? (names + '等' + focusItem.moodLabels.length + '项')
+        : names;
+    }
+    // 月份气泡只展示最高占比，避免挤不下截断
+    const triLabels = ['积极', '中性', '消极'];
+    let topI = 0;
+    focusItem.segs.forEach((pct, i)=>{ if(pct > focusItem.segs[topI]) topI = i; });
+    return triLabels[topI] + ' ' + focusItem.segs[topI] + '%';
+  })();
+  const tipSecondary = (()=>{
+    if(!focusItem) return '';
+    if(isDay){
+      const tri = focusItem.segs[0] >= focusItem.segs[1] && focusItem.segs[0] >= focusItem.segs[2]
+        ? '积极'
+        : (focusItem.segs[2] >= focusItem.segs[1] ? '消极' : '中性');
+      return (focusItem.isToday ? '今天' : focusItem.label + '日') + ' · ' + tri;
+    }
+    return focusItem.label || '';
+  })();
+  // 近1年/全部月份多时支持横滑；近半年 6 列一屏够用
+  const scrollable = isDay || range === 'year' || range === 'all';
+  const colMinPx = isDay ? 16 : (range === 'year' ? 36 : 32);
+  const gapPx = 6;
+  const plotPadX = 2;
+  const plotWidth = scrollable
+    ? (items.length * colMinPx + Math.max(0, items.length - 1) * gapPx + plotPadX * 2)
+    : undefined;
+  const scrollRef = React.useRef(null);
+  const tipRef = React.useRef(null);
+  const plotRef = React.useRef(null);
+  const colRefs = React.useRef([]);
+  const [layout, setLayout] = React.useState({lineLeft: 0, tipLeft: 0});
+  const syncFocusLayout = React.useCallback(()=>{
+    const plot = plotRef.current;
+    const tip = tipRef.current;
+    const col = colRefs.current[focus];
+    if(!plot || !col) return;
+    const lineLeft = col.offsetLeft + col.offsetWidth / 2;
+    const tipW = tip ? tip.offsetWidth : 88;
+    const tipH = tip ? tip.offsetHeight : 44;
+    // 与近30天散点一致：气泡与粉点之间留空隙（--coh / --vlt）
+    plot.style.setProperty('--coh', (tipH + 14) + 'px');
+    plot.style.setProperty('--vlt', (tipH + 4) + 'px');
+    const tipLeft = Math.max(
+      tipW / 2 + 4,
+      Math.min(Math.max(tipW / 2 + 4, plot.offsetWidth - tipW / 2 - 4), lineLeft)
+    );
+    setLayout(prev => (
+      prev.lineLeft === lineLeft && prev.tipLeft === tipLeft
+        ? prev
+        : {lineLeft, tipLeft}
+    ));
+  }, [focus]);
+  React.useLayoutEffect(()=>{
+    if(!scrollable) return;
+    const el = scrollRef.current;
+    const col = colRefs.current[focus];
+    if(!el || !col) return;
+    const target = col.offsetLeft + col.offsetWidth / 2;
+    const next = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target - el.clientWidth / 2));
+    el.scrollTo({left:next, behavior: isDay && picked == null ? 'auto' : 'smooth'});
+  }, [scrollable, focus, items.length, isDay, picked]);
+  React.useLayoutEffect(()=>{
+    syncFocusLayout();
+    const id = requestAnimationFrame(syncFocusLayout);
+    return ()=>cancelAnimationFrame(id);
+  }, [syncFocusLayout, tipMain, tipSecondary, items.length, scrollable, plotWidth]);
+  const colors = {
+    pos: MOOD_TRI_POS,
+    neu: MOOD_TRI_NEU,
+    neg: MOOD_TRI_NEG,
+  };
+  return (
+    <div className={'mood-tri-share' + (scrollable ? ' is-scrollable' : '') + (isDay ? ' is-day' : '') + (range === 'year' ? ' is-year' : '')}>
+      <div className="mood-tri-share-frame">
+        <div
+          className="mood-tri-share-scroll"
+          ref={scrollRef}
+          aria-label={scrollable ? (isDay ? '左右滑动查看更多日期' : '左右滑动查看更多月份') : undefined}
+        >
+          <div
+            className="mood-tri-share-plot"
+            ref={plotRef}
+            style={plotWidth ? {width: plotWidth + 'px'} : undefined}
+          >
+            <div
+              ref={tipRef}
+              className={'sy-sheet-tip sy-heat-tip mood-tri-share-tip' + (tipEmpty ? ' is-empty' : '')}
+              style={{left: layout.tipLeft + 'px'}}
+              role="status"
+            >
+              <b>{tipMain}</b>
+              <span>{tipSecondary}</span>
+            </div>
+            <i
+              className="mood-tri-share-focus-line"
+              style={{left: layout.lineLeft + 'px'}}
+              aria-hidden="true"
+            />
+            {items.map((item, i)=>{
+              const [pos, neu, neg] = item.segs;
+              const empty = !item.counts.total;
+              const showAxis = item.showLabel !== false || focus === i;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  ref={el=>{ colRefs.current[i] = el; }}
+                  className={'mood-tri-share-col' + (focus === i ? ' is-focus' : '') + (empty ? ' is-empty' : '')}
+                  onClick={()=>setPicked(i)}
+                  aria-label={item.label + (empty ? ' 未记录' : (' 积极' + pos + '% 中性' + neu + '% 消极' + neg + '%'))}
+                >
+                  <span className={'mood-tri-share-bar' + (empty ? ' is-empty' : '')} aria-hidden="true">
+                    {empty ? (
+                      <i className="is-miss"/>
+                    ) : (
+                      <>
+                        {pos > 0 ? <i style={{flexGrow:pos, background:colors.pos}}/> : null}
+                        {neu > 0 ? <i style={{flexGrow:neu, background:colors.neu}}/> : null}
+                        {neg > 0 ? <i style={{flexGrow:neg, background:colors.neg}}/> : null}
+                      </>
+                    )}
+                  </span>
+                  <em className={showAxis ? '' : 'is-hide'}>{item.label}</em>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="review-mood-dist-legend mood-tri-share-legend" aria-hidden="true">
+        <span><i className="is-pos" style={{background:colors.pos}}/>积极</span>
+        <span><i className="is-mid" style={{background:colors.neu}}/>中性</span>
+        <span><i className="is-neg" style={{background:colors.neg}}/>消极</span>
+      </div>
+    </div>
+  );
+}
+
 function MoodTrendSummary({range = 'd30'}){
   const meta = MOOD_RANGE_META[range] || MOOD_RANGE_META.d30;
-  const chartProps = moodTrendChartProps(range);
-  const isCompact = !!chartProps.compact;
+  const useTriShare = range !== 'd30';
   const hourly = MOOD_HOURLY_BY_RANGE[range] || MOOD_HOURLY_BY_RANGE.d30;
   const recordCount = hourly.reduce((s, n)=>s + n, 0);
   const topMoods = meta.topMoods || '平静、易怒';
@@ -11628,12 +12275,17 @@ function MoodTrendSummary({range = 'd30'}){
       subtitle={meta.dateText}
       className="review-mood-trend-section-card"
     >
-      <div className={'review-chart review-detail-chart review-mood-trend-chart' + (isCompact ? ' is-compact' : '')}>
-        <MoodLineChart {...chartProps}/>
-      </div>
-      <MoodChartLegend/>
+      {useTriShare ? (
+        <div className="review-chart review-detail-chart review-mood-trend-chart is-tri-share">
+          <MoodTriShareChart range={range}/>
+        </div>
+      ) : (
+        <div className="review-chart review-detail-chart review-mood-trend-chart is-scatter">
+          <MoodScatterSheet range={range}/>
+        </div>
+      )}
       <div className="review-mood-trend-foot">
-        <div className="review-mood-trend-insight-panel review-mood-trend-insight-row review-weight-stat-row">
+        <div className="review-mood-trend-insight-row review-weight-stat-row">
           <div className="review-mood-trend-record-card review-weight-stat-card review-mood-stat-card">
             <span className="review-mood-trend-record-card-title">心情记录</span>
             <p><b>{recordCount}</b><em>次</em></p>
@@ -14229,6 +14881,12 @@ function SymptomUltimateCycleCard(){
             ))}
           </div>
           <div className="sy-phase-plot-wrap">
+            <div className="sy-ultimate-today-head" aria-hidden="true">
+              <span
+                className="sy-ultimate-today-label"
+                style={{left:todayLeftPct + '%'}}
+              >今天</span>
+            </div>
             <div
               className="sy-phase-plot"
               role="img"
@@ -14288,7 +14946,6 @@ function SymptomUltimateCycleCard(){
               {tickDays.map(day=>(
                 <span key={day} style={{left:((day - 0.5) / days) * 100 + '%'}}>{'D' + day}</span>
               ))}
-              <span className="is-today" style={{left:todayLeftPct + '%'}}>今天</span>
             </div>
             <div className="sy-phase-xlabels" aria-hidden="true">
               {phases.map(ph=>{
