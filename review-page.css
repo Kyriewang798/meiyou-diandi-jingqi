@@ -10979,9 +10979,6 @@
 .mood-tri-share.is-scrollable .mood-tri-share-col{
   flex:0 0 32px;
 }
-.mood-tri-share.is-year.is-scrollable .mood-tri-share-col{
-  flex:0 0 36px;
-}
 .mood-tri-share.is-day.is-scrollable .mood-tri-share-col{
   flex:0 0 16px;
 }
@@ -10991,6 +10988,23 @@
 .mood-tri-share.is-day .mood-tri-share-bar{
   max-width:12px;
   border-radius:4px;
+}
+/* 近1年 / 全部：12 柱一屏密度，全部可向前横滑 */
+.mood-tri-share.is-year .mood-tri-share-plot,
+.mood-tri-share.is-year-density .mood-tri-share-plot{
+  gap:4px;
+}
+.mood-tri-share.is-year .mood-tri-share-bar,
+.mood-tri-share.is-year-density .mood-tri-share-bar{
+  max-width:18px;
+  border-radius:5px;
+}
+.mood-tri-share.is-year .mood-tri-share-col em,
+.mood-tri-share.is-year-density .mood-tri-share-col em{
+  font-size:10px;
+}
+.mood-tri-share.is-all.is-scrollable .mood-tri-share-col{
+  flex:0 0 var(--mood-tri-col-w, calc((100% - 44px) / 12));
 }
 .mood-tri-share-col em.is-hide{
   visibility:hidden;

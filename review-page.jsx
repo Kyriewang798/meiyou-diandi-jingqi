@@ -11910,7 +11910,7 @@ function buildMoodTriShare(range = 'half'){
     cols = cols.slice(start);
     stats = stats.slice(start);
   }
-  const labelStep = range === 'year' ? 2 : (range === 'all' ? 3 : 1);
+  const labelStep = (range === 'year' || range === 'all') ? 2 : 1;
   const items = cols.map((col, i)=>{
     const t = stats[i] || {pos:0, neu:0, neg:0, total:0};
     const isEdge = i === 0 || i === cols.length - 1;
@@ -12138,19 +12138,42 @@ function MoodTriShareChart({range = 'half'}){
     }
     return focusItem.label || '';
   })();
-  // 近1年/全部月份多时支持横滑；近半年 6 列一屏够用
-  const scrollable = isDay || range === 'year' || range === 'all';
-  const colMinPx = isDay ? 16 : (range === 'year' ? 36 : 32);
-  const gapPx = 6;
+  // 近1年一屏 12 柱；全部同密度并可向前横滑
+  const pageCols = 12;
+  const isPagedMonth = range === 'all';
+  const scrollable = isDay || isPagedMonth;
+  const gapPx = (range === 'year' || isPagedMonth) ? 4 : 6;
   const plotPadX = 2;
-  const plotWidth = scrollable
-    ? (items.length * colMinPx + Math.max(0, items.length - 1) * gapPx + plotPadX * 2)
-    : undefined;
+  const dayColPx = 16;
   const scrollRef = React.useRef(null);
   const tipRef = React.useRef(null);
   const plotRef = React.useRef(null);
   const colRefs = React.useRef([]);
+  const [pageColW, setPageColW] = React.useState(0);
   const [layout, setLayout] = React.useState({lineLeft: 0, tipLeft: 0});
+  React.useLayoutEffect(()=>{
+    if(!isPagedMonth) return undefined;
+    const el = scrollRef.current;
+    if(!el) return undefined;
+    const measure = ()=>{
+      const viewW = el.clientWidth || 0;
+      if(viewW <= 0) return;
+      const next = Math.max(16, (viewW - plotPadX * 2 - gapPx * (pageCols - 1)) / pageCols);
+      setPageColW(prev => Math.abs(prev - next) < 0.5 ? prev : next);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if(ro) ro.observe(el);
+    window.addEventListener('resize', measure);
+    return ()=>{
+      if(ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [isPagedMonth, gapPx, pageCols, plotPadX, items.length]);
+  const colMinPx = isDay ? dayColPx : (isPagedMonth ? pageColW : 32);
+  const plotWidth = scrollable && colMinPx
+    ? (items.length * colMinPx + Math.max(0, items.length - 1) * gapPx + plotPadX * 2)
+    : undefined;
   const syncFocusLayout = React.useCallback(()=>{
     const plot = plotRef.current;
     const tip = tipRef.current;
@@ -12177,22 +12200,39 @@ function MoodTriShareChart({range = 'half'}){
     const el = scrollRef.current;
     const col = colRefs.current[focus];
     if(!el || !col) return;
-    const target = col.offsetLeft + col.offsetWidth / 2;
-    const next = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target - el.clientWidth / 2));
-    el.scrollTo({left:next, behavior: isDay && picked == null ? 'auto' : 'smooth'});
-  }, [scrollable, focus, items.length, isDay, picked]);
+    // 全部默认滚到最近一屏（与近1年同视口密度）
+    const target = isPagedMonth && picked == null
+      ? el.scrollWidth - el.clientWidth
+      : (col.offsetLeft + col.offsetWidth / 2 - el.clientWidth / 2);
+    const next = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target));
+    el.scrollTo({left:next, behavior: (isDay || isPagedMonth) && picked == null ? 'auto' : 'smooth'});
+  }, [scrollable, focus, items.length, isDay, isPagedMonth, picked, plotWidth]);
   React.useLayoutEffect(()=>{
     syncFocusLayout();
     const id = requestAnimationFrame(syncFocusLayout);
     return ()=>cancelAnimationFrame(id);
   }, [syncFocusLayout, tipMain, tipSecondary, items.length, scrollable, plotWidth]);
+  React.useEffect(()=>{
+    if(!scrollable) return undefined;
+    const el = scrollRef.current;
+    if(!el) return undefined;
+    const onScroll = ()=>syncFocusLayout();
+    el.addEventListener('scroll', onScroll, {passive:true});
+    return ()=>el.removeEventListener('scroll', onScroll);
+  }, [scrollable, syncFocusLayout]);
   const colors = {
     pos: MOOD_TRI_POS,
     neu: MOOD_TRI_NEU,
     neg: MOOD_TRI_NEG,
   };
   return (
-    <div className={'mood-tri-share' + (scrollable ? ' is-scrollable' : '') + (isDay ? ' is-day' : '') + (range === 'year' ? ' is-year' : '')}>
+    <div className={
+      'mood-tri-share'
+      + (scrollable ? ' is-scrollable' : '')
+      + (isDay ? ' is-day' : '')
+      + (range === 'year' ? ' is-year' : '')
+      + (isPagedMonth ? ' is-all is-year-density' : '')
+    }>
       <div className="mood-tri-share-frame">
         <div
           className="mood-tri-share-scroll"
@@ -12202,7 +12242,11 @@ function MoodTriShareChart({range = 'half'}){
           <div
             className="mood-tri-share-plot"
             ref={plotRef}
-            style={plotWidth ? {width: plotWidth + 'px'} : undefined}
+            style={plotWidth ? {
+              width: plotWidth + 'px',
+              gap: gapPx + 'px',
+              ...(isPagedMonth && pageColW ? {'--mood-tri-col-w': pageColW + 'px'} : null),
+            } : undefined}
           >
             <div
               ref={tipRef}
@@ -12228,6 +12272,7 @@ function MoodTriShareChart({range = 'half'}){
                   type="button"
                   ref={el=>{ colRefs.current[i] = el; }}
                   className={'mood-tri-share-col' + (focus === i ? ' is-focus' : '') + (empty ? ' is-empty' : '')}
+                  style={isPagedMonth && pageColW ? {flex:'0 0 ' + pageColW + 'px'} : undefined}
                   onClick={()=>setPicked(i)}
                   aria-label={item.label + (empty ? ' 未记录' : (' 积极' + pos + '% 中性' + neu + '% 消极' + neg + '%'))}
                 >
